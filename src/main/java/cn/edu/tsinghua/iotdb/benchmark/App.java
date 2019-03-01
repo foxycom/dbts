@@ -11,6 +11,7 @@ import cn.edu.tsinghua.iotdb.benchmark.db.ctsdb.CTSDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.db.influxdb.InfluxDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.db.iotdb.IoTDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.db.kairosdb.KairosDBFactory;
+import cn.edu.tsinghua.iotdb.benchmark.db.leveldb.TsLevelDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.db.opentsdb.OpenTSDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.db.timescaledb.TimescaleDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.loadData.Resolve;
@@ -443,7 +444,7 @@ public class App {
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
 
-        IDatebase datebase;
+        IDatebase datebase = null;
         long createSchemaStartTime = 0;
         long createSchemaEndTime;
         float createSchemaTime;
@@ -459,7 +460,7 @@ public class App {
             datebase.close();
             createSchemaEndTime = System.nanoTime();
             createSchemaTime = (createSchemaEndTime - createSchemaStartTime) / 1000000000.0f;
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LOGGER.error("Fail to init database becasue {}", e.getMessage());
             return;
         }
@@ -473,7 +474,7 @@ public class App {
             ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER + 1);
             executorService.submit(new Resolve(config.FILE_PATH, storage));
             for (int i = 0; i < config.CLIENT_NUMBER; i++) {
-                executorService.submit(new ClientThread(idbFactory.buildDB(mysql.getLabID()), i, storage, downLatch,
+                executorService.submit(new ClientThread(datebase, i, storage, downLatch,
                         totalTimes, totalInsertErrorNums, latenciesOfClients));
             }
             executorService.shutdown();
@@ -636,6 +637,7 @@ public class App {
             case Constants.DB_CTS:
             case Constants.DB_KAIROS:
             case Constants.DB_TIMESCALE:
+            case Constants.DB_TSLEVELDB:
                 totalErrorPoint = getErrorNumIoT(totalInsertErrorNums);
                 break;
             default:
@@ -658,6 +660,8 @@ public class App {
                 return new KairosDBFactory();
             case Constants.DB_TIMESCALE:
                 return new TimescaleDBFactory();
+            case Constants.DB_TSLEVELDB:
+                return new TsLevelDBFactory();
             default:
                 throw new SQLException("unsupported database " + config.DB_SWITCH);
         }
