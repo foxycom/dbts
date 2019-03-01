@@ -40,13 +40,4 @@ public class LevelDB {
     }
   }
 
-
-
-  public void closeTsLevelDB(){
-    try {
-      timeSeriesDB.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 }

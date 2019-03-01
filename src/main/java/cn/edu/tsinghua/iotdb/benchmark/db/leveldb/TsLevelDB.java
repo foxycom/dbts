@@ -13,12 +13,14 @@ import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
 import edu.tsinghua.k1.BaseTimeSeriesDBFactory;
 import edu.tsinghua.k1.api.ITimeSeriesDB;
 import edu.tsinghua.k1.api.ITimeSeriesWriteBatch;
+import edu.tsinghua.k1.api.TimeSeriesDBIterator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,23 +58,19 @@ public class TsLevelDB implements IDatebase {
     mySql.initMysql(labID);
 
     timeSeriesDB = LevelDB.getInstance().getTimeSeriesDB();
-//    File file = new File(config.GEN_DATA_FILE_PATH);
-//    System.out.println("creating timeSeriesDB...");
-//    options.createIfMissing(true);
-//
-//    try {
-//      timeSeriesDB = BaseTimeSeriesDBFactory.getInstance().openOrCreate(file, options);
-//    } catch (IOException e) {
-//      e.printStackTrace();
-//    } finally {
-//      // if the is not null, close it
-//    }
+
   }
 
 
   @Override
   public void init() {
-
+//    //delete old data
+//    File file = new File(config.GEN_DATA_FILE_PATH);
+//    try {
+//      BaseTimeSeriesDBFactory.getInstance().destroy(file, options);
+//    } catch (IOException e) {
+//      e.printStackTrace();
+//    }
   }
 
   @Override
@@ -203,13 +201,11 @@ public class TsLevelDB implements IDatebase {
 
   @Override
   public void close() throws SQLException {
-
-//    File file = new File(config.GEN_DATA_FILE_PATH);
-//    try {
-//      BaseTimeSeriesDBFactory.getInstance().destroy(file, options);
-//    } catch (IOException e) {
-//      e.printStackTrace();
-//    }
+    try {
+      timeSeriesDB.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -217,10 +213,62 @@ public class TsLevelDB implements IDatebase {
     return 0;
   }
 
+  public static double bytes2Double(byte[] arr) {
+    long value = 0;
+    for (int i = 0; i < 8; i++) {
+      value |= ((long) (arr[i] & 0xff)) << (8 * i);
+    }
+    return Double.longBitsToDouble(value);
+  }
+
+  public static long bytes2Long(byte[] arr) {
+    long value = 0;
+    for (int i = 0; i < 8; i++) {
+      value |= ((long) (arr[i] & 0xff)) << (8 * i);
+    }
+    return value;
+  }
+
   @Override
   public void executeOneQuery(List<Integer> devices, int index, long startTime,
       QueryClientThread client, ThreadLocal<Long> errorCount, ArrayList<Long> latencies) {
-
+    List<String> list = new ArrayList<String>();
+    for (String sensor : config.SENSOR_CODES) {
+      list.add(sensor);
+    }
+    Collections.shuffle(list, sensorRandom);
+    String timeSeries = Constants.ROOT_SERIES_NAME + "." + getGroupDevicePath("d_" + devices.get(0)) + "." + list.get(0);
+    // query data with range which contains data
+    TimeSeriesDBIterator dbIterator = timeSeriesDB.iterator(timeSeries, startTime,startTime + config.QUERY_INTERVAL);
+    LOGGER.info("query {}, start time {}, end time {}", timeSeries, startTime, startTime + config.QUERY_INTERVAL);
+    int line = 0;
+    long startTimeStamp = System.nanoTime();
+    while(dbIterator.hasNext()){
+      line++;
+      Map.Entry<byte[], byte[]> entry = dbIterator.next();
+      double value = bytes2Double(entry.getValue());
+      byte[] timeBytes = new byte[8];
+      for(int i = 0; i < 8; i++){
+        timeBytes[i] = entry.getKey()[11 - i];
+      }
+      long time = bytes2Long(timeBytes);
+      LOGGER.info("query result {}: [{}, {}]", line, time, value);
+    }
+    long endTimeStamp = System.nanoTime();
+    long latency = endTimeStamp - startTimeStamp;
+    latencies.add(latency);
+    client.setTotalPoint(client.getTotalPoint() + line * config.QUERY_SENSOR_NUM * config.QUERY_DEVICE_NUM);
+    client.setTotalTime(client.getTotalTime() + latency);
+    LOGGER.info(
+        "{} execute {} loop, it costs {}s with {} result points cur_rate is {}points/s; "
+            + "TotalTime {}s with totalPoint {} rate is {}points/s",
+        Thread.currentThread().getName(), index, (latency / 1000.0) / 1000000.0,
+        line * config.QUERY_SENSOR_NUM * config.QUERY_DEVICE_NUM,
+        line * config.QUERY_SENSOR_NUM * config.QUERY_DEVICE_NUM * 1000.0 / (latency / 1000000.0),
+        (client.getTotalTime() / 1000.0) / 1000000.0, client.getTotalPoint(),
+        client.getTotalPoint() * 1000.0f / (client.getTotalTime() / 1000000.0));
+    mySql.saveQueryProcess(index, line * config.QUERY_SENSOR_NUM * config.QUERY_DEVICE_NUM,
+        (latency / 1000.0f) / 1000000.0, config.REMARK);
   }
 
   @Override

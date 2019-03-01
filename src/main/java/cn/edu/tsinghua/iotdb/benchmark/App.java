@@ -457,7 +457,7 @@ public class App {
                 createSchemaStartTime = System.nanoTime();
                 datebase.createSchema();
             }
-            datebase.close();
+            //datebase.close();
             createSchemaEndTime = System.nanoTime();
             createSchemaTime = (createSchemaEndTime - createSchemaStartTime) / 1000000000.0f;
         } catch (Exception e) {
@@ -541,6 +541,7 @@ public class App {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            datebase.close();
             long totalTime = 0;
             for (long c : totalTimes) {
                 if (c > totalTime) {
