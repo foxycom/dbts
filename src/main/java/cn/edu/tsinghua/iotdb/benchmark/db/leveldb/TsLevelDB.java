@@ -117,13 +117,14 @@ public class TsLevelDB implements IDatebase {
       try {
         timeSeriesDB.write(batch);
       } catch (Exception e) {
+        LOGGER.error("Batch one insert failed because: ", e);
         errorNum += config.CACHE_NUM * config.SENSOR_NUMBER;
       }
       long endTime = System.nanoTime();
       long costTime = endTime - startTime;
       latencies.add(costTime);
       if (errorNum > 0) {
-        LOGGER.info("Batch insert failed, the failed number is {}! ", errorNum);
+        LOGGER.error("Batch insert failed, the failed number is {}! ", errorNum);
       } else {
         LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
             Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
