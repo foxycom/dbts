@@ -253,7 +253,7 @@ public class TsLevelDB implements IDatebase {
         timeBytes[i] = entry.getKey()[11 - i];
       }
       long time = bytes2Long(timeBytes);
-      LOGGER.info("query result {}: [{}, {}]", line, time, value);
+      // LOGGER.info("query result {}: [{}, {}]", line, time, value);
     }
     long endTimeStamp = System.nanoTime();
     long latency = endTimeStamp - startTimeStamp;
