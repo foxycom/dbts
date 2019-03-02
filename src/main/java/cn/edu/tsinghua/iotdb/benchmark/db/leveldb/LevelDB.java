@@ -31,6 +31,9 @@ public class LevelDB {
     System.out.println("creating timeSeriesDB...");
     options = new Options();
     options.createIfMissing(true);
+    options.writeBufferSize(16<<20);
+    options.cacheSize(4L<<30);
+    options.maxOpenFiles(1<<20);
     try {
       timeSeriesDB = BaseTimeSeriesDBFactory.getInstance().openOrCreate(file, options);
     } catch (IOException e) {
