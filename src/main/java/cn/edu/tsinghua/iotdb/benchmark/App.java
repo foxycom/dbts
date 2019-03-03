@@ -541,7 +541,7 @@ public class App {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            datebase.close();
+            //datebase.close();
             long totalTime = 0;
             for (long c : totalTimes) {
                 if (c > totalTime) {
