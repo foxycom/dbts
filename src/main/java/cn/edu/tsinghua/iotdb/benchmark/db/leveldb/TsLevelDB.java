@@ -202,13 +202,13 @@ public class TsLevelDB implements IDatebase {
 
   @Override
   public void close() throws SQLException {
-    LOGGER.info("The leveldb will be closed.................");
-//    try {
-//
-//      timeSeriesDB.close();
-//    } catch (IOException e) {
-//      e.printStackTrace();
-//    }
+    LOGGER.info("The leveldb will be closed.................begin");
+    try {
+      timeSeriesDB.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    LOGGER.info("The leveldb will be closed.................end");
   }
 
   @Override
