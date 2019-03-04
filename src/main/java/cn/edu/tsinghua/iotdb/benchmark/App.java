@@ -541,7 +541,11 @@ public class App {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            datebase.close();
+            try {
+                datebase.close();
+            } catch (Exception e) {
+                LOGGER.error("close TsLevelDB after all threads finished fail because", e);
+            }
             long totalTime = 0;
             for (long c : totalTimes) {
                 if (c > totalTime) {

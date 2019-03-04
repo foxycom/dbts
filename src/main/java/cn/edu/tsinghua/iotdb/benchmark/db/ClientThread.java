@@ -193,11 +193,11 @@ public class ClientThread implements Runnable{
 		}
 
 
-		try {
-			database.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			database.close();
+//		} catch (SQLException e) {
+//			e.printStackTrace();
+//		}
 		this.totalTimes.add(totalTime.get());
 		this.totalInsertErrorNums.add(errorCount.get());
 		this.latenciesOfClients.add(latencies);
