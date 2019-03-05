@@ -769,7 +769,7 @@ public class App {
 
         LOGGER.info("{}: execute ,{}, query in ,{}, seconds, speed ,{}, get ,{}, result points with ,{}, workers (mean rate ,{}, points/s)",
                 getQueryName(config), config.CLIENT_NUMBER * config.LOOP, (totalTime / 1000.0f) / 1000000.0,
-            totalResultPoint,config.CLIENT_NUMBER * config.LOOP/((totalTime / 1000.0f) / 1000000.0),
+                config.CLIENT_NUMBER * config.LOOP/((totalTime / 1000.0f) / 1000000.0),totalResultPoint,
                 config.CLIENT_NUMBER, (1000.0f * totalResultPoint) / ((float) totalTime / 1000000.0f));
         LOGGER.info("Total Operations {}; Latency(ms): Avg {}, MiddleAvg {}, Min {}, Max {}, p1 {}, p5 {}, p25 {}, p50 {}, p75 {}, p90 {}, p95 {}, p99 {}, p99.9 {}, p99.99 {}",
                 totalOps, avgLatency, midAvgLatency, min, max, p1, p5, p25, p50, p75, p90, p95, p99, p999, p9999);
