@@ -204,6 +204,11 @@ public class TsLevelDB implements IDatebase {
   public void close() throws SQLException {
     LOGGER.info("The leveldb will be closed.................begin");
     try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    try {
       timeSeriesDB.close();
     } catch (IOException e) {
       e.printStackTrace();
