@@ -247,8 +247,10 @@ public class TsLevelDB implements IDatebase {
     Collections.shuffle(list, sensorRandom);
     String timeSeries = Constants.ROOT_SERIES_NAME + "." + getGroupDevicePath("d_" + devices.get(0)) + "." + list.get(0);
     // query data with range which contains data
-    TimeSeriesDBIterator dbIterator = timeSeriesDB.iterator(timeSeries, startTime,startTime + config.QUERY_INTERVAL);
-    LOGGER.info("query {}, start time {}, end time {}", timeSeries, startTime, startTime + config.QUERY_INTERVAL);
+    startTime = 0;
+    long endTime = Long.MAX_VALUE;
+    TimeSeriesDBIterator dbIterator = timeSeriesDB.iterator(timeSeries, startTime,endTime);
+    LOGGER.info("query {}, start time {}, end time {}", timeSeries, startTime, endTime);
     int line = 0;
     long startTimeStamp = System.nanoTime();
     while(dbIterator.hasNext()){
