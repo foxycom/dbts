@@ -2,8 +2,8 @@ package cn.edu.tsinghua.iotdb.benchmark.db.leveldb;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
-import edu.tsinghua.k1.BaseTimeSeriesDBFactory;
 import edu.tsinghua.k1.api.ITimeSeriesDB;
+import edu.tsinghua.k1.leveldb.LevelTimeSeriesDBFactory;
 import java.io.File;
 import java.io.IOException;
 import org.iq80.leveldb.Options;
@@ -36,7 +36,7 @@ public class LevelDB {
     // none read cache
     options.maxOpenFiles(1<<20);
     try {
-      timeSeriesDB = BaseTimeSeriesDBFactory.getInstance().openOrCreate(file, options);
+      timeSeriesDB = LevelTimeSeriesDBFactory.getInstance().openOrCreate(file, options);
     } catch (IOException e) {
       e.printStackTrace();
     } finally {
