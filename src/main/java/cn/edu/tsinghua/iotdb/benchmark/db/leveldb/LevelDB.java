@@ -30,7 +30,6 @@ public class LevelDB {
   LevelDB(){
     File file = new File(config.GEN_DATA_FILE_PATH);
     System.out.println("creating timeSeriesDB...");
-
     try {
       timeSeriesDB = makeTimeSeriesDB(file);
 

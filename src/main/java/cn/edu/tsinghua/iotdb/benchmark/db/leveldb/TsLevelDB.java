@@ -230,6 +230,11 @@ public class TsLevelDB implements IDatebase {
   public void close() throws SQLException {
     LOGGER.info("The leveldb will be closed.................begin");
     try {
+      Thread.sleep(10000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    try {
       timeSeriesDB.close();
     } catch (IOException e) {
       e.printStackTrace();
@@ -268,8 +273,10 @@ public class TsLevelDB implements IDatebase {
     Collections.shuffle(list, sensorRandom);
     String timeSeries = Constants.ROOT_SERIES_NAME + "." + getGroupDevicePath("d_" + devices.get(0)) + "." + list.get(0);
     // query data with range which contains data
-    TimeSeriesDBIterator dbIterator = timeSeriesDB.iterator(timeSeries, startTime,startTime + config.QUERY_INTERVAL);
-    LOGGER.info("query {}, start time {}, end time {}", timeSeries, startTime, startTime + config.QUERY_INTERVAL);
+    startTime = 0;
+    long endTime = Long.MAX_VALUE;
+    TimeSeriesDBIterator dbIterator = timeSeriesDB.iterator(timeSeries, startTime,endTime);
+    LOGGER.info("query {}, start time {}, end time {}", timeSeries, startTime, endTime);
     int line = 0;
     long startTimeStamp = System.nanoTime();
     while(dbIterator.hasNext()){
