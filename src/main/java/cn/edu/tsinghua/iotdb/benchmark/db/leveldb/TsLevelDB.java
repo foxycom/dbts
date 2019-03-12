@@ -5,18 +5,16 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.db.IDatebase;
 import cn.edu.tsinghua.iotdb.benchmark.db.QueryClientThread;
+import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
 import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 import cn.edu.tsinghua.iotdb.benchmark.loadData.Point;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
-import edu.tsinghua.k1.BaseTimeSeriesDBFactory;
 import edu.tsinghua.k1.api.ITimeSeriesDB;
 import edu.tsinghua.k1.api.ITimeSeriesWriteBatch;
 import edu.tsinghua.k1.api.TimeSeriesDBIterator;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -150,6 +148,15 @@ public class TsLevelDB implements IDatebase {
     }
   }
 
+  public void addBatch(String device, int timestampIndex, ITimeSeriesWriteBatch batch) {
+    for (String sensor : config.SENSOR_CODES) {
+      long timestamp = getTimestamp(timestampIndex);
+      byte[] dataBytes = getDataBytes(timestampIndex, sensor);
+      String timeSeries = getSeries(device, sensor);
+      batch.write(timeSeries, timestamp, dataBytes);
+    }
+  }
+
   private long getTimestamp(int loopIndex, int i) {
     long currentTime =
         Constants.START_TIMESTAMP + config.POINT_STEP * (loopIndex * config.CACHE_NUM + i);
@@ -157,6 +164,35 @@ public class TsLevelDB implements IDatebase {
       currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
     }
     return currentTime;
+  }
+
+  private long getTimestamp(int timestampIndex) {
+    long currentTime =
+        Constants.START_TIMESTAMP + config.POINT_STEP * timestampIndex;
+    if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
+      currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
+    }
+    return currentTime;
+  }
+
+  private byte[] getDataBytes(int loopIndex, int i, String sensor) {
+    long currentTime =
+        Constants.START_TIMESTAMP + config.POINT_STEP * (loopIndex * config.CACHE_NUM + i);
+    if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
+      currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
+    }
+    FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
+    return double2Bytes(Function.getValueByFuntionidAndParam(param, currentTime).doubleValue());
+  }
+
+  private byte[] getDataBytes(int timestampIndex, String sensor) {
+    long currentTime =
+        Constants.START_TIMESTAMP + config.POINT_STEP * timestampIndex;
+    if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
+      currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
+    }
+    FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
+    return double2Bytes(Function.getValueByFuntionidAndParam(param, currentTime).doubleValue());
   }
 
   private String getSeries(String device, String sensor) {
@@ -174,16 +210,6 @@ public class TsLevelDB implements IDatebase {
       byteRet[i] = (byte) ((value >> 8 * i) & 0xff);
     }
     return byteRet;
-  }
-
-  private byte[] getDataBytes(int loopIndex, int i, String sensor) {
-    long currentTime =
-        Constants.START_TIMESTAMP + config.POINT_STEP * (loopIndex * config.CACHE_NUM + i);
-    if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
-      currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
-    }
-    FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-    return double2Bytes(Function.getValueByFuntionidAndParam(param, currentTime).doubleValue());
   }
 
   private String getGroupDevicePath(String device) {
@@ -313,6 +339,46 @@ public class TsLevelDB implements IDatebase {
   public int insertOverflowOneBatchDist(String device, int loopIndex, ThreadLocal<Long> totalTime,
       ThreadLocal<Long> errorCount, Integer maxTimestampIndex, Random random,
       ArrayList<Long> latencies) throws SQLException {
-    return 0;
+
+    long errorNum = 0;
+    int timestampIndex;
+    PossionDistribution possionDistribution = new PossionDistribution(random);
+    int nextDelta;
+    ITimeSeriesWriteBatch batch = timeSeriesDB.createBatch();
+    for (int i = 0; i < config.CACHE_NUM; i++) {
+      if (probTool.returnTrueByProb(config.OVERFLOW_RATIO, random)) {
+        nextDelta = possionDistribution.getNextPossionDelta();
+        timestampIndex = maxTimestampIndex - nextDelta;
+      } else {
+        maxTimestampIndex++;
+        timestampIndex = maxTimestampIndex;
+      }
+      addBatch(device, timestampIndex, batch);
+    }
+    long startTime = System.nanoTime();
+    try {
+      timeSeriesDB.write(batch);
+    } catch (Exception e) {
+      LOGGER.error("Batch one insert failed because: ", e);
+      errorNum += config.CACHE_NUM * config.SENSOR_NUMBER;
+    }
+    long endTime = System.nanoTime();
+    long costTime = endTime - startTime;
+    latencies.add(costTime);
+    if (errorNum > 0) {
+      LOGGER.info("Batch insert failed, the failed number is {}! ", errorNum);
+    } else {
+      LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
+          Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
+          (totalTime.get() + costTime) / unitTransfer,
+          (config.CACHE_NUM * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+      totalTime.set(totalTime.get() + costTime);
+    }
+    errorCount.set(errorCount.get() + errorNum);
+
+    mySql.saveInsertProcess(loopIndex, (endTime - startTime) / unitTransfer,
+        totalTime.get() / unitTransfer, errorNum,
+        config.REMARK);
+    return maxTimestampIndex;
   }
 }
