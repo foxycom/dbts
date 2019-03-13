@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import org.iq80.leveldb.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,6 @@ public class TsLevelDB implements IDatebase {
   private Random timestampRandom;
   private ProbTool probTool;
   private final double unitTransfer = 1000000000.0;
-  private Options options;
 
   public TsLevelDB(long labID) {
     config = ConfigDescriptor.getInstance().getConfig();
