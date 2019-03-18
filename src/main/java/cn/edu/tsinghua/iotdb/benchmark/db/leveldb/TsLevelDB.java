@@ -272,7 +272,7 @@ public class TsLevelDB implements IDatebase {
     String timeSeries = Constants.ROOT_SERIES_NAME + "." + getGroupDevicePath("d_" + devices.get(0)) + "." + list.get(0);
     // query data with range which contains data
     startTime = 0;
-    long endTime = Long.MAX_VALUE;
+    long endTime = startTime+config.QUERY_INTERVAL;
     TimeSeriesDBIterator dbIterator = timeSeriesDB.iterator(timeSeries, startTime,endTime);
     LOGGER.info("query {}, start time {}, end time {}", timeSeries, startTime, endTime);
     int line = 0;
