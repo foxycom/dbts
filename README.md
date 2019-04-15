@@ -345,6 +345,10 @@ If you do not need this function, just set 'IS_USE_MYSQL=false' will be fine.
 configure ```conf/config.properties```
 ```
 ###### import data from CSV file ######
+HOST=127.0.0.1
+PORT=6667
+DB_SWITCH=IoTDB
+BENCHMARK_WORK_MODE=importDataFromCSV
 line 65  DATA_TYPE=INT32
 line 153 IMPORT_DATA_FILE_PATH=/Users/liurui/github/iotdb-benchmark/dump0.csv
 line 154 METADATA_FILE_PATH=/Users/liurui/github/iotdb-benchmark/meta.csv
