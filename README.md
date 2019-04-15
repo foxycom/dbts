@@ -339,3 +339,20 @@ MYSQL_URL=jdbc:mysql://[DB_HOST]:3306/[DBName]?user=[UserName]&password=[PassWor
 ```
 
 If you do not need this function, just set 'IS_USE_MYSQL=false' will be fine.
+
+## Import Data from CSV file
+
+configure ```conf/config.properties```
+```
+###### import data from CSV file ######
+line 65  DATA_TYPE=INT32
+line 153 IMPORT_DATA_FILE_PATH=/Users/liurui/github/iotdb-benchmark/dump0.csv
+line 154 METADATA_FILE_PATH=/Users/liurui/github/iotdb-benchmark/meta.csv
+line 155 BATCH_EXECUTE_COUNT=5000
+```
+IMPORT_DATA_FILE_PATH是读取的数据文件完整路径 默认的dump0.csv文件是例子
+METADATA_FILE_PATH是用于创建IoTDB schema的声明文件 默认的meta.csv文件是例子
+BATCH_EXECUTE_COUNT参数可以用来优化导入速度
+
+执行
+```benchmark.sh```
