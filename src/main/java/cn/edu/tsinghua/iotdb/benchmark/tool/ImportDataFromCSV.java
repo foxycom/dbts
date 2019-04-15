@@ -111,7 +111,8 @@ public class ImportDataFromCSV {
 			long startTime = System.currentTimeMillis();
 			for (int i = 1; i < strHeadInfo.length; i++) {
 
-				String type = iotdb.queryTimeseriesDataType(strHeadInfo[i]);
+				//String type = iotdb.queryTimeseriesDataType(strHeadInfo[i]);
+				String type = config.DATA_TYPE;
 				if (type != null && type != "") {
 					timeseriesDataType.put(strHeadInfo[i], type);
 				} else {
