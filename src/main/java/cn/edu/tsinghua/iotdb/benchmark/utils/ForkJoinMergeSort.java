@@ -83,10 +83,10 @@ public class ForkJoinMergeSort {
     int[] rawArr = generateIntArray(10000000);
     int[] rawArr2 = Arrays.copyOf(rawArr, rawArr.length);
 
-    begintime = new Date().getTime();
-    new SingleThreadMergeSort().sort(rawArr);
-    endtime = new Date().getTime();
-    System.out.println("单线程归并排序花费时间：" + (endtime - begintime));
+//    begintime = new Date().getTime();
+//    new SingleThreadMergeSort().sort(rawArr);
+//    endtime = new Date().getTime();
+//    System.out.println("单线程归并排序花费时间：" + (endtime - begintime));
 
     for (int i = 1; i <= 20; i++) {
       begintime = new Date().getTime();
