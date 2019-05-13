@@ -31,6 +31,7 @@ import cn.edu.tsinghua.iotdb.benchmark.tool.ImportDataFromCSV;
 import cn.edu.tsinghua.iotdb.benchmark.tool.MetaDateBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
+import cn.edu.tsinghua.iotdb.benchmark.utils.ForkJoinMergeSort;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.BasicReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
@@ -41,8 +42,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -97,11 +100,35 @@ public class App {
             case Constants.MODE_CLIENT_SYSTEM_INFO:
                 clientSystemInfo(config);
                 break;
+            case "para":
+                testPara(config);
+                break;
             default:
                 throw new SQLException("unsupported mode " + config.BENCHMARK_WORK_MODE);
         }
 
     }// main
+
+    private static void testPara(Config config) {
+        long begintime = 0;
+        long endtime = 0;
+
+        // 生成排序数据
+        int[] rawArr = ForkJoinMergeSort.generateIntArray(10000000);
+        int[] rawArr2 = Arrays.copyOf(rawArr, rawArr.length);
+
+//    begintime = new Date().getTime();
+//    new SingleThreadMergeSort().sort(rawArr);
+//    endtime = new Date().getTime();
+//    System.out.println("单线程归并排序花费时间：" + (endtime - begintime));
+
+        for (int i = 1; i <= config.CLIENT_NUMBER; i++) {
+            begintime = new Date().getTime();
+            new ForkJoinMergeSort().sort(rawArr2, i);
+            endtime = new Date().getTime();
+            System.out.println("Fork/Join归并排序花费时间：" + "," + i + "," + (endtime - begintime));
+        }
+    }
 
     /**
      * 按比例选择workload执行的测试

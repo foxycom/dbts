@@ -100,7 +100,7 @@ public class ForkJoinMergeSort {
   /**
    * 生成int类型的数组
    */
-  private static int[] generateIntArray(int length) {
+  public static int[] generateIntArray(int length) {
     int[] intArr = new int[length];
     for (int i = 0; i < length; i++) {
       intArr[i] = new Double(Math.random() * length).intValue();
