@@ -114,7 +114,7 @@ public class App {
         long endtime = 0;
 
         // 生成排序数据
-        int[] rawArr = ForkJoinMergeSort.generateIntArray(10000000);
+        int[] rawArr = ForkJoinMergeSort.generateIntArray(config.BATCH_SIZE);
         int[] rawArr2 = Arrays.copyOf(rawArr, rawArr.length);
 
 //    begintime = new Date().getTime();
