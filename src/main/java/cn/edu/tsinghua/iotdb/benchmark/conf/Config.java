@@ -33,7 +33,9 @@ public class Config {
 
 	public String getHost(){
 		int len = hosts.length;
-		return hosts[random.nextInt(len)];
+		String h = hosts[random.nextInt(len)];
+		System.out.println(h);
+		return h;
 	}
 
 	/** 设备数量 */
