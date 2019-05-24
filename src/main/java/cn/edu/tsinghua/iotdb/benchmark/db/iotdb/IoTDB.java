@@ -1233,7 +1233,7 @@ public class IoTDB implements IDatebase {
         int deviceIndex = Integer.parseInt(spl[1]);
         int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
         int groupIndex = deviceIndex / groupSize;
-        return "group_" + groupIndex + "." + device;
+        return "group_" + groupIndex + "." + device + ".group_0";
     }
 
     private String getFullGroupDevicePathByID(int id) {
