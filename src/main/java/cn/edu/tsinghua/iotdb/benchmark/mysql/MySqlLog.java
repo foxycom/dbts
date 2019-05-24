@@ -456,7 +456,7 @@ public class MySqlLog {
         int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
         int groupIndex = id / groupSize;
         return Constants.ROOT_SERIES_NAME + ".group_" + groupIndex + "."
-                + config.DEVICE_CODES.get(id);
+                + config.DEVICE_CODES.get(id) + ".group_0";
     }
 
     public void savaTestConfig() {
