@@ -27,7 +27,14 @@ public class Config {
 	}
 
 	public String host="127.0.0.1";
+	public String[] hosts={"127.0.0.1"};
 	public String port="6667";
+	public Random random = new Random();
+
+	public String getHost(){
+		int len = hosts.length;
+		return hosts[random.nextInt(len)];
+	}
 
 	/** 设备数量 */
 	public int DEVICE_NUMBER = 2;
