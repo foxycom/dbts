@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -108,6 +109,7 @@ public class IoTDB implements IDatabase {
                   + "." + sensor,
               config.DATA_TYPE, config.ENCODING, config.COMPRESSOR);
           statement.addBatch(createSeriesSql);
+//          System.out.println(createSeriesSql);
           count++;
           if (count % 5000 == 0) {
             statement.executeBatch();
@@ -131,16 +133,22 @@ public class IoTDB implements IDatabase {
     long st;
     long en;
     try (Statement statement = connection.createStatement()) {
+      List<String> sqlList = new ArrayList<>();
       for (Record record : batch.getRecords()) {
         String sql = getInsertOneBatchSql(batch.getDeviceSchema(), record.getTimestamp(),
             record.getRecordDataValue());
-        statement.addBatch(sql);
+        sqlList.add(sql);
+//        statement.addBatch(sql);
       }
       st = System.nanoTime();
-      statement.executeBatch();
+      for(String sql : sqlList){
+        statement.execute(sql);
+      }
+//      statement.executeBatch();
       en = System.nanoTime();
       return new Status(true, en - st);
     } catch (Exception e) {
+      e.printStackTrace();
       return new Status(false, 0, e, e.toString());
     }
   }
