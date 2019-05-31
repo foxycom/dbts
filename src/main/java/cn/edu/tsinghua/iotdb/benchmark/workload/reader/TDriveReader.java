@@ -57,7 +57,8 @@ public class TDriveReader extends BasicReader {
       fields.add(items[2]);
       fields.add(items[3]);
 
-      Date date = dateFormat.parse(items[1]);
+//      dateFormat.parse(items[1]);
+      Date date = new Date(Long.parseLong(items[1]));
       long time = date.getTime();
 
       return new Record(time, fields);
