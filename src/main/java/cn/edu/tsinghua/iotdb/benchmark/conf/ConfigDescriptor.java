@@ -23,7 +23,7 @@ public class ConfigDescriptor {
 	private ConfigDescriptor() {
 		config = new Config();
 		loadProps();
-		config.initInnerFucntion();
+		config.initInnerFunction();
 		config.initDeviceCodes();
 		config.initSensorCodes();
 		config.initSensorFunction();
@@ -104,7 +104,7 @@ public class ConfigDescriptor {
 				config.TIME_UNIT = Long.parseLong(properties.getProperty("TIME_UNIT", config.TIME_UNIT+""));
 				config.VERSION = properties.getProperty("VERSION", "");
 
-				config.LOG_STOP_FLAG_PATH = properties.getProperty("LOG_STOP_FLAG_PATH", "/home/liurui");
+				config.LOG_STOP_FLAG_PATH = properties.getProperty("LOG_STOP_FLAG_PATH", "/Users/tim");
 				config.ENCODING = properties.getProperty("ENCODING", "PLAIN");
 				config.NUMBER_OF_DECIMAL_DIGIT = Integer.parseInt(properties.getProperty("NUMBER_OF_DECIMAL_DIGIT", config.NUMBER_OF_DECIMAL_DIGIT+""));
 				config.MUL_DEV_BATCH = Boolean.parseBoolean(properties.getProperty("MUL_DEV_BATCH", config.MUL_DEV_BATCH+""));

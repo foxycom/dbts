@@ -34,9 +34,6 @@ public class SyntheticWorkload implements IWorkload {
   private static Random random = new Random();
   private static NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
-
-
-
   public SyntheticWorkload(int clientId) {
     probTool = new ProbTool();
     maxTimestampIndex = 0;
@@ -68,7 +65,7 @@ public class SyntheticWorkload implements IWorkload {
   private Batch getOrderedBatch(DeviceSchema deviceSchema, long loopIndex) {
     Batch batch = new Batch();
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
-      long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;
+      long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;    // time step
       addOneRowIntoBatch(deviceSchema, batch, stepOffset);
     }
     batch.setDeviceSchema(deviceSchema);

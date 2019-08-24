@@ -108,9 +108,10 @@ public class App {
      * 按比例选择workload执行的测试
      */
     private static void testWithDefaultPath(Config config) {
+
         MySqlLog mysql = new MySqlLog();
         mysql.initMysql(System.currentTimeMillis());
-        mysql.savaTestConfig();
+        mysql.saveTestConfig();
 
         Measurement measurement = new Measurement();
         DBWrapper dbWrapper = new DBWrapper(measurement);
@@ -166,7 +167,7 @@ public class App {
     private static void testWithRealDataSet(Config config) {
         MySqlLog mysql = new MySqlLog();
         mysql.initMysql(System.currentTimeMillis());
-        mysql.savaTestConfig();
+        mysql.saveTestConfig();
 
         // BATCH_SIZE is points number in this mode
         config.BATCH_SIZE = config.BATCH_SIZE / config.FIELDS.size();
@@ -281,7 +282,7 @@ public class App {
     private static void queryWithRealDataSet(Config config) {
         MySqlLog mysql = new MySqlLog();
         mysql.initMysql(System.currentTimeMillis());
-        mysql.savaTestConfig();
+        mysql.saveTestConfig();
         LOGGER.info("use dataset: {}", config.DATA_SET);
         //check whether the parameters are legitimate
         if(!checkParamForQueryRealDataSet(config)){
@@ -566,7 +567,7 @@ public class App {
         MySqlLog mysql = new MySqlLog();
         mysql.initMysql(System.currentTimeMillis());
         mysql.saveTestModel(config.TIMESERIES_TYPE, config.ENCODING);
-        mysql.savaTestConfig();
+        mysql.saveTestConfig();
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
 
@@ -703,7 +704,7 @@ public class App {
         mysql.initMysql(System.currentTimeMillis());
         ArrayList<ArrayList> latenciesOfClients = new ArrayList<>();
         mysql.saveTestModel("Double", config.ENCODING);
-        mysql.savaTestConfig();
+        mysql.saveTestConfig();
 
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
@@ -966,7 +967,7 @@ public class App {
         MySqlLog mySql = new MySqlLog();
         mySql.initMysql(System.currentTimeMillis());
         mySql.saveTestModel("Double", config.ENCODING);
-        mySql.savaTestConfig();
+        mySql.saveTestConfig();
 
         CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
         ArrayList<Long> totalTimes = new ArrayList<>();

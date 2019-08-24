@@ -459,7 +459,7 @@ public class MySqlLog {
                 + config.DEVICE_CODES.get(id);
     }
 
-    public void savaTestConfig() {
+    public void saveTestConfig() {
         if (!config.IS_USE_MYSQL) {
             return;
         }
