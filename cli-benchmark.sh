@@ -9,9 +9,9 @@ fi
 # ssh-copy-id [hostname]@[IP]
 
 #configure the related path and host name
-IOTDB_HOME=/home/liurui/github/iotdb/iotdb/bin
-REMOTE_BENCHMARK_HOME=/home/liurui/github/iotdb-benchmark
-HOST_NAME=liurui
+IOTDB_HOME=/Users/tim/iotdb/iotdb/bin
+REMOTE_BENCHMARK_HOME=/Users/tim/iotdb-benchmark
+HOST_NAME=tim
 IS_SSH_CHANGE_PORT=false
 SSH_PORT=2222
 

@@ -24,6 +24,8 @@ public class InfluxDataModel {
      *  e.g. cpu,host=server03,region=useast load=15.4 1434055562000000000
      */
     public String toString() {
+        // FIXME NullPointException
+
         StringBuilder builder = new StringBuilder(measurement);
         // attach tags
         if(tagSet.size() > 0) {

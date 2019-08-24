@@ -34,7 +34,7 @@ public class TimescaleDB implements IDatabase {
   private static final Logger LOGGER = LoggerFactory.getLogger(TimescaleDB.class);
   //chunk_time_interval=7d
   private static final String CONVERT_TO_HYPERTABLE =
-      "SELECT create_hypertable('%s', 'time', chunk_time_interval => 604800000);";
+      "SELECT create_hypertable('%s', 'time');";
   private static final String dropTable = "DROP TABLE %s;";
 
   public TimescaleDB() {
@@ -109,6 +109,7 @@ public class TimescaleDB implements IDatabase {
       String pgsql = getCreateTableSql(tableName, schemaList.get(0).getSensors());
       statement.execute(pgsql);
       LOGGER.debug("CreateTableSQL Statement:  {}", pgsql);
+      String test = String.format(CONVERT_TO_HYPERTABLE, tableName);
       statement.execute(String.format(CONVERT_TO_HYPERTABLE, tableName));
       LOGGER.debug("CONVERT_TO_HYPERTABLE Statement:  {}",
           String.format(CONVERT_TO_HYPERTABLE, tableName));

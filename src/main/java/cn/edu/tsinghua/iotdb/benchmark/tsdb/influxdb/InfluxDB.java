@@ -239,7 +239,7 @@ public class InfluxDB implements IDatabase {
       case "long":
         return Long.parseLong(value);
       default:
-        throw new TsdbException("unsuport datatype " + dataType);
+        throw new TsdbException("unsupported datatype " + dataType);
 
     }
   }

@@ -20,12 +20,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class SyntheticWorkload implements IWorkload {
 
@@ -37,7 +32,7 @@ public class SyntheticWorkload implements IWorkload {
   private Random queryDeviceRandom;
   private Map<Operation, Long> operationLoops;
   private static Random random = new Random();
-  private static NumberFormat nf = NumberFormat.getNumberInstance();
+  private static NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
 
 
