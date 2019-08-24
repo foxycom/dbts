@@ -15,6 +15,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.reader.GeolifeReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.ReddReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.TDriveReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,7 +60,7 @@ public class RealDatasetWorkLoad implements IWorkload {
     this.config = config;
 
     //init sensor list
-    List<String> sensorList = new ArrayList<>();
+    List<Sensor> sensorList = new ArrayList<>();
     for (int i = 0; i < config.QUERY_SENSOR_NUM; i++) {
       sensorList.add(config.FIELDS.get(i));
     }

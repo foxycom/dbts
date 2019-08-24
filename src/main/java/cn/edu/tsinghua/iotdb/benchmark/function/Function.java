@@ -1,7 +1,5 @@
 package cn.edu.tsinghua.iotdb.benchmark.function;
 
-import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.util.Random;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
@@ -124,13 +122,13 @@ public class Function {
 
 	}
 	
-	public static Number getValueByFuntionidAndParam(FunctionParam param, long currentTime) {
-		return getValueByFuntionidAndParam(FunctionType.valueOf(
+	public static Number getValueByFunctionIdAndParam(FunctionParam param, long currentTime) {
+		return getValueByFunctionIdAndParam(FunctionType.valueOf(
 				param.getFunctionType().toUpperCase()), param.getMax(), param.getMin(), param.getCycle(), currentTime);
 	}
 
-	public static Number getValueByFuntionidAndParam(FunctionType functionType, double max, double min, long cycle,
-			long currentTime) {
+	public static Number getValueByFunctionIdAndParam(FunctionType functionType, double max, double min, long cycle,
+													  long currentTime) {
 		currentTime = currentTime - TimeUtils.convertDateStrToTimestamp(Constants.START_TIME);
 		switch (functionType) {
 			case FLOAT_MONO:

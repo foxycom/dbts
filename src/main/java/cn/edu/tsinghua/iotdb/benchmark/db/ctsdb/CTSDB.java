@@ -152,7 +152,7 @@ public class CTSDB extends TSDB implements IDatebase {
         for (String sensor : config.SENSOR_CODES) {
             sb.append("\"").append(sensor).append("\":");
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-            Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+            Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
             //DecimalFormat df = new DecimalFormat(".0000");
             //sb.append(df.format(value)).append(",");
             sb.append(value).append(",");

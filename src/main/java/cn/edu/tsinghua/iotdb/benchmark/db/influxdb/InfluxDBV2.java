@@ -223,7 +223,7 @@ public class InfluxDBV2 implements IDatebase {
 		model.timestamp = currentTime;
 		for (String sensor : config.SENSOR_CODES) {
 			FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-			Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+			Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
 			model.fields.put(sensor, value);
 		}
 		return model;
@@ -243,7 +243,7 @@ public class InfluxDBV2 implements IDatebase {
 		model.timestamp = currentTime;
 		for (String sensor : config.SENSOR_CODES) {
 			FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-			Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+			Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
 			model.fields.put(sensor, value);
 		}
 		return model;

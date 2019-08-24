@@ -10,6 +10,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +21,12 @@ public class TDriveReader extends BasicReader {
   private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
   private DeviceSchema deviceSchema;
-  private List<String> sensors = new ArrayList<>();
+  private List<Sensor> sensors = new ArrayList<>();
 
   public TDriveReader(Config config, List<String> files) {
     super(config, files);
-    sensors.add("longitude");
-    sensors.add("latitude");
+    sensors.add(new Sensor("longitude", null));
+    sensors.add(new Sensor("latitude", null));
   }
 
   @Override

@@ -18,6 +18,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.*;
@@ -65,7 +67,7 @@ public class SyntheticWorkload implements IWorkload {
   private Batch getOrderedBatch(DeviceSchema deviceSchema, long loopIndex) {
     Batch batch = new Batch();
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
-      long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;    // time step
+      long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;    // point step
       addOneRowIntoBatch(deviceSchema, batch, stepOffset);
     }
     batch.setDeviceSchema(deviceSchema);
@@ -97,10 +99,13 @@ public class SyntheticWorkload implements IWorkload {
     List<String> values = new ArrayList<>();
     long currentTimestamp;
     currentTimestamp = getCurrentTimestamp(stepOffset);
-    for (String sensor : deviceSchema.getSensors()) {
-      FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-      String value = nf.format(Function.getValueByFuntionidAndParam(param, currentTimestamp));
-      values.add(value);
+    for (Sensor sensor : deviceSchema.getSensors()) {
+
+      // Different sensors may collect data with different frequencies
+      if (sensor.hasValue(currentTimestamp)) {
+        String convertedValue = nf.format(sensor.getValue(currentTimestamp));
+        values.add(convertedValue);
+      }
     }
     batch.add(currentTimestamp, values);
   }
@@ -115,7 +120,9 @@ public class SyntheticWorkload implements IWorkload {
 
   public Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException {
     if (!config.IS_OVERFLOW) {
-      return getOrderedBatch(deviceSchema, loopIndex);
+      Batch batch = getOrderedBatch(deviceSchema, loopIndex);
+      return batch;
+      // return getOrderedBatch(deviceSchema, loopIndex);
     } else {
       switch (config.OVERFLOW_MODE) {
         case 0:
@@ -140,9 +147,9 @@ public class SyntheticWorkload implements IWorkload {
     Collections.shuffle(clientDevicesIndex, queryDeviceRandom);
     for (int m = 0; m < config.QUERY_DEVICE_NUM; m++) {
       DeviceSchema deviceSchema = new DeviceSchema(clientDevicesIndex.get(m));
-      List<String> sensors = deviceSchema.getSensors();
+      List<Sensor> sensors = deviceSchema.getSensors();
       Collections.shuffle(sensors, queryDeviceRandom);
-      List<String> querySensors = new ArrayList<>();
+      List<Sensor> querySensors = new ArrayList<>();
       for (int i = 0; i < config.QUERY_SENSOR_NUM; i++) {
         querySensors.add(sensors.get(i));
       }

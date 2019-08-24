@@ -859,7 +859,7 @@ public class IoTDB implements IDatebase {
         builder.append(currentTime);
         for (String sensor : config.SENSOR_CODES) {
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-            builder.append(",").append(Function.getValueByFuntionidAndParam(param, currentTime));
+            builder.append(",").append(Function.getValueByFunctionIdAndParam(param, currentTime));
         }
         builder.append(")");
         LOGGER.debug("createSQLStatment:  {}", builder.toString());
@@ -881,7 +881,7 @@ public class IoTDB implements IDatebase {
         builder.append(currentTime);
         for (String sensor : config.SENSOR_CODES) {
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-            builder.append(",").append(Function.getValueByFuntionidAndParam(param, currentTime));
+            builder.append(",").append(Function.getValueByFunctionIdAndParam(param, currentTime));
         }
         builder.append(")");
         //LOGGER.debug("timestampIndex:  ,{}", timestampIndex);
@@ -982,7 +982,7 @@ public class IoTDB implements IDatebase {
         builder.append(currentTime);
         for (String sensor : config.SENSOR_CODES) {
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-            builder.append(",").append(Function.getValueByFuntionidAndParam(param, currentTime));
+            builder.append(",").append(Function.getValueByFunctionIdAndParam(param, currentTime));
         }
         builder.append(")");
         LOGGER.debug("createSQLStatmentOfMulDevice:  {}", builder.toString());

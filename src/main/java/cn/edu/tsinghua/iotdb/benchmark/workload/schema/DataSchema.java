@@ -27,7 +27,7 @@ public class DataSchema {
     return DataSchemaHolder.INSTANCE;
   }
 
-  private static class  DataSchemaHolder {
+  private static class DataSchemaHolder {
     private static final DataSchema INSTANCE = new DataSchema();
   }
 

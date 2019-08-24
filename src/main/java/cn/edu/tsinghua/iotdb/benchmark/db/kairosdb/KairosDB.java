@@ -120,7 +120,7 @@ public class KairosDB extends TSDB implements IDatebase {
             if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
                 currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
             }
-            Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+            Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
             KairosDataModel model = new KairosDataModel();
             model.setName(sensor);
             // KairosDB do not support float as data type
@@ -575,7 +575,7 @@ public class KairosDB extends TSDB implements IDatebase {
             if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
                 currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
             }
-            Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+            Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
             KairosDataModel model = new KairosDataModel();
             model.setName(sensor);
             // KairosDB do not support float as data type

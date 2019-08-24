@@ -22,7 +22,7 @@ public class DeviceSchema {
   private String device;
 
   // sensorIds
-  private List<String> sensors;
+  private List<Sensor> sensors;
 
   // only for synthetic data set
   private int deviceId;
@@ -38,7 +38,7 @@ public class DeviceSchema {
     }
   }
 
-  public DeviceSchema(String group, String device, List<String> sensors) {
+  public DeviceSchema(String group, String device, List<Sensor> sensors) {
     this.group = GROUP_NAME_PREFIX + group;
     this.device = DEVICE_NAME_PREFIX + device;
     this.sensors = sensors;
@@ -49,7 +49,7 @@ public class DeviceSchema {
     int thisDeviceGroupIndex = calGroupId(deviceId, config.DEVICE_NUMBER, config.GROUP_NUMBER);
     //System.out.println("device " + deviceId +" sg " + thisDeviceGroupIndex);
     group = GROUP_NAME_PREFIX + thisDeviceGroupIndex;
-    sensors.addAll(config.SENSOR_CODES);
+    sensors.addAll(config.SENSORS);
   }
 
   static int calGroupId(int deviceId, int deviceNum, int groupNum) throws WorkloadException {
@@ -72,11 +72,11 @@ public class DeviceSchema {
     this.group = group;
   }
 
-  public List<String> getSensors() {
+  public List<Sensor> getSensors() {
     return sensors;
   }
 
-  public void setSensors(List<String> sensors) {
+  public void setSensors(List<Sensor> sensors) {
     this.sensors = sensors;
   }
 

@@ -208,7 +208,7 @@ public class TimescaleDB implements IDatebase {
         builder.append(", '").append(device).append("'");
         for (String sensor : config.SENSOR_CODES) {
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-            builder.append(", ").append(Function.getValueByFuntionidAndParam(param, currentTime));
+            builder.append(", ").append(Function.getValueByFunctionIdAndParam(param, currentTime));
         }
         builder.append(");");
         LOGGER.debug("createSQLStatement:  {}", builder.toString());
@@ -679,7 +679,7 @@ public class TimescaleDB implements IDatebase {
         builder.append(", '").append(device).append("'");
         for (String sensor : config.SENSOR_CODES) {
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
-            builder.append(", ").append(Function.getValueByFuntionidAndParam(param, currentTime));
+            builder.append(", ").append(Function.getValueByFunctionIdAndParam(param, currentTime));
         }
         builder.append(");");
         LOGGER.debug("createSQLStatement:  {}", builder.toString());

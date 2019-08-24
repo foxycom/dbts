@@ -12,6 +12,7 @@ import java.util.Random;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,16 +99,22 @@ public class Config {
 	public String GEN_DATA_FILE_PATH = "/home/liurui/sampleData";
 	/**上一次结果的日志路径*/
 	public String LAST_RESULT_PATH = "/var/lib/jenkins/workspace/IoTDBWeeklyTest/iotdb-benchmark/logs";
+
 	/**存放SQL语句文件的完整路径*/
 	public String SQL_FILE = "/var/lib/jenkins/workspace/IoTDBWeeklyTest/iotdb-benchmark/SQLFile";
+
 	/** 文件的名字 */
 	public String FILE_PATH;
+
 	/** 数据集的名字 */
 	public DataSet DATA_SET;
-	/** 数据集的传感器 */
-	public List<String> FIELDS;
-	/** 数据集的传感器的精度 */
+
+	/** Sensors schema */
+	public List<Sensor> FIELDS;
+
+	/** Sensor accuracy of the sensors schema */
 	public int[] PRECISION;
+
 	/** 是否从文件读取数据*/
 	public boolean READ_FROM_FILE = false;
 	/** 一次插入到数据库的条数 */
@@ -156,13 +163,18 @@ public class Config {
 	public List<String> DEVICE_CODES = new ArrayList<String>();
 
 	/** Sensor names */
-	public List<String> SENSOR_CODES = new ArrayList<String>();
+	public List<String> SENSOR_CODES = new ArrayList<>();
+
+	/**
+	 * Sensors list
+	 */
+	public List<Sensor> SENSORS = new ArrayList<>();
 
 	/** 设备_传感器 时间偏移量 */
-	public Map<String, Long> SHIFT_TIME_MAP = new HashMap<String, Long>();
+	public Map<String, Long> SHIFT_TIME_MAP = new HashMap<>();
 
 	/** Data functions for every sensor */
-	public Map<String, FunctionParam> SENSOR_FUNCTION = new HashMap<>();
+	public Map<Integer, FunctionParam> SENSOR_FUNCTION = new HashMap<>();
 
 	/** First timestamp of historical data */
 	public long HISTORY_START_TIME;
@@ -334,7 +346,7 @@ public class Config {
 					System.err.println(" initSensorFunction() 初始化函数比例有问题！");
 					System.exit(0);
 				}
-				SENSOR_FUNCTION.put(SENSOR_CODES.get(i), param);
+				SENSOR_FUNCTION.put(i, param);
 			}
 		} else {
 			System.err.println("function ration must >=0 and sum>0");
@@ -351,6 +363,14 @@ public class Config {
 			SENSOR_CODES.add(sensorCode);
 		}
 		return SENSOR_CODES;
+	}
+
+	public List<Sensor> initSensors() {
+		for (int i = 0; i < SENSOR_NUMBER; i++) {
+			String name = "s_" + i;
+			SENSORS.add(new Sensor(name, SENSOR_FUNCTION.get(i)));
+		}
+		return SENSORS;
 	}
 
 	/**
@@ -376,19 +396,23 @@ public class Config {
 	public void initRealDataSetSchema() {
 		switch (DATA_SET) {
 			case TDRIVE:
-				FIELDS = Arrays.asList("longitude", "latitude");
+				FIELDS = Arrays.asList(new Sensor("longitude", null),
+						new Sensor("latitude", null));
 				PRECISION = new int[]{5, 5};
 				break;
 			case REDD:
-				FIELDS = Arrays.asList("v");
+				FIELDS = Arrays.asList(new Sensor("v", null));
 				PRECISION = new int[]{2};
 				break;
 			case GEOLIFE:
-				FIELDS = Arrays.asList("Latitude", "Longitude", "Zero", "Altitude");
+				FIELDS = Arrays.asList(new Sensor("Latitude", null),
+						new Sensor("Longitude", null),
+						new Sensor("Zero", null),
+						new Sensor("Altitude", null));
 				PRECISION = new int[]{6, 6, 0, 12};
 				break;
 			default:
-				throw new RuntimeException(DATA_SET + " is not support");
+				throw new RuntimeException(DATA_SET + " is not supported.");
 		}
 	}
 

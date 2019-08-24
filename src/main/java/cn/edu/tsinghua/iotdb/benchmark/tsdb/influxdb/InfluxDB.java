@@ -20,6 +20,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
@@ -217,10 +219,10 @@ public class InfluxDB implements IDatabase {
     model.measurement = deviceSchema.getGroup();
     model.tagSet.put("device", deviceSchema.getDevice());
     model.timestamp = time;
-    List<String> sensors = deviceSchema.getSensors();
+    List<Sensor> sensors = deviceSchema.getSensors();
     for (int i = 0; i < sensors.size(); i++) {
       Number value = parseNumber(valueList.get(i));
-      model.fields.put(sensors.get(i), value);
+      model.fields.put(sensors.get(i).getName(), value);
     }
     return model;
   }
@@ -297,8 +299,8 @@ public class InfluxDB implements IDatabase {
   private static String addWhereValueClause(List<DeviceSchema> devices, String sqlHeader,
       double valueThreshold) {
     StringBuilder builder = new StringBuilder(sqlHeader);
-    for (String sensor : devices.get(0).getSensors()) {
-      builder.append(" AND ").append(sensor).append(" > ").append(valueThreshold);
+    for (Sensor sensor : devices.get(0).getSensors()) {
+      builder.append(" AND ").append(sensor.getName()).append(" > ").append(valueThreshold);
     }
     return builder.toString();
   }
@@ -325,11 +327,11 @@ public class InfluxDB implements IDatabase {
   private static String getSimpleQuerySqlHead(List<DeviceSchema> devices) {
     StringBuilder builder = new StringBuilder();
     builder.append("SELECT ");
-    List<String> querySensors = devices.get(0).getSensors();
+    List<Sensor> querySensors = devices.get(0).getSensors();
 
-    builder.append(querySensors.get(0));
+    builder.append(querySensors.get(0).getName());
     for (int i = 1; i < querySensors.size(); i++) {
-      builder.append(", ").append(querySensors.get(i));
+      builder.append(", ").append(querySensors.get(i).getName());
     }
 
     builder.append(generateConstrainForDevices(devices));
@@ -346,11 +348,11 @@ public class InfluxDB implements IDatabase {
   private static String getAggQuerySqlHead(List<DeviceSchema> devices, String method) {
     StringBuilder builder = new StringBuilder();
     builder.append("SELECT ");
-    List<String> querySensors = devices.get(0).getSensors();
+    List<Sensor> querySensors = devices.get(0).getSensors();
 
-    builder.append(method).append("(").append(querySensors.get(0)).append(")");
+    builder.append(method).append("(").append(querySensors.get(0).getName()).append(")");
     for (int i = 1; i < querySensors.size(); i++) {
-      builder.append(", ").append(method).append("(").append(querySensors.get(i)).append(")");
+      builder.append(", ").append(method).append("(").append(querySensors.get(i).getName()).append(")");
     }
 
     builder.append(generateConstrainForDevices(devices));

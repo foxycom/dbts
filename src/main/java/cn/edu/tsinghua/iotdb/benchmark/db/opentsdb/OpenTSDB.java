@@ -148,7 +148,7 @@ public class OpenTSDB extends TSDB implements IDatebase {
             if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
                 currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
             }
-            Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+            Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
             TSDBDataModel model = new TSDBDataModel();
             model.setMetric(metricName);
             model.setTimestamp(currentTime);
@@ -175,7 +175,7 @@ public class OpenTSDB extends TSDB implements IDatebase {
             if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
                 currentTime += (long) (config.POINT_STEP * timestampRandom.nextDouble());
             }
-            Number value = Function.getValueByFuntionidAndParam(param, currentTime);
+            Number value = Function.getValueByFunctionIdAndParam(param, currentTime);
             TSDBDataModel model = new TSDBDataModel();
             model.setMetric(metricName);
             model.setTimestamp(currentTime);

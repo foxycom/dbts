@@ -23,6 +23,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,7 +111,6 @@ public class TimescaleDB implements IDatabase {
       String pgsql = getCreateTableSql(tableName, schemaList.get(0).getSensors());
       statement.execute(pgsql);
       LOGGER.debug("CreateTableSQL Statement:  {}", pgsql);
-      String test = String.format(CONVERT_TO_HYPERTABLE, tableName);
       statement.execute(String.format(CONVERT_TO_HYPERTABLE, tableName));
       LOGGER.debug("CONVERT_TO_HYPERTABLE Statement:  {}",
           String.format(CONVERT_TO_HYPERTABLE, tableName));
@@ -330,13 +331,13 @@ public class TimescaleDB implements IDatabase {
     return builder;
   }
 
-  private void addFunSensor(String method, StringBuilder builder, List<String> list) {
+  private void addFunSensor(String method, StringBuilder builder, List<Sensor> list) {
     if (method != null) {
       list.forEach(sensor ->
-          builder.append(", ").append(method).append("(").append(sensor).append(")")
+          builder.append(", ").append(method).append("(").append(sensor.getName()).append(")")
       );
     } else {
-      list.forEach(sensor -> builder.append(", ").append(sensor));
+      list.forEach(sensor -> builder.append(", ").append(sensor.getName()));
     }
   }
 
@@ -370,12 +371,12 @@ public class TimescaleDB implements IDatabase {
   private static void addWhereValueClause(List<DeviceSchema> devices, StringBuilder builder,
       double valueThreshold) {
     boolean first = true;
-    for (String sensor : devices.get(0).getSensors()) {
+    for (Sensor sensor : devices.get(0).getSensors()) {
       if (first) {
-        builder.append(" AND (").append(sensor).append(" > ").append(valueThreshold);
+        builder.append(" AND (").append(sensor.getName()).append(" > ").append(valueThreshold);
         first = false;
       } else {
-        builder.append(" and ").append(sensor).append(" > ").append(valueThreshold);
+        builder.append(" and ").append(sensor.getName()).append(" > ").append(valueThreshold);
       }
     }
     builder.append(")");
@@ -389,11 +390,11 @@ public class TimescaleDB implements IDatabase {
    * </p>
    * @return create table SQL String
    */
-  private String getCreateTableSql(String tableName, List<String> sensors) {
+  private String getCreateTableSql(String tableName, List<Sensor> sensors) {
     StringBuilder sqlBuilder = new StringBuilder("CREATE TABLE ").append(tableName).append(" (");
     sqlBuilder.append("time BIGINT NOT NULL, sGroup TEXT NOT NULL, device TEXT NOT NULL");
-    for (String sensor : sensors) {
-      sqlBuilder.append(", ").append(sensor).append(" ").append(config.DATA_TYPE)
+    for (Sensor sensor : sensors) {
+      sqlBuilder.append(", ").append(sensor.getName()).append(" ").append(config.DATA_TYPE)
           .append(" PRECISION NULL");
     }
     sqlBuilder.append(");");
@@ -413,8 +414,8 @@ public class TimescaleDB implements IDatabase {
     builder.append("insert into ")
         .append(tableName)
         .append("(time, sGroup, device");
-    for (String sensor : deviceSchema.getSensors()) {
-      builder.append(",").append(sensor);
+    for (Sensor sensor : deviceSchema.getSensors()) {
+      builder.append(",").append(sensor.getName());
     }
     builder.append(") values(");
     builder.append(timestamp);

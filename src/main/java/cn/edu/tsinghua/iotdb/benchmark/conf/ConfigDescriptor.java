@@ -27,6 +27,7 @@ public class ConfigDescriptor {
 		config.initDeviceCodes();
 		config.initSensorCodes();
 		config.initSensorFunction();
+		config.initSensors();
 		config.initRealDataSetSchema();
 	}
 

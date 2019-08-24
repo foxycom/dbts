@@ -18,6 +18,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import com.alibaba.fastjson.JSON;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -105,9 +106,9 @@ public class KairosDB implements IDatabase {
     LinkedList<KairosDataModel> models = new LinkedList<>();
     String groupId = deviceSchema.getGroup();
     int i = 0;
-    for (String sensor : deviceSchema.getSensors()) {
+    for (Sensor sensor : deviceSchema.getSensors()) {
       KairosDataModel model = new KairosDataModel();
-      model.setName(sensor);
+      model.setName(sensor.getName());
       // KairosDB do not support float as data type
       if (config.DATA_TYPE.equalsIgnoreCase("FLOAT")) {
         model.setType("double");
@@ -259,8 +260,8 @@ public class KairosDB implements IDatabase {
     builder.setStart(new Date(st))
         .setEnd(new Date(et));
     for (DeviceSchema deviceSchema : deviceSchemaList) {
-      for (String sensor : deviceSchema.getSensors()) {
-        builder.addMetric(sensor)
+      for (Sensor sensor : deviceSchema.getSensors()) {
+        builder.addMetric(sensor.getName())
             .addTag(DEVICE_STR, deviceSchema.getDevice())
             .addTag(GROUP_STR, deviceSchema.getGroup());
       }

@@ -27,6 +27,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,12 +102,12 @@ public class IoTDB implements IDatabase {
     // create time series
     try (Statement statement = connection.createStatement()) {
       for (DeviceSchema deviceSchema : schemaList) {
-        for (String sensor : deviceSchema.getSensors()) {
+        for (Sensor sensor : deviceSchema.getSensors()) {
           String createSeriesSql = String.format(CREATE_SERIES_SQL,
               Constants.ROOT_SERIES_NAME
                   + "." + deviceSchema.getGroup()
                   + "." + deviceSchema.getDevice()
-                  + "." + sensor,
+                  + "." + sensor.getName(),
               config.DATA_TYPE, config.ENCODING, config.COMPRESSOR);
           statement.addBatch(createSeriesSql);
           count++;
@@ -247,9 +249,9 @@ public class IoTDB implements IDatabase {
   private String getValueFilterClause(List<DeviceSchema> deviceSchemas, double valueThreshold) {
     StringBuilder builder = new StringBuilder();
     for (DeviceSchema deviceSchema : deviceSchemas) {
-      for (String sensor : deviceSchema.getSensors()) {
+      for (Sensor sensor : deviceSchema.getSensors()) {
         builder.append(" AND ").append(getDevicePath(deviceSchema)).append(".")
-            .append(sensor).append(" > ")
+            .append(sensor.getName()).append(" > ")
             .append(valueThreshold);
       }
     }
@@ -264,8 +266,8 @@ public class IoTDB implements IDatabase {
         .append(".").append(deviceSchema.getGroup())
         .append(".").append(deviceSchema.getDevice())
         .append("(timestamp");
-    for (String sensor : deviceSchema.getSensors()) {
-      builder.append(",").append(sensor);
+    for (Sensor sensor : deviceSchema.getSensors()) {
+      builder.append(",").append(sensor.getName());
     }
     builder.append(") values(");
     builder.append(timestamp);
@@ -286,10 +288,10 @@ public class IoTDB implements IDatabase {
   private String getSimpleQuerySqlHead(List<DeviceSchema> devices) {
     StringBuilder builder = new StringBuilder();
     builder.append("SELECT ");
-    List<String> querySensors = devices.get(0).getSensors();
-    builder.append(querySensors.get(0));
+    List<Sensor> querySensors = devices.get(0).getSensors();
+    builder.append(querySensors.get(0).getName());
     for (int i = 1; i < querySensors.size(); i++) {
-      builder.append(", ").append(querySensors.get(i));
+      builder.append(", ").append(querySensors.get(i).getName());
     }
     return addFromClause(devices, builder);
   }
@@ -297,10 +299,10 @@ public class IoTDB implements IDatabase {
   private String getAggQuerySqlHead(List<DeviceSchema> devices, String aggFun) {
     StringBuilder builder = new StringBuilder();
     builder.append("SELECT ");
-    List<String> querySensors = devices.get(0).getSensors();
-    builder.append(aggFun).append("(").append(querySensors.get(0)).append(")");
+    List<Sensor> querySensors = devices.get(0).getSensors();
+    builder.append(aggFun).append("(").append(querySensors.get(0).getName()).append(")");
     for (int i = 1; i < querySensors.size(); i++) {
-      builder.append(", ").append(aggFun).append("(").append(querySensors.get(i)).append(")");
+      builder.append(", ").append(aggFun).append("(").append(querySensors.get(i).getName()).append(")");
     }
     return addFromClause(devices, builder);
   }
