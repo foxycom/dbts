@@ -9,6 +9,7 @@ import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
 import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
+import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggValueQuery;
@@ -66,12 +67,23 @@ public class SyntheticWorkload implements IWorkload {
 
   private Batch getOrderedBatch(DeviceSchema deviceSchema, long loopIndex) {
     Batch batch = new Batch();
-    for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
-      long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;    // point step
-      addOneRowIntoBatch(deviceSchema, batch, stepOffset);
+    batch.setTimeRange(config.loopTimeRange());
+    for (Sensor sensor : deviceSchema.getSensors()) {
+      addSensorData(sensor, batch, loopIndex);
     }
+
+    //for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
+    //  long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;    // point step
+      // addOneRowIntoBatch(deviceSchema, batch, stepOffset);
+    //  addSensorData();
+    //}
     batch.setDeviceSchema(deviceSchema);
     return batch;
+  }
+
+  private void setBatchTimeRange(Batch batch, long loopIndex) {
+    long timeRange = config.loopTimeRange() * loopIndex;
+    batch.setTimeRange(timeRange);
   }
 
   private Batch getDistOutOfOrderBatch(DeviceSchema deviceSchema) {
@@ -108,6 +120,19 @@ public class SyntheticWorkload implements IWorkload {
       }
     }
     batch.add(currentTimestamp, values);
+  }
+
+  static void addSensorData(Sensor sensor, Batch batch, long loopIndex) {
+    List<Point> values = new ArrayList<>();
+    long valuesNum = batch.getTimeRange() / sensor.getInterval();
+    for (long i = 0; i < valuesNum; i++) {
+      long stepOffset = loopIndex * valuesNum + i;    // point step
+      long timestamp = sensor.getTimestamp(stepOffset);
+      String convertedValue = nf.format(sensor.getValue(timestamp));
+      values.add(new Point(timestamp, convertedValue));
+    }
+
+    batch.add(sensor, values);
   }
 
   private Batch getLocalOutOfOrderBatch() {

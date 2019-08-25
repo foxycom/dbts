@@ -7,6 +7,7 @@ import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
+import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
@@ -23,6 +24,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
@@ -107,21 +109,22 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public void registerSchema(List<DeviceSchema> schemaList) throws TsdbException {
-    try (Statement statement = connection.createStatement()){
-      String pgsql = getCreateTableSql(tableName, schemaList.get(0).getSensors());
-      statement.execute(pgsql);
+    try (Statement statement = connection.createStatement()) {
+      connection.setAutoCommit(false);
+      String pgsql = getCreateTableSql(schemaList.get(0).getSensors());
+      statement.addBatch(pgsql);
+      statement.executeBatch();
+      connection.commit();
+
       LOGGER.debug("CreateTableSQL Statement:  {}", pgsql);
-      statement.execute(String.format(CONVERT_TO_HYPERTABLE, tableName));
-      LOGGER.debug("CONVERT_TO_HYPERTABLE Statement:  {}",
-          String.format(CONVERT_TO_HYPERTABLE, tableName));
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
       throw new TsdbException(e);
     }
   }
 
-  @Override
-  public Status insertOneBatch(Batch batch) {
+  //@Override
+  public Status insertOneBatchLegacy(Batch batch) {
     long st;
     long en;
     try (Statement statement = connection.createStatement()){
@@ -137,6 +140,52 @@ public class TimescaleDB implements IDatabase {
     } catch (Exception e) {
       return new Status(false, 0, e, e.toString());
     }
+  }
+
+  @Override
+  public Status insertOneBatch(Batch batch) {
+    long st;
+    long en;
+    String sql;
+    try (Statement statement = connection.createStatement()) {
+      sql = getInsertOneBatchSql(batch);
+    } catch (SQLException e) {
+
+    }
+    return null;
+  }
+
+  private String getInsertOneBatchSql(Batch batch) {
+    Map<Sensor, List<Point>> entries = batch.getEntries();
+    DeviceSchema deviceSchema = batch.getDeviceSchema();
+    StringBuilder sb = new StringBuilder();
+    // FIXME different table names for different sensors
+    for (Sensor sensor : entries.keySet()) {
+      if (entries.get(sensor).isEmpty()) {
+        continue;
+      }
+
+      sb.append("insert into ").append(sensor.getName()).append("(time, sGroup, device, ").append(sensor.getName())
+      .append(") values ");
+
+      boolean firstIteration = true;
+      for (Point point : entries.get(sensor)) {
+        if (firstIteration) {
+          firstIteration = false;
+        }
+        else {
+          sb.append(", ");
+        }
+        sb.append("(").append(point.getTimestamp()).append(", ")
+                .append("'").append(deviceSchema.getGroup()).append("', ")
+                .append("'").append(deviceSchema.getDevice()).append("', ")
+                .append(point.getValue())
+                .append(")");
+      }
+    }
+    sb.append(";");
+    return sb.toString();
+
   }
 
   /**
@@ -390,14 +439,16 @@ public class TimescaleDB implements IDatabase {
    * </p>
    * @return create table SQL String
    */
-  private String getCreateTableSql(String tableName, List<Sensor> sensors) {
-    StringBuilder sqlBuilder = new StringBuilder("CREATE TABLE ").append(tableName).append(" (");
-    sqlBuilder.append("time BIGINT NOT NULL, sGroup TEXT NOT NULL, device TEXT NOT NULL");
+  private String getCreateTableSql(List<Sensor> sensors) {
+    StringBuilder sqlBuilder = new StringBuilder();
     for (Sensor sensor : sensors) {
-      sqlBuilder.append(", ").append(sensor.getName()).append(" ").append(config.DATA_TYPE)
-          .append(" PRECISION NULL");
+      sqlBuilder.append("CREATE TABLE ").append(sensor.getTableName()).append(" (");
+      sqlBuilder.append("time TIMESTAMPTZ NOT NULL, sGroup TEXT NOT NULL, device TEXT NOT NULL");
+      sqlBuilder.append(", ").append(sensor.getName()).append(" ")
+              .append(sensor.getDataType()).append(" PRECISION NULL").append("); ");
+      String convertToHyperTableSql = String.format(CONVERT_TO_HYPERTABLE, sensor.getTableName());
+      sqlBuilder.append(convertToHyperTableSql);
     }
-    sqlBuilder.append(");");
     return sqlBuilder.toString();
   }
 

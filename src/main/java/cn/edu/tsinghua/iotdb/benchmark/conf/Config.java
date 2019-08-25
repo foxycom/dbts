@@ -20,6 +20,8 @@ import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionXml;
 
+import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.START_TIMESTAMP;
+
 public class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 	private String deviceCode;
@@ -38,6 +40,9 @@ public class Config {
 	public int CLIENT_NUMBER = 2;
 	/** 每个设备的传感器数量 */
 	public int SENSOR_NUMBER = 5;
+
+	public List<Integer> SENSOR_FREQ = new ArrayList<>();
+	public List<String> SENSOR_DATA_TYPES = new ArrayList<>();
 	/** 数据采集步长 */
 	public long POINT_STEP = 7000;
 	/** 查询时间戳变化增加步长 */
@@ -368,7 +373,9 @@ public class Config {
 	public List<Sensor> initSensors() {
 		for (int i = 0; i < SENSOR_NUMBER; i++) {
 			String name = "s_" + i;
-			SENSORS.add(new Sensor(name, SENSOR_FUNCTION.get(i)));
+			Sensor sensor = new Sensor(name, SENSOR_FUNCTION.get(i), SENSOR_FREQ.get(i));
+			sensor.setDataType(SENSOR_DATA_TYPES.get(i));
+			SENSORS.add(sensor);
 		}
 		return SENSORS;
 	}
@@ -427,5 +434,23 @@ public class Config {
 	public static void main(String[] args) {
 		// Config config = Config.newInstance();
 
+	}
+
+	public long loopTimeRange() {
+		long timeRange = BATCH_SIZE * minSensorTimeStep();
+		return timeRange;
+	}
+
+	private long minSensorTimeStep() {
+		// FIXME compute min sensor time step
+		assert SENSORS != null;
+		long minTimeStep = Long.MAX_VALUE;
+		for (Sensor sensor : SENSORS) {
+			long timeStep = sensor.getInterval();
+			if (timeStep < minTimeStep) {
+				minTimeStep = timeStep;
+			}
+		}
+		return minTimeStep;
 	}
 }

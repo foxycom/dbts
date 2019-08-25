@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -56,6 +58,39 @@ public class ConfigDescriptor {
 				config.port = properties.getProperty("PORT", "no port");
 				config.DEVICE_NUMBER = Integer.parseInt(properties.getProperty("DEVICE_NUMBER", config.DEVICE_NUMBER+""));
 				config.SENSOR_NUMBER = Integer.parseInt(properties.getProperty("SENSOR_NUMBER", config.SENSOR_NUMBER+""));
+
+				/* List of frequencies for every sensor. */
+				String sensorFreq = properties.getProperty("SENSOR_FREQ", "1000");
+				List<String> frequencies = Arrays.asList(sensorFreq.split(","));
+				if (frequencies.size() == 1) {
+					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
+						config.SENSOR_FREQ.add(Integer.parseInt(frequencies.get(0)));
+					}
+				} else if (frequencies.size() > 1) {
+					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
+						config.SENSOR_FREQ.add(Integer.parseInt(frequencies.get(i)));
+					}
+				} else {
+					throw new RuntimeException("Length of the frequencies list should be exactly 1 or equal the number " +
+							"of sensors.");
+				}
+
+				/* List of data types for every sensor. */
+				String sensorDataTypes = properties.getProperty("SENSOR_DATA_TYPES", "DOUBLE");
+				List<String> dataTypes = Arrays.asList(sensorDataTypes.split(","));
+				if (dataTypes.size() == 1) {
+					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
+						config.SENSOR_DATA_TYPES.add(dataTypes.get(0));
+					}
+				} else if (dataTypes.size() > 1) {
+					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
+						config.SENSOR_DATA_TYPES.add(dataTypes.get(i));
+					}
+				} else {
+					throw new RuntimeException("Length of the data types list should be exactly 1 or equal the number " +
+							"of sensors.");
+				}
+
 
 				config.FILE_PATH = properties.getProperty("FILE_PATH", "no file");
 
