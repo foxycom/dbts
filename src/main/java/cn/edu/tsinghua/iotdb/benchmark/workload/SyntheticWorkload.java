@@ -6,8 +6,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
-import cn.edu.tsinghua.iotdb.benchmark.function.Function;
-import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
+import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
@@ -20,13 +19,14 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.util.*;
 
 public class SyntheticWorkload implements IWorkload {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(Measurement.class);
   private static Config config = ConfigDescriptor.getInstance().getConfig();
   private static Random timestampRandom = new Random(config.DATA_SEED);
   private ProbTool probTool;
@@ -35,16 +35,11 @@ public class SyntheticWorkload implements IWorkload {
   private Random queryDeviceRandom;
   private Map<Operation, Long> operationLoops;
   private static Random random = new Random();
-  private static NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
   public SyntheticWorkload(int clientId) {
     probTool = new ProbTool();
     maxTimestampIndex = 0;
-    int numOfDecimalDigit = config.NUMBER_OF_DECIMAL_DIGIT;
-    nf.setRoundingMode(RoundingMode.HALF_UP); // 四舍五入
-    nf.setMaximumFractionDigits(numOfDecimalDigit);
-    nf.setMinimumFractionDigits(numOfDecimalDigit);
-    nf.setGroupingUsed(false);
+
     poissonRandom = new Random(config.DATA_SEED);
     queryDeviceRandom = new Random(config.QUERY_SEED + clientId);
     operationLoops = new EnumMap<>(Operation.class);
@@ -115,21 +110,22 @@ public class SyntheticWorkload implements IWorkload {
 
       // Different sensors may collect data with different frequencies
       if (sensor.hasValue(currentTimestamp)) {
-        String convertedValue = nf.format(sensor.getValue(currentTimestamp));
-        values.add(convertedValue);
+        String value = sensor.getValue(currentTimestamp);
+        values.add(value);
       }
     }
     batch.add(currentTimestamp, values);
   }
 
   static void addSensorData(Sensor sensor, Batch batch, long loopIndex) {
-    List<Point> values = new ArrayList<>();
     long valuesNum = batch.getTimeRange() / sensor.getInterval();
+    Integer valNum = Math.toIntExact(valuesNum);
+    List<Point> values = new ArrayList<>(valNum);
     for (long i = 0; i < valuesNum; i++) {
       long stepOffset = loopIndex * valuesNum + i;    // point step
       long timestamp = sensor.getTimestamp(stepOffset);
-      String convertedValue = nf.format(sensor.getValue(timestamp));
-      values.add(new Point(timestamp, convertedValue));
+      String value = sensor.getValue(timestamp);
+      values.add(new Point(timestamp, value));
     }
 
     batch.add(sensor, values);
@@ -146,20 +142,44 @@ public class SyntheticWorkload implements IWorkload {
   public Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException {
     if (!config.IS_OVERFLOW) {
       Batch batch = getOrderedBatch(deviceSchema, loopIndex);
+      LOGGER.info("Generated one batch of size {}", batch.pointNum());
       return batch;
       // return getOrderedBatch(deviceSchema, loopIndex);
     } else {
+      Batch batch;
       switch (config.OVERFLOW_MODE) {
         case 0:
-          return getLocalOutOfOrderBatch();
+          batch = getLocalOutOfOrderBatch();
+          break;
         case 1:
-          return getGlobalOutOfOrderBatch();
+          batch = getGlobalOutOfOrderBatch();
+          break;
         case 2:
-          return getDistOutOfOrderBatch(deviceSchema);
+          batch = getDistOutOfOrderBatch(deviceSchema);
+          break;
         default:
           throw new WorkloadException("Unsupported overflow mode: " + config.OVERFLOW_MODE);
       }
+      LOGGER.info("Generated one overflow batch of size {}", batch.pointNum());
+      return batch;
     }
+  }
+
+  private List<DeviceSchema> getGpsQueryDeviceSchemaList() throws WorkloadException {
+    checkQuerySchemaParams();
+    List<DeviceSchema> queryDevices = new ArrayList<>();
+
+    int deviceId = queryDeviceRandom.nextInt(config.DEVICE_NUMBER);
+    DeviceSchema deviceSchema = new DeviceSchema(deviceId);
+    List<Sensor> sensors = deviceSchema.getSensors();
+    List<Sensor> gpsSensor = new ArrayList<>(1);
+
+    // Add only GPS sensor
+    gpsSensor.add(sensors.get(sensors.size() - 1));
+
+    deviceSchema.setSensors(gpsSensor);
+    queryDevices.add(deviceSchema);
+    return queryDevices;
   }
 
   private List<DeviceSchema> getQueryDeviceSchemaList() throws WorkloadException {
@@ -212,6 +232,15 @@ public class SyntheticWorkload implements IWorkload {
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
     return new RangeQuery(queryDevices, startTimestamp, endTimestamp);
   }
+
+  @Override
+  public RangeQuery getGpsRangeQuery() throws WorkloadException {
+    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
+    long startTimestamp = getQueryStartTimestamp();
+    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
+    return new RangeQuery(queryDevices, startTimestamp, endTimestamp);
+  }
+
 
   public ValueRangeQuery getValueRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();

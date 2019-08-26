@@ -140,6 +140,11 @@ public class InfluxDB implements IDatabase {
     return executeQueryAndGetStatus(sql);
   }
 
+  @Override
+  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+    return null;
+  }
+
   /**
    * eg. SELECT s_3 FROM group_0  WHERE ( device = 'd_3' ) AND time >= 1535558420000000000 AND time
    * <= 153555800000 AND s_3 > -5.0.

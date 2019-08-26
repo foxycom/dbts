@@ -32,7 +32,7 @@ public class CTSDB extends TSDB implements IDatebase {
     private String metric = "root.perform.";
     private String dataType = "double";
     private Config config;
-    private MySqlLog mySql = new MySqlLog();
+    private MySqlLog mySql;
     private long labID;
     private float nano2million = 1000000;
     private Map<String, LinkedList<TSDBDataModel>> dataMap = new HashMap<>();
@@ -44,13 +44,13 @@ public class CTSDB extends TSDB implements IDatebase {
 
     public CTSDB(long labID){
         config = ConfigDescriptor.getInstance().getConfig();
-        mySql = new MySqlLog();
+        mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
         this.labID = labID;
         sensorRandom = new Random(1 + config.QUERY_SEED);
         Url = config.DB_URL;
         queryUrl = Url + "/%s/_search";
         metricUrl = Url + "/_metric/";
-        mySql.initMysql(labID);
+        mySql.initMysql(false);
         Authenticator.setDefault(new MyAuthenticator());
     }
 
@@ -191,8 +191,8 @@ public class CTSDB extends TSDB implements IDatebase {
                     ((totalTime.get() + costTime) / 1000000000.0),
                     (batch_point_num / (double) costTime) * 1000000000);
             totalTime.set(totalTime.get() + costTime);
-            mySql.saveInsertProcess(batchIndex, costTime / 1000000000.0, totalTime.get() / 1000000000.0, batch_point_num,
-                    config.REMARK);
+            //mySql.saveInsertProcess(batchIndex, costTime / 1000000000.0, totalTime.get() / 1000000000.0, batch_point_num,
+            //        config.REMARK);
         } catch (IOException e) {
             errorCount.set(errorCount.get() + batch_point_num);
             LOGGER.error("Batch insert failed, the failed num is ,{}, Error：{}", batch_point_num, e.getMessage());

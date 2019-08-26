@@ -3,6 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.mysql;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
+import cn.edu.tsinghua.iotdb.benchmark.conf.Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import java.net.UnknownHostException;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class MySqlLog {
 
@@ -25,20 +27,19 @@ public class MySqlLog {
     private String day = "";
     private String projectID = "";
 
-    public MySqlLog() {
+    public MySqlLog(long labID) {
+        this.labID = labID;
         try {
             InetAddress localhost = InetAddress.getLocalHost();
             localName = localhost.getHostName();
         } catch (UnknownHostException e) {
-            LOGGER.error("获取本机主机名称失败;UnknownHostException：{}", e.getMessage());
+            LOGGER.error("Error connecting host; UnknownHostException：{}", e.getMessage());
             e.printStackTrace();
         }
-        localName = localName.replace("-", "_");
-        localName = localName.replace(".", "_");
+        localName = localName.replace("-", "_").replace(".", "_");
     }
 
-    public void initMysql(long labIndex) {
-        labID = labIndex;
+    public void initMysql(boolean initTables) {
         projectID = config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID;
         if (config.IS_USE_MYSQL) {
             Date date = new Date(labID);
@@ -47,7 +48,9 @@ public class MySqlLog {
             try {
                 Class.forName(Constants.MYSQL_DRIVENAME);
                 mysqlConnection = DriverManager.getConnection(config.MYSQL_URL);
-                initTable();
+                if (initTables) {
+                    initTable();
+                }
             } catch (SQLException e) {
                 LOGGER.error("mysql 初始化失败，原因是：{}", e.getMessage());
                 e.printStackTrace();
@@ -59,12 +62,15 @@ public class MySqlLog {
 
     }
 
-    // 检查记录本次实验的表格是否已经创建，没有则创建
+    /**
+     * Checks if the benchmark results table exists. If not, creates a new table.
+     */
     public void initTable() {
         Statement stat = null;
         try {
             stat = mysqlConnection.createStatement();
-            if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_SERVER_MODE) || config.BENCHMARK_WORK_MODE.equals(Constants.MODE_CLIENT_SYSTEM_INFO)) {
+            Mode mode = Mode.valueOf(config.BENCHMARK_WORK_MODE.trim().toUpperCase());
+            if (mode == Mode.SERVER_MODE || mode == Mode.CLIENT_SYSTEM_INFO) {
                 if (!hasTable("SERVER_MODE_" + localName + "_" + day)) {
                     stat.executeUpdate("create table SERVER_MODE_"
                             + localName
@@ -110,29 +116,44 @@ public class MySqlLog {
                 stat.executeUpdate("create table CONFIG (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, projectID VARCHAR(150), configuration_item VARCHAR(150), configuration_value VARCHAR(150))AUTO_INCREMENT = 1;");
                 LOGGER.info("Table CONFIG create success!");
             }
+
             if (!hasTable("RESULT")) {
                 stat.executeUpdate("create table RESULT (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, projectID VARCHAR(150), result_key VARCHAR(150), result_value VARCHAR(150))AUTO_INCREMENT = 1;");
                 LOGGER.info("Table RESULT create success!");
             }
-            if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH) && !hasTable(projectID)) {
+
+            if (mode == Mode.QUERY_TEST_WITH_DEFAULT_PATH && !hasTable(projectID)) {
                 stat.executeUpdate("create table "
                         + projectID
                         + "(id BIGINT, clientName varchar(50), "
                         + "loopIndex INTEGER, point INTEGER, time DOUBLE, cur_rate DOUBLE, remark varchar(6000), primary key(id,clientName))");
                 LOGGER.info("Table {} create success!", projectID);
             }
-            if (!config.BENCHMARK_WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH) && !hasTable(projectID)) {
-                stat.executeUpdate("create table "
-                        + projectID
-                        + "(id BIGINT, clientName varchar(50), "
-                        + "loopIndex INTEGER, costTime DOUBLE, totalTime DOUBLE, cur_rate DOUBLE, errorPoint BIGINT, remark varchar(6000),primary key(id,clientName))");
-                LOGGER.info("Table {} create success!", projectID);
 
+            if (mode != Mode.QUERY_TEST_WITH_DEFAULT_PATH && !hasTable(projectID)) {
+
+                // Creates table for clients statistics
+                stat.executeUpdate("create table "
+                        + projectID + "Clients"
+                        + "(id BIGINT, clientName varchar(50), operation varchar(100), status varchar(20), "
+                        + "loopIndex INTEGER, costTime DOUBLE, "
+                        + "totalTime DOUBLE, rate DOUBLE, okPoint BIGINT, failPoint BIGINT, remark varchar(6000), "
+                        + "primary key(id, clientName))");
+                LOGGER.info("Table {} create success!", projectID + "Clients");
+
+                // Creates single loop table
                 stat.executeUpdate("create table "
                         + projectID + "Loop"
                         + "(id BIGINT, clientName varchar(50), "
-                        + "loopIndex INTEGER, cur_rate DOUBLE, primary key(id, clientName))");
-                LOGGER.info("Table {} Loop create success!", projectID);
+                        + "loopIndex INTEGER, rate DOUBLE, primary key(id, clientName))");
+                LOGGER.info("Table {} create success!", projectID + "Loop");
+
+                // Creates table for a whole measurement
+                stat.executeUpdate("create table " + projectID
+                        + "(id BIGINT, operation varchar(100), costTimeAvg DOUBLE, costTimeP99 DOUBLE, "
+                        + "costTimeMedian DOUBLE, totalTime DOUBLE, rate DOUBLE, okPoint BIGINT, errorPoint BIGINT, "
+                        + "remark varchar(6000), primary key(id));");
+                LOGGER.info("Table {} create success!", projectID);
             }
         } catch (SQLException e) {
             LOGGER.error("mysql 创建表格失败,原因是：{}", e.getMessage());
@@ -147,17 +168,32 @@ public class MySqlLog {
         }
     }
 
-    // 将插入测试的以batch为单位的中间结果存入数据库
-    public void saveInsertProcess(int index, double costTime, double totalTime,
-                                  long errorPoint, String remark) {
+    /**
+     * Stores the results of an insert benchmark in the database.
+     *
+     * @param index The loop index.
+     * @param costTimeAvg
+     * @param totalTime
+     * @param errorPoint
+     * @param remark
+     */
+    public void saveInsertProcess(int index, double costTimeAvg,
+                                  double totalTime, /*long pointNum, */long errorPoint, String remark) {
         if (config.IS_USE_MYSQL) {
-            double rate = (config.BATCH_SIZE * config.SENSOR_NUMBER / costTime);
+            // TODO different rates for different sensor frequencies
+            //double rate = (config.BATCH_SIZE * config.SENSOR_NUMBER / costTime);
+
+            // TODO delete
+            int pointNum = 0;
+
+
+            double rate = pointNum / costTimeAvg;
             if(Double.isInfinite(rate)) {
                 rate = 0;
             }
-            String mysqlSql = String.format("insert into " + config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%f,%f,%f,%d,%s)",
+            String mysqlSql = String.format(Locale.US, "insert into " + config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%f,%f,%f,%d,%s)",
                     System.currentTimeMillis(), "'" + Thread.currentThread().getName() + "'", index,
-                    costTime, totalTime, rate, errorPoint, "'" + remark + "'");
+                    costTimeAvg, totalTime, rate, errorPoint, "'" + remark + "'");
             Statement stat;
             try {
                 stat = mysqlConnection.createStatement();
@@ -170,6 +206,42 @@ public class MySqlLog {
                 LOGGER.error("{}", mysqlSql);
                 e.printStackTrace();
             }
+        }
+    }
+
+
+    public void saveCompleteMeasurement(String operation, double costTimeAvg, double costTimeP99, double costTimeMedian,
+                                       double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
+        String logSql = String.format(Locale.US, "INSERT INTO " + config.BENCHMARK_WORK_MODE + "_"
+                + config.DB_SWITCH + "_" + config.REMARK + labID + " values (%d, %s, %f, %f, %f, %f, %f, %d, %d, %s)",
+                System.currentTimeMillis(), "'" + operation + "'", costTimeAvg, costTimeP99, costTimeMedian,
+                totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
+        Statement statement;
+        try {
+            statement = mysqlConnection.createStatement();
+            statement.executeUpdate(logSql);
+            statement.close();
+        } catch (SQLException e) {
+            LOGGER.error("Saving the whole measurement failed. Error: {}", e.getMessage());
+            LOGGER.error(logSql);
+        }
+    }
+
+    public void saveClientInsertProcess(String clientName, String operation, String status, int loopIndex, double costTime,
+                                         double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
+        String logSql = String.format(Locale.US, "INSERT INTO " + config.BENCHMARK_WORK_MODE + "_" +
+                config.DB_SWITCH + "_" + config.REMARK + labID + "Clients values (%d, %s, %s, %s, %d, %f, %f, %f, %d, %d, %s)",
+                System.currentTimeMillis(), "'" + clientName + "'", "'" + operation + "'", "'" + status + "'",
+                loopIndex, costTime, totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
+        Statement statement;
+        try {
+            statement = mysqlConnection.createStatement();
+            statement.executeUpdate(logSql);
+            statement.close();
+        } catch (SQLException e) {
+            LOGGER.error("{} saving client insertProcess failed. Error: {}", Thread.currentThread().getName(),
+                    e.getMessage());
+            LOGGER.error(logSql);
         }
     }
 

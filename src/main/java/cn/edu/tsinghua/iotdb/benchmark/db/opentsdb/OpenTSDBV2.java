@@ -48,7 +48,7 @@ public class OpenTSDBV2 extends TSDB implements IDatebase {
     private int backScanTime = 24;
 
     public OpenTSDBV2(long labID) {
-        mySql = new MySqlLog();
+        mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
         this.labID = labID;
         config = ConfigDescriptor.getInstance().getConfig();
         sensorRandom = new Random(1 + config.QUERY_SEED);
@@ -57,7 +57,7 @@ public class OpenTSDBV2 extends TSDB implements IDatebase {
         openUrl = config.DB_URL;
         writeUrl = openUrl + "/api/put?summary ";
         queryUrl = openUrl + "/api/query";
-        mySql.initMysql(labID);
+        mySql.initMysql(false);
     }
 
     @Override

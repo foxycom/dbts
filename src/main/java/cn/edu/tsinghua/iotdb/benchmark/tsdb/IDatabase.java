@@ -66,6 +66,13 @@ public interface IDatabase {
   Status rangeQuery(RangeQuery rangeQuery);
 
   /**
+   * TODO comment
+   * @param RangeQuery
+   * @return
+   */
+  Status gpsPathRangeQuery(RangeQuery rangeQuery);
+
+  /**
    * Query data of one or multiple sensors in a time range with a value filter.
    * e.g. select v1... from data where time >= ? and time <= ? and v1 > ? and device in ?
    * @param valueRangeQuery contains universal range query with value filter parameters

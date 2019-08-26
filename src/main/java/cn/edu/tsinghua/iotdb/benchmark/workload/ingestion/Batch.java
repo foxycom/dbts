@@ -57,8 +57,8 @@ public class Batch {
    */
   public int pointNum() {
     int pointNum = 0;
-    for (Record record : records) {
-      pointNum += record.size();
+    for (Sensor sensor : entries.keySet()) {
+      pointNum += entries.get(sensor).size();
     }
     return pointNum;
   }

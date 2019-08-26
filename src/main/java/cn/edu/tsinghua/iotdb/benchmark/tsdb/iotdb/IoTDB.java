@@ -160,6 +160,11 @@ public class IoTDB implements IDatabase {
     return executeQueryAndGetStatus(sql);
   }
 
+  @Override
+  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+    return null;
+  }
+
   /**
    * SELECT s_39 FROM root.group_2.d_29
    * WHERE time >= 2010-01-01 12:00:00

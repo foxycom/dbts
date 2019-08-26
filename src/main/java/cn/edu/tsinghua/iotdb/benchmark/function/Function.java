@@ -7,6 +7,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.enums.FunctionType;
 import cn.edu.tsinghua.iotdb.benchmark.utils.TimeUtils;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 
 public class Function {
 //	private final static double[] ABNORMAL_RATE = { 0.005, 0.01, 0.1, 0.15, 0.2 };
@@ -115,10 +116,16 @@ public class Function {
 	private static double getRandomValue(double max, double min) {
 		return r.nextDouble() * (max - min) + min;
 	}
-	
+
+	public static GeoPoint getGeoLinePoint(double max, double min, double cycle, long currentTime) {
+		long timeDelta = (currentTime - Constants.START_TIMESTAMP) / 1000;
+		double y = max * Math.sin(min * timeDelta);
+		double x = timeDelta;
+		return new GeoPoint(x, y);
+	}
 	
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 
 	}
 	
@@ -160,7 +167,7 @@ public class Function {
 			case INT_SQUARE:
 				return (int) getSquareValue(max, min, cycle, currentTime);
 			case INT_MONO_K:
-				return (int) getMonoKValue(max, min, cycle, currentTime);			
+				return (int) getMonoKValue(max, min, cycle, currentTime);
 			default:
 				return 0;
 		}

@@ -8,6 +8,7 @@ import cn.edu.tsinghua.iotdb.benchmark.client.SyntheticClient;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
+import cn.edu.tsinghua.iotdb.benchmark.conf.Mode;
 import cn.edu.tsinghua.iotdb.benchmark.db.ClientThread;
 import cn.edu.tsinghua.iotdb.benchmark.db.IDBFactory;
 import cn.edu.tsinghua.iotdb.benchmark.db.IDatebase;
@@ -31,6 +32,7 @@ import cn.edu.tsinghua.iotdb.benchmark.sersyslog.OpenFileNumber;
 import cn.edu.tsinghua.iotdb.benchmark.tool.ImportDataFromCSV;
 import cn.edu.tsinghua.iotdb.benchmark.tool.MetaDateBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.BasicReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
@@ -67,58 +69,60 @@ public class App {
             return;
         }
         Config config = ConfigDescriptor.getInstance().getConfig();
-        switch (config.BENCHMARK_WORK_MODE.trim()) {
-            case Constants.MODE_TEST_WITH_DEFAULT_PATH:
+        Mode mode = Mode.valueOf(config.BENCHMARK_WORK_MODE.trim().toUpperCase());
+        switch (mode) {
+            case TEST_WITH_DEFAULT_PATH:
                 testWithDefaultPath(config);
                 break;
-            case Constants.MODE_WRITE_WITH_REAL_DATASET:
+            case WRITE_WITH_REAL_DATASET:
                 testWithRealDataSet(config);
                 break;
-            case Constants.MODE_QUERY_WITH_REAL_DATASET:
+            case QUERY_WITH_REAL_DATASET:
                 queryWithRealDataSet(config);
                 break;
-            case Constants.MODE_SERVER_MODE:
+            case SERVER_MODE:
                 serverMode(config);
                 break;
-            case Constants.MODE_INSERT_TEST_WITH_DEFAULT_PATH:
+            case INSERT_TEST_WITH_DEFAULT_PATH:
                 insertTest(config);
                 break;
-            case Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH:
+            case INSERT_TEST_WITH_USERDEFINED_PATH:
                 genData(config);
                 break;
-            case Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH:
+            case QUERY_TEST_WITH_DEFAULT_PATH:
                 queryTest(config);
                 break;
-            case Constants.MODE_IMPORT_DATA_FROM_CSV:
+            case IMPORT_DATA_FROM_CSV:
                 importDataFromCSV(config);
                 break;
-            case Constants.MODE_EXECUTE_SQL_FROM_FILE:
+            case EXECUTE_SQL_FROM_FILE:
                 executeSQLFromFile(config);
                 break;
-            case Constants.MODE_CLIENT_SYSTEM_INFO:
+            case CLIENT_SYSTEM_INFO:
                 clientSystemInfo(config);
                 break;
             default:
                 throw new SQLException("unsupported mode " + config.BENCHMARK_WORK_MODE);
         }
 
-    }// main
+    }
 
     /**
      * 按比例选择workload执行的测试
      */
     private static void testWithDefaultPath(Config config) {
 
-        MySqlLog mysql = new MySqlLog();
-        mysql.initMysql(System.currentTimeMillis());
-        mysql.saveTestConfig();
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
+        mySql.saveTestConfig();
 
         Measurement measurement = new Measurement();
         DBWrapper dbWrapper = new DBWrapper(measurement);
+
         // register schema if needed
         try {
             dbWrapper.init();
-            if(config.IS_DELETE_DATA){
+            if (config.IS_DELETE_DATA) {
                 try {
                     dbWrapper.cleanup();
                 } catch (TsdbException e) {
@@ -165,8 +169,8 @@ public class App {
      * @param config
      */
     private static void testWithRealDataSet(Config config) {
-        MySqlLog mysql = new MySqlLog();
-        mysql.initMysql(System.currentTimeMillis());
+        MySqlLog mysql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mysql.initMysql(true);
         mysql.saveTestConfig();
 
         // BATCH_SIZE is points number in this mode
@@ -246,8 +250,7 @@ public class App {
     }
 
     private static void finalMeasure(ExecutorService executorService, CountDownLatch downLatch,
-        Measurement measurement, List<Measurement> threadsMeasurements,
-        long st, List<Client> clients) {
+            Measurement measurement, List<Measurement> threadsMeasurements, long st, List<Client> clients) {
         executorService.shutdown();
 
         try {
@@ -259,6 +262,7 @@ public class App {
         }
         long en = System.nanoTime();
         LOGGER.info("All clients finished.");
+
         // sum up all the measurements and calculate statistics
         measurement.setElapseTime((en - st) / NANO_TO_SECOND);
         for (Client client : clients) {
@@ -273,6 +277,7 @@ public class App {
         measurement.showConfigs();
         measurement.showMeasurements();
         measurement.showMetrics();
+        measurement.save();
     }
 
     /**
@@ -280,8 +285,8 @@ public class App {
      * @param config
      */
     private static void queryWithRealDataSet(Config config) {
-        MySqlLog mysql = new MySqlLog();
-        mysql.initMysql(System.currentTimeMillis());
+        MySqlLog mysql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mysql.initMysql(true);
         mysql.saveTestConfig();
         LOGGER.info("use dataset: {}", config.DATA_SET);
         //check whether the parameters are legitimate
@@ -352,8 +357,8 @@ public class App {
 
     private static void clientSystemInfo(Config config) {
         double abnormalValue = -1;
-        MySqlLog mySql = new MySqlLog();
-        mySql.initMysql(System.currentTimeMillis());
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
         File dir = new File(config.LOG_STOP_FLAG_PATH);
         if (dir.exists() && dir.isDirectory()) {
             File file = new File(config.LOG_STOP_FLAG_PATH + "/log_stop_flag");
@@ -422,8 +427,8 @@ public class App {
      * @throws ClassNotFoundException
      */
     private static void serverMode(Config config) {
-        MySqlLog mySql = new MySqlLog();
-        mySql.initMysql(System.currentTimeMillis());
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
         File dir = new File(config.LOG_STOP_FLAG_PATH);
 
         boolean write2File = false;
@@ -528,8 +533,8 @@ public class App {
     }
 
     private static void executeSQLFromFile(Config config) throws SQLException, ClassNotFoundException {
-        MySqlLog mysql = new MySqlLog();
-        mysql.initMysql(System.currentTimeMillis());
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
         IDatebase datebase;
@@ -538,7 +543,7 @@ public class App {
         float exeSQLFromFileTime = 1;
         int SQLCount = 0;
         try {
-            datebase = idbFactory.buildDB(mysql.getLabID());
+            datebase = idbFactory.buildDB(mySql.getLabID());
             datebase.init();
             exeSQLFromFileStartTime = System.nanoTime();
             datebase.exeSQLFromFileByOneBatch();
@@ -559,15 +564,15 @@ public class App {
          */
 
         // 加入新版的mysql表中
-        mysql.closeMysql();
+        mySql.closeMysql();
     }
 
     private static void genData(Config config) throws SQLException, ClassNotFoundException {
         // 一次生成一个timeseries的数据
-        MySqlLog mysql = new MySqlLog();
-        mysql.initMysql(System.currentTimeMillis());
-        mysql.saveTestModel(config.TIMESERIES_TYPE, config.ENCODING);
-        mysql.saveTestConfig();
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
+        mySql.saveTestModel(config.TIMESERIES_TYPE, config.ENCODING);
+        mySql.saveTestConfig();
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
 
@@ -576,7 +581,7 @@ public class App {
         long createSchemaEndTime;
         float createSchemaTime;
         try {
-            datebase = idbFactory.buildDB(mysql.getLabID());
+            datebase = idbFactory.buildDB(mySql.getLabID());
             datebase.init();
             createSchemaStartTime = System.nanoTime();
             datebase.createSchemaOfDataGen();
@@ -596,7 +601,7 @@ public class App {
         ArrayList<Long> totalTimes = new ArrayList<>();
         ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
         for (int i = 0; i < config.CLIENT_NUMBER; i++) {
-            executorService.submit(new ClientThread(idbFactory.buildDB(mysql.getLabID()), i, downLatch, totalTimes,
+            executorService.submit(new ClientThread(idbFactory.buildDB(mySql.getLabID()), i, downLatch, totalTimes,
                     totalInsertErrorNums, latenciesOfClients));
         }
         executorService.shutdown();
@@ -660,23 +665,23 @@ public class App {
         LOGGER.info("Total error num is {}, create schema cost {},s", totalErrorPoint, createSchemaTime);
 
         // 加入新版的mysql表中
-        mysql.saveResult("createSchemaTime(s)", "" + createSchemaTime);
-        mysql.saveResult("totalPoints", "" + totalPoints);
-        mysql.saveResult("totalTime(s)", "" + totalTime / 1000000000.0f);
-        mysql.saveResult("totalErrorPoint", "" + totalErrorPoint);
-        mysql.saveResult("avg", "" + avgLatency);
-        mysql.saveResult("middleAvg", "" + midAvgLatency);
-        mysql.saveResult("min", "" + min);
-        mysql.saveResult("max", "" + max);
-        mysql.saveResult("p1", "" + p1);
-        mysql.saveResult("p5", "" + p5);
-        mysql.saveResult("p50", "" + p50);
-        mysql.saveResult("p90", "" + p90);
-        mysql.saveResult("p95", "" + p95);
-        mysql.saveResult("p99", "" + p99);
-        mysql.saveResult("p999", "" + p999);
-        mysql.saveResult("p9999", "" + p9999);
-        mysql.closeMysql();
+        mySql.saveResult("createSchemaTime(s)", "" + createSchemaTime);
+        mySql.saveResult("totalPoints", "" + totalPoints);
+        mySql.saveResult("totalTime(s)", "" + totalTime / 1000000000.0f);
+        mySql.saveResult("totalErrorPoint", "" + totalErrorPoint);
+        mySql.saveResult("avg", "" + avgLatency);
+        mySql.saveResult("middleAvg", "" + midAvgLatency);
+        mySql.saveResult("min", "" + min);
+        mySql.saveResult("max", "" + max);
+        mySql.saveResult("p1", "" + p1);
+        mySql.saveResult("p5", "" + p5);
+        mySql.saveResult("p50", "" + p50);
+        mySql.saveResult("p90", "" + p90);
+        mySql.saveResult("p95", "" + p95);
+        mySql.saveResult("p99", "" + p99);
+        mySql.saveResult("p999", "" + p999);
+        mySql.saveResult("p9999", "" + p9999);
+        mySql.closeMysql();
 
     }
 
@@ -700,11 +705,11 @@ public class App {
      * @throws ClassNotFoundException
      */
     private static void insertTest(Config config) throws SQLException, ClassNotFoundException {
-        MySqlLog mysql = new MySqlLog();
-        mysql.initMysql(System.currentTimeMillis());
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
         ArrayList<ArrayList> latenciesOfClients = new ArrayList<>();
-        mysql.saveTestModel("Double", config.ENCODING);
-        mysql.saveTestConfig();
+        mySql.saveTestModel("Double", config.ENCODING);
+        mySql.saveTestConfig();
 
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
@@ -716,7 +721,7 @@ public class App {
 
         long insertStartTime = System.nanoTime();
         try {
-            datebase = idbFactory.buildDB(mysql.getLabID());
+            datebase = idbFactory.buildDB(mySql.getLabID());
             if (config.CREATE_SCHEMA) {
                 datebase.init();
                 createSchemaStartTime = System.nanoTime();
@@ -739,7 +744,7 @@ public class App {
             ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER + 1);
             executorService.submit(new Resolve(config.FILE_PATH, storage));
             for (int i = 0; i < config.CLIENT_NUMBER; i++) {
-                executorService.submit(new ClientThread(idbFactory.buildDB(mysql.getLabID()), i, storage, downLatch,
+                executorService.submit(new ClientThread(idbFactory.buildDB(mySql.getLabID()), i, storage, downLatch,
                         totalTimes, totalInsertErrorNums, latenciesOfClients));
             }
             executorService.shutdown();
@@ -799,7 +804,7 @@ public class App {
             ArrayList<Long> totalTimes = new ArrayList<>();
             ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
             for (int i = 0; i < config.CLIENT_NUMBER; i++) {
-                executorService.submit(new ClientThread(idbFactory.buildDB(mysql.getLabID()), i, downLatch, totalTimes,
+                executorService.submit(new ClientThread(idbFactory.buildDB(mySql.getLabID()), i, downLatch, totalTimes,
                         totalInsertErrorNums, latenciesOfClients));
             }
             executorService.shutdown();
@@ -869,24 +874,24 @@ public class App {
                     totalOps, avgLatency, midAvgLatency, min, max, p1, p5, p50, p90, p95, p99, p999, p9999);
             LOGGER.info("Total error num is {}, create schema cost {} second. Total elapse time: {} second", totalErrorPoint, createSchemaTime, insertElapseTime);
 
-            mysql.saveResult("createSchemaTime(s)", "" + createSchemaTime);
-            mysql.saveResult("totalPoints", "" + totalPoints);
-            mysql.saveResult("totalInsertionTime(s)", "" + totalTime / 1000000000.0f);
-            mysql.saveResult("totalElapseTime(s)", "" + insertElapseTime);
-            mysql.saveResult("totalErrorPoint", "" + totalErrorPoint);
-            mysql.saveResult("avg", "" + avgLatency);
-            mysql.saveResult("middleAvg", "" + midAvgLatency);
-            mysql.saveResult("min", "" + min);
-            mysql.saveResult("max", "" + max);
-            mysql.saveResult("p1", "" + p1);
-            mysql.saveResult("p5", "" + p5);
-            mysql.saveResult("p50", "" + p50);
-            mysql.saveResult("p90", "" + p90);
-            mysql.saveResult("p95", "" + p95);
-            mysql.saveResult("p99", "" + p99);
-            mysql.saveResult("p999", "" + p999);
-            mysql.saveResult("p9999", "" + p9999);
-            mysql.closeMysql();
+            mySql.saveResult("createSchemaTime(s)", "" + createSchemaTime);
+            mySql.saveResult("totalPoints", "" + totalPoints);
+            mySql.saveResult("totalInsertionTime(s)", "" + totalTime / 1000000000.0f);
+            mySql.saveResult("totalElapseTime(s)", "" + insertElapseTime);
+            mySql.saveResult("totalErrorPoint", "" + totalErrorPoint);
+            mySql.saveResult("avg", "" + avgLatency);
+            mySql.saveResult("middleAvg", "" + midAvgLatency);
+            mySql.saveResult("min", "" + min);
+            mySql.saveResult("max", "" + max);
+            mySql.saveResult("p1", "" + p1);
+            mySql.saveResult("p5", "" + p5);
+            mySql.saveResult("p50", "" + p50);
+            mySql.saveResult("p90", "" + p90);
+            mySql.saveResult("p95", "" + p95);
+            mySql.saveResult("p99", "" + p99);
+            mySql.saveResult("p999", "" + p999);
+            mySql.saveResult("p9999", "" + p9999);
+            mySql.closeMysql();
 
         } // else--
 
@@ -964,8 +969,8 @@ public class App {
         IDBFactory idbFactory = null;
         idbFactory = getDBFactory(config);
         ArrayList<ArrayList> latenciesOfClients = new ArrayList<>();
-        MySqlLog mySql = new MySqlLog();
-        mySql.initMysql(System.currentTimeMillis());
+        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+        mySql.initMysql(true);
         mySql.saveTestModel("Double", config.ENCODING);
         mySql.saveTestConfig();
 

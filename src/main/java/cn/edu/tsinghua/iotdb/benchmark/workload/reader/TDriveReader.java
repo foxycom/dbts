@@ -3,6 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.reader;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.BasicSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import java.io.File;
 import java.text.DateFormat;
@@ -25,8 +26,8 @@ public class TDriveReader extends BasicReader {
 
   public TDriveReader(Config config, List<String> files) {
     super(config, files);
-    sensors.add(new Sensor("longitude", null));
-    sensors.add(new Sensor("latitude", null));
+    sensors.add(new BasicSensor("longitude", null));
+    sensors.add(new BasicSensor("latitude", null));
   }
 
   @Override

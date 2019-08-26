@@ -12,6 +12,8 @@ import java.util.Random;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.BasicSensor;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionXml;
 
+import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.GEO_DATA_TYPE;
 import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.START_TIMESTAMP;
 
 public class Config {
@@ -158,14 +161,15 @@ public class Config {
 	public long DATA_SEED = 666L;
 
 	/** 内置函数参数 */
-	public List<FunctionParam> LINE_LIST = new ArrayList<FunctionParam>();
-	public List<FunctionParam> SIN_LIST = new ArrayList<FunctionParam>();
-	public List<FunctionParam> SQUARE_LIST = new ArrayList<FunctionParam>();
-	public List<FunctionParam> RANDOM_LIST = new ArrayList<FunctionParam>();
-	public List<FunctionParam> CONSTANT_LIST = new ArrayList<FunctionParam>();
+	public List<FunctionParam> LINE_LIST = new ArrayList<>();
+	public List<FunctionParam> SIN_LIST = new ArrayList<>();
+	public List<FunctionParam> SQUARE_LIST = new ArrayList<>();
+	public List<FunctionParam> RANDOM_LIST = new ArrayList<>();
+	public List<FunctionParam> CONSTANT_LIST = new ArrayList<>();
+	public List<FunctionParam> GEO_LIST = new ArrayList<>();
 
 	/** Device names */
-	public List<String> DEVICE_CODES = new ArrayList<String>();
+	public List<String> DEVICE_CODES = new ArrayList<>();
 
 	/** Sensor names */
 	public List<String> SENSOR_CODES = new ArrayList<>();
@@ -206,6 +210,8 @@ public class Config {
 
 	//iotDB查询测试相关参数
 	public int QUERY_SENSOR_NUM = 1;
+
+	/** Number of devices to perform query on. */
 	public int QUERY_DEVICE_NUM = 1;
 	public int QUERY_CHOICE = 1;
 	public String QUERY_AGGREGATE_FUN = "";
@@ -228,6 +234,8 @@ public class Config {
 
 	/** Log data in MySQL */
 	public boolean IS_USE_MYSQL = false;
+
+	public long MYSQL_INIT_TIMESTAMP = System.currentTimeMillis();
 
 	public boolean IS_SAVE_DATAMODEL = false;
 
@@ -303,6 +311,8 @@ public class Config {
 				SQUARE_LIST.add(param);
 			} else if (param.getFunctionType().indexOf("_random") != -1) {
 				RANDOM_LIST.add(param);
+			} else if (param.getFunctionType().indexOf("point_geo") != -1) {
+				GEO_LIST.add(param);
 			}
 		}
 	}
@@ -370,13 +380,23 @@ public class Config {
 		return SENSOR_CODES;
 	}
 
+	/**
+	 * Initializes the specified number of sensors including one GPS sensor.
+	 *
+	 * @return The list of sensor objects.
+	 */
 	public List<Sensor> initSensors() {
-		for (int i = 0; i < SENSOR_NUMBER; i++) {
+		for (int i = 0; i < SENSOR_NUMBER - 1; i++) {
 			String name = "s_" + i;
-			Sensor sensor = new Sensor(name, SENSOR_FUNCTION.get(i), SENSOR_FREQ.get(i));
+			Sensor sensor = new BasicSensor(name, SENSOR_FUNCTION.get(i), SENSOR_FREQ.get(i));
 			sensor.setDataType(SENSOR_DATA_TYPES.get(i));
 			SENSORS.add(sensor);
 		}
+		String name = "gps";
+		// FIXME insert random geo functions
+		Sensor gpsSensor = new GpsSensor(name, GEO_LIST.get(0), SENSOR_FREQ.get(SENSOR_FREQ.size() - 1));
+		gpsSensor.setDataType(GEO_DATA_TYPE);
+		SENSORS.add(gpsSensor);
 		return SENSORS;
 	}
 
@@ -403,19 +423,19 @@ public class Config {
 	public void initRealDataSetSchema() {
 		switch (DATA_SET) {
 			case TDRIVE:
-				FIELDS = Arrays.asList(new Sensor("longitude", null),
-						new Sensor("latitude", null));
+				FIELDS = Arrays.asList(new BasicSensor("longitude", null),
+						new BasicSensor("latitude", null));
 				PRECISION = new int[]{5, 5};
 				break;
 			case REDD:
-				FIELDS = Arrays.asList(new Sensor("v", null));
+				FIELDS = Arrays.asList(new BasicSensor("v", null));
 				PRECISION = new int[]{2};
 				break;
 			case GEOLIFE:
-				FIELDS = Arrays.asList(new Sensor("Latitude", null),
-						new Sensor("Longitude", null),
-						new Sensor("Zero", null),
-						new Sensor("Altitude", null));
+				FIELDS = Arrays.asList(new BasicSensor("Latitude", null),
+						new BasicSensor("Longitude", null),
+						new BasicSensor("Zero", null),
+						new BasicSensor("Altitude", null));
 				PRECISION = new int[]{6, 6, 0, 12};
 				break;
 			default:

@@ -72,6 +72,11 @@ public class FakeDB implements IDatabase {
   }
 
   @Override
+  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+    return null;
+  }
+
+  @Override
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
     return new Status(true, 1000000L, 0);
   }

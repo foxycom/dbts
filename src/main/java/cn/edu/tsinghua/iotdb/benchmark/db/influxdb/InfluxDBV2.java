@@ -46,11 +46,11 @@ public class InfluxDBV2 implements IDatebase {
 
 	public InfluxDBV2(long labID) {
 		config = ConfigDescriptor.getInstance().getConfig();
-		mySql = new MySqlLog();
+		mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
 		this.labID = labID;
 		probTool = new ProbTool();
 		timestampRandom = new Random(2 + config.QUERY_SEED);
-		mySql.initMysql(labID);
+		mySql.initMysql(false);
 		sensorRandom = new Random(1 + config.QUERY_SEED);
 		InfluxURL = config.DB_URL;
 		InfluxDBName = config.DB_NAME;

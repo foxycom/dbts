@@ -1,6 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
+import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.SingletonWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
@@ -45,8 +46,8 @@ public abstract class BaseClient extends Client implements Runnable {
             try {
               List<DeviceSchema> schema = dataSchema.getClientBindSchema().get(clientThreadId);
               for (DeviceSchema deviceSchema : schema) {
-                dbWrapper
-                    .insertOneBatch(syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex));
+                dbWrapper.insertOneBatch(syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex));
+
               }
             } catch (Exception e) {
               LOGGER.error("Failed to insert one batch data because ", e);
@@ -116,9 +117,18 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to do latest point query because ", e);
           }
           break;
+
+        case GPS_TIME_RANGE_QUERY:
+          try {
+            dbWrapper.gpsPathRangeQuery(syntheticWorkload.getGpsRangeQuery());
+          } catch (WorkloadException e) {
+            LOGGER.error("Failed to do a time range query with GPS data.");
+          }
+          break;
         default:
           LOGGER.error("Unsupported operation type {}", operation);
       }
+
       String percent = String.format("%.2f", (loopIndex + 1) * 100.0D / config.LOOP);
       LOGGER.info("{} {}% syntheticWorkload is done.", Thread.currentThread().getName(), percent);
     }

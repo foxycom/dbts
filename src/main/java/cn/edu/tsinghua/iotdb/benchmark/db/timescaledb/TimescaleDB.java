@@ -40,7 +40,7 @@ public class TimescaleDB implements IDatebase {
         config = ConfigDescriptor.getInstance().getConfig();
         points = new ArrayList<>();
         mp = new HashMap<>();
-        mySql = new MySqlLog();
+        mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
         this.labID = labID;
         sensorRandom = new Random(1 + config.QUERY_SEED);
         timestampRandom = new Random(2 + config.QUERY_SEED);
@@ -50,7 +50,7 @@ public class TimescaleDB implements IDatebase {
                 Constants.POSTGRESQL_USER,
                 Constants.POSTGRESQL_PASSWD
         );
-        mySql.initMysql(labID);
+        mySql.initMysql(false);
     }
 
     @Override

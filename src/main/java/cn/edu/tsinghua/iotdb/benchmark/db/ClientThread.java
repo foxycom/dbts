@@ -48,8 +48,8 @@ public class ClientThread implements Runnable{
 		this.totalInsertErrorNums = totalInsertErrorNums;
 		this.latencies = new ArrayList<>();
 		this.latenciesOfClients = latenciesOfClients;
-		mySql = new MySqlLog();
-		mySql.initMysql(datebase.getLabID());
+		mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+		mySql.initMysql(false);
 	}
 
 	public ClientThread(IDatebase datebase, int index , Storage storage, CountDownLatch downLatch,
@@ -63,8 +63,8 @@ public class ClientThread implements Runnable{
 		this.totalInsertErrorNums = totalInsertErrorNums;
 		this.latencies = new ArrayList<>();
 		this.latenciesOfClients = latenciesOfClients;
-		mySql = new MySqlLog();
-		mySql.initMysql(datebase.getLabID());
+		mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+		mySql.initMysql(false);
 	}
 
 

@@ -13,6 +13,8 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.GEO_DATA_TYPE;
+
 public class ConfigDescriptor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigDescriptor.class);
 
@@ -78,17 +80,21 @@ public class ConfigDescriptor {
 				/* List of data types for every sensor. */
 				String sensorDataTypes = properties.getProperty("SENSOR_DATA_TYPES", "DOUBLE");
 				List<String> dataTypes = Arrays.asList(sensorDataTypes.split(","));
-				if (dataTypes.size() == 1) {
-					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
-						config.SENSOR_DATA_TYPES.add(dataTypes.get(0));
-					}
-				} else if (dataTypes.size() > 1) {
-					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
-						config.SENSOR_DATA_TYPES.add(dataTypes.get(i));
-					}
-				} else {
+
+				if (dataTypes.size() < 1) {
 					throw new RuntimeException("Length of the data types list should be exactly 1 or equal the number " +
 							"of sensors.");
+				} else {
+					if (dataTypes.size() == 1) {
+						for (int i = 0; i < config.SENSOR_NUMBER - 1; i++) {
+							config.SENSOR_DATA_TYPES.add(dataTypes.get(0));
+						}
+					} else {
+						for (int i = 0; i < config.SENSOR_NUMBER - 1; i++) {
+							config.SENSOR_DATA_TYPES.add(dataTypes.get(i));
+						}
+					}
+					config.SENSOR_DATA_TYPES.add(GEO_DATA_TYPE);
 				}
 
 

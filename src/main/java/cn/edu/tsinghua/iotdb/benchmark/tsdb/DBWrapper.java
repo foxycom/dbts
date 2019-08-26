@@ -15,6 +15,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+
+import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,17 +53,16 @@ public class DBWrapper implements IDatabase {
         measureOperation(status, operation, batch.pointNum());
         String formatTimeInMillis = String.format("%.2f", timeInMillis);
         String currentThread = Thread.currentThread().getName();
-        double throughput = batch.pointNum() * 1000 / timeInMillis;
-        LOGGER.info("{} insert one batch latency (device: {}, sg: {}) ,{}, ms, throughput ,{}, points/s",
+        BigDecimal throughput = new BigDecimal(batch.pointNum() * 1000 / timeInMillis);
+        throughput = throughput.setScale(2, BigDecimal.ROUND_HALF_UP);
+        LOGGER.info("{} INSERT ONE batch latency (DEVICE: {}, GROUP: {}), {} ms, THROUGHPUT: {} points/s",
             currentThread, batch.getDeviceSchema().getDevice(),
             batch.getDeviceSchema().getGroup(), formatTimeInMillis, throughput);
       } else {
-        measurement.addFailOperationNum(operation);
-        measurement.addFailPointNum(operation, batch.pointNum());
+        measurement.addFailOperation(operation, batch.pointNum());
       }
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
-      measurement.addFailPointNum(operation, batch.pointNum());
+      measurement.addFailOperation(operation, batch.pointNum());
       LOGGER.error("Failed to insert one batch because unexpected exception: ", e);
     }
     return status;
@@ -76,14 +77,12 @@ public class DBWrapper implements IDatabase {
       handleQueryOperation(status, operation);
 
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
     return status;
   }
-
-
 
   @Override
   public Status rangeQuery(RangeQuery rangeQuery) {
@@ -93,13 +92,26 @@ public class DBWrapper implements IDatabase {
       status = db.rangeQuery(rangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
     return status;
   }
 
+  @Override
+  public Status gpsPathRangeQuery(RangeQuery rangeQuery) {
+    Status status = null;
+    Operation operation = Operation.GPS_TIME_RANGE_QUERY;
+    try {
+      status = db.gpsPathRangeQuery(rangeQuery);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
 
 
   @Override
@@ -110,7 +122,7 @@ public class DBWrapper implements IDatabase {
       status = db.valueRangeQuery(valueRangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
@@ -125,7 +137,7 @@ public class DBWrapper implements IDatabase {
       status = db.aggRangeQuery(aggRangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
@@ -140,7 +152,7 @@ public class DBWrapper implements IDatabase {
       status = db.aggValueQuery(aggValueQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
@@ -155,7 +167,7 @@ public class DBWrapper implements IDatabase {
       status = db.aggRangeValueQuery(aggRangeValueQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
@@ -170,7 +182,7 @@ public class DBWrapper implements IDatabase {
       status = db.groupByQuery(groupByQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
@@ -185,7 +197,7 @@ public class DBWrapper implements IDatabase {
       status = db.latestPointQuery(latestPointQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       LOGGER.error(ERROR_LOG, operation, e);
     }
@@ -218,19 +230,22 @@ public class DBWrapper implements IDatabase {
         st = System.nanoTime();
         db.registerSchema(schemaList);
         en = System.nanoTime();
+        LOGGER.info("Successfully registered schema!");
       }
       createSchemaTimeInSecond = (en - st) / NANO_TO_SECOND;
       measurement.setCreateSchemaTime(createSchemaTimeInSecond);
     } catch (Exception e) {
       measurement.setCreateSchemaTime(0);
+      System.out.println();
       throw new TsdbException(e);
     }
   }
 
   private void measureOperation(Status status, Operation operation, int okPointNum) {
-    measurement.addOperationLatency(operation, status.getCostTime() / NANO_TO_MILLIS);
-    measurement.addOkOperationNum(operation);
-    measurement.addOkPointNum(operation, okPointNum);
+    //measurement.addOperationLatency(operation, status.getCostTime() / NANO_TO_MILLIS);
+    //measurement.addOkOperation(operation);
+    //measurement.addOkPointNum(operation, okPointNum);
+    measurement.addOkOperation(operation, status.getCostTime() / NANO_TO_MILLIS, okPointNum);
   }
 
   private void handleQueryOperation(Status status, Operation operation){
@@ -244,7 +259,7 @@ public class DBWrapper implements IDatabase {
               formatTimeInMillis, status.getQueryResultPointNum());
     } else {
       LOGGER.error("Execution fail: {}", status.getErrorMessage(), status.getException());
-      measurement.addFailOperationNum(operation);
+      measurement.addFailOperation(operation);
       // currently we do not have expected result point number
       measurement.addOkPointNum(operation, status.getQueryResultPointNum());
     }

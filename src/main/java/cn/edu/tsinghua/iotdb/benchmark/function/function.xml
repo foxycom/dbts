@@ -177,4 +177,5 @@
 	<function id="constant56" function-type="double_mono" max="0.0" min="0.0" cycle="3600"></function>
 	<function id="constant57" function-type="double_mono" max="0.03" min="0.03" cycle="3600"></function>
 	<function id="constant58" function-type="double_mono" max="0.0" min="0.0" cycle="3600"></function>
+	<function id="geo1" function-type="point_geo" max="10" min="0.3" cycle="3600"></function>
 </functions>

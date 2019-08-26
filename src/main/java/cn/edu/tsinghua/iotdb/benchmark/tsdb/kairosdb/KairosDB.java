@@ -176,6 +176,11 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
+  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+    return null;
+  }
+
+  @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
     long startTime = aggRangeQuery.getStartTimestamp();
     long endTime = aggRangeQuery.getEndTimestamp();

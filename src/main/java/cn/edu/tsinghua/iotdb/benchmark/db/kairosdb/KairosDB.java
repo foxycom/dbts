@@ -49,7 +49,7 @@ public class KairosDB extends TSDB implements IDatebase {
 
     public KairosDB(long labID) {
         config = ConfigDescriptor.getInstance().getConfig();
-        mySql = new MySqlLog();
+        mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
         this.labID = labID;
         sensorRandom = new Random(1 + config.QUERY_SEED);
         probTool = new ProbTool();
@@ -58,7 +58,7 @@ public class KairosDB extends TSDB implements IDatebase {
         queryUrl = Url + "/api/v1/datapoints/query";
         writeUrl = Url + "/api/v1/datapoints";
         deleteUrl = Url + "/api/v1/metric/%s";
-        mySql.initMysql(labID);
+        mySql.initMysql(false);
     }
 
 

@@ -60,5 +60,7 @@ public class Constants {
     public static final String MODE_EXECUTE_SQL_FROM_FILE = "executeSQLFromFile";
 
     public static final String EXE_SQL_FROM_FILE_MODE = "1";
+    public static final String GEO_DATA_TYPE = "GEOMETRY";
+
 
 }
