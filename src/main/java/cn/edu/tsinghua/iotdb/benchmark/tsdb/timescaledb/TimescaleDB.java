@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 public class TimescaleDB implements IDatabase {
 
+  private static final int B2GB = 1024 * 1024 * 1024;
   private Connection connection;
   private static String tableName;
   private static Config config;
@@ -157,6 +158,23 @@ public class TimescaleDB implements IDatabase {
       }
     } catch (SQLException e) {
       LOGGER.error("Can't convert Postgres table to a Timescale hypertable.");
+      throw new TsdbException(e);
+    }
+  }
+
+  @Override
+  public float getSize() throws TsdbException {
+    float resultInGB = 0.0f;
+    try (Statement statement = connection.createStatement()) {
+      String selectSizeSql = String.format("SELECT pg_database_size('%s');", config.DB_NAME);
+      ResultSet rs = statement.executeQuery(selectSizeSql);
+      if (rs.next()) {
+        long resultInB = rs.getLong("pg_database_size");
+        resultInGB = resultInB / B2GB;
+      }
+      return resultInGB;
+    } catch (SQLException e) {
+      LOGGER.error("Could not read the size of the data because: {}", e.getMessage());
       throw new TsdbException(e);
     }
   }

@@ -24,24 +24,21 @@ import cn.edu.tsinghua.iotdb.benchmark.loadData.Resolve;
 import cn.edu.tsinghua.iotdb.benchmark.loadData.Storage;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.FileSize;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.IoUsage;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.MemUsage;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.NetUsage;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.OpenFileNumber;
+import cn.edu.tsinghua.iotdb.benchmark.server.ServerMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.tool.ImportDataFromCSV;
 import cn.edu.tsinghua.iotdb.benchmark.tool.MetaDateBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.BasicReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
-import java.io.BufferedWriter;
+
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class App {
 
@@ -99,8 +97,8 @@ public class App {
                 executeSQLFromFile(config);
                 break;
             case CLIENT_SYSTEM_INFO:
-                clientSystemInfo(config);
-                break;
+                //clientSystemInfo(config);
+                throw new NotImplementedException();
             default:
                 throw new SQLException("unsupported mode " + config.BENCHMARK_WORK_MODE);
         }
@@ -356,7 +354,9 @@ public class App {
         importTool.importData(config.IMPORT_DATA_FILE_PATH);
     }
 
-    private static void clientSystemInfo(Config config) {
+
+    // TODO legacy
+    /*private static void clientSystemInfo(Config config) {
         double abnormalValue = -1;
         MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
         mySql.initMysql(true);
@@ -371,7 +371,7 @@ public class App {
                 ArrayList<Float> ioUsageList = IoUsage.getInstance().get();
                 ArrayList<Float> netUsageList = NetUsage.getInstance().get();
                 ArrayList<Integer> openFileList = OpenFileNumber.getInstance().get();
-                ioStatistics = IoUsage.getInstance().getIOStatistics();
+                ioStatistics = IoUsage.INSTANCE.getIOStatistics();
                 LOGGER.info("CPU使用率,{}", ioUsageList.get(0));
                 LOGGER.info("内存使用率,{}", MemUsage.getInstance().get());
                 LOGGER.info("内存使用大小GB,{}", MemUsage.getInstance().getProcessMemUsage());
@@ -419,6 +419,11 @@ public class App {
         }
 
         mySql.closeMysql();
+    }*/
+
+    private static void serverMode(Config config) {
+        ServerMonitoring monitor = ServerMonitoring.INSTANCE;
+        monitor.start(config);
     }
 
     /**
@@ -427,109 +432,8 @@ public class App {
      * @throws SQLException
      * @throws ClassNotFoundException
      */
-    private static void serverMode(Config config) {
-        MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
-        mySql.initMysql(true);
-        File dir = new File(config.LOG_STOP_FLAG_PATH);
+    private static void serverModeLegacy(Config config) {
 
-        boolean write2File = false;
-        BufferedWriter out = null;
-        char space = ' ';
-        try {
-            if (config.SERVER_MODE_INFO_FILE.length() > 0) {
-                write2File = true;
-                // if the file doesn't exits, then create the file, else append.
-                out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(config.SERVER_MODE_INFO_FILE, true)));
-                out.write(String.format("Time%15cCPUUsage%7cRAM%5cDiskIO%5ceth0In%5ceth0Out%5cTotalFiles%5cDataAndWalFiles%5cSockets"
-                                + "%5cdeltaFileNum%5cderbyFileNum%5cdigestFileNum%5cmetadataFileNum%5coverflowFileNum%5cwalsFileNum\r\n",
-                        space, space, space, space, space, space, space, space));
-            }
-
-            if (dir.exists() && dir.isDirectory()) {
-                File file = new File(config.LOG_STOP_FLAG_PATH + "/log_stop_flag");
-                HashMap<FileSize.FileSizeKinds, Double> fileSizeStatistics;
-                HashMap<IoUsage.IOStatistics, Float> ioStatistics;
-                int interval = config.INTERVAL;
-                // 检测所需的时间在目前代码的参数下至少为2秒
-                LOGGER.info("----------New Test Begin with interval about {} s----------", interval + 2);
-                while (true) {
-                    ArrayList<Float> ioUsageList = IoUsage.getInstance().get();
-                    ArrayList<Float> netUsageList = NetUsage.getInstance().get();
-                    ArrayList<Integer> openFileList = OpenFileNumber.getInstance().get();
-                    fileSizeStatistics = FileSize.getInstance().getFileSize();
-                    ioStatistics = IoUsage.getInstance().getIOStatistics();
-                    LOGGER.info("CPU使用率,{}", ioUsageList.get(0));
-                    LOGGER.info("内存使用率,{}", MemUsage.getInstance().get());
-                    LOGGER.info("内存使用大小GB,{}", MemUsage.getInstance().getProcessMemUsage());
-                    LOGGER.info("磁盘IO使用率,{},TPS,{},读速率MB/s,{},写速率MB/s,{}",
-                            ioUsageList.get(1),
-                            ioStatistics.get(IoUsage.IOStatistics.TPS),
-                            ioStatistics.get(IoUsage.IOStatistics.MB_READ),
-                            ioStatistics.get(IoUsage.IOStatistics.MB_WRTN));
-                    LOGGER.info("eth0接收和发送速率,{},{},KB/s", netUsageList.get(0), netUsageList.get(1));
-                    LOGGER.info("PID={},打开文件总数{},打开data目录下文件数{},打开socket数{}", OpenFileNumber.getInstance().getPid(),
-                            openFileList.get(0), openFileList.get(1), openFileList.get(2));
-                    LOGGER.info("文件大小GB,data,{},info,{},metadata,{},overflow,{},delta,{},wal,{}",
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.DATA),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.INFO),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.METADATA),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.OVERFLOW),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.DELTA),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.WAL));
-                    mySql.insertSERVER_MODE(
-                            ioUsageList.get(0),
-                            MemUsage.getInstance().get(),
-                            ioUsageList.get(1),
-                            netUsageList.get(0),
-                            netUsageList.get(1),
-                            MemUsage.getInstance().getProcessMemUsage(),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.DATA),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.INFO),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.METADATA),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.OVERFLOW),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.DELTA),
-                            fileSizeStatistics.get(FileSize.FileSizeKinds.WAL),
-                            ioStatistics.get(IoUsage.IOStatistics.TPS),
-                            ioStatistics.get(IoUsage.IOStatistics.MB_READ),
-                            ioStatistics.get(IoUsage.IOStatistics.MB_WRTN),
-                            openFileList, "");
-                    if (write2File) {
-                        out.write(String.format("%d%14f%14f%15f", System.currentTimeMillis(),
-                                ioUsageList.get(0), MemUsage.getInstance().get(), ioUsageList.get(1)));
-                        out.write(String.format("%16f%16f%12d%8s%8d%10s%5d", netUsageList.get(0),
-                                netUsageList.get(1), openFileList.get(0), space, openFileList.get(1),
-                                space, openFileList.get(2)));
-                        out.write(String.format("%16d%16d%16d%16d%16d%16d\n", openFileList.get(3),
-                                openFileList.get(4), openFileList.get(5), space, openFileList.get(6),
-                                openFileList.get(7), openFileList.get(8)));
-                    }
-                    try {
-                        Thread.sleep(interval * 1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if (file.exists()) {
-                        boolean f = file.delete();
-                        if (!f) {
-                            LOGGER.error("log_stop_flag 文件删除失败");
-                        }
-                        break;
-                    }
-                }
-            } else {
-                LOGGER.error("LOG_STOP_FLAG_PATH not exist!");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            mySql.closeMysql();
-            try {
-                if (out != null)
-                    out.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
 
     }
 
@@ -901,15 +805,15 @@ public class App {
     private static long getErrorNum(Config config, ArrayList<Long> totalInsertErrorNums, IDatebase datebase)
             throws SQLException {
         long totalErrorPoint;
-        switch (config.DB_SWITCH.trim()) {
-            case Constants.DB_INFLUX:
+        switch (config.DB_SWITCH) {
+            case INFLUXDB:
                 totalErrorPoint = getErrorNumInflux(config, datebase);
                 break;
-            case Constants.DB_IOT:
-            case Constants.DB_OPENTS:
-            case Constants.DB_CTS:
-            case Constants.DB_KAIROS:
-            case Constants.DB_TIMESCALE:
+            case IOTDB:
+            case OPENTSDB:
+            case CTSDB:
+            case KAIROSDB:
+            case TIMESCALEDB:
                 totalErrorPoint = getErrorNumIoT(totalInsertErrorNums);
                 break;
             default:
@@ -920,19 +824,19 @@ public class App {
 
     private static IDBFactory getDBFactory(Config config) throws SQLException {
         switch (config.DB_SWITCH) {
-            case Constants.DB_IOT:
+            case IOTDB:
                 return new IoTDBFactory();
-            case Constants.DB_INFLUX:
+            case INFLUXDB:
                 return new InfluxDBFactory();
-            case Constants.DB_OPENTS:
+            case OPENTSDB:
                 return new OpenTSDBFactory();
-            case Constants.DB_CTS:
+            case CTSDB:
                 return new CTSDBFactory();
-            case Constants.DB_KAIROS:
+            case KAIROSDB:
                 return new KairosDBFactory();
-            case Constants.DB_TIMESCALE:
+            case TIMESCALEDB:
                 return new TimescaleDBFactory();
-            case Constants.DB_FAKE:
+            case FAKEDB:
                 return new FakeDBFactory();
             default:
                 throw new SQLException("unsupported database " + config.DB_SWITCH);

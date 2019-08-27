@@ -100,6 +100,11 @@ public class KairosDB implements IDatabase {
     //no need for KairosDB
   }
 
+  @Override
+  public float getSize() throws TsdbException {
+    return 0;
+  }
+
 
   private LinkedList<KairosDataModel> createDataModel(DeviceSchema deviceSchema, long timestamp,
       List<String> recordValues) {

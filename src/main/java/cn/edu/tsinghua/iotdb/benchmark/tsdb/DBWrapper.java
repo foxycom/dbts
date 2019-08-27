@@ -245,6 +245,11 @@ public class DBWrapper implements IDatabase {
     }
   }
 
+  @Override
+  public float getSize() throws TsdbException {
+    return db.getSize();
+  }
+
   private void measureOperation(Status status, Operation operation, int okPointNum) {
     measurement.addOkOperation(operation, status.getCostTime() / NANO_TO_MILLIS, okPointNum);
   }

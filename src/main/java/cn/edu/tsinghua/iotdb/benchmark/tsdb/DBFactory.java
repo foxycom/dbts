@@ -21,15 +21,15 @@ public class DBFactory {
   public IDatabase getDatabase() throws SQLException {
 
     switch (config.DB_SWITCH) {
-      case Constants.DB_IOT:
+      case IOTDB:
         return new IoTDB();
-      case Constants.DB_INFLUX:
+      case INFLUXDB:
         return new InfluxDB();
-      case Constants.DB_KAIROS:
+      case KAIROSDB:
         return new KairosDB();
-      case Constants.DB_TIMESCALE:
+      case TIMESCALEDB:
         return new TimescaleDB();
-      case Constants.DB_FAKE:
+      case FAKEDB:
         return new FakeDB();
       default:
         LOGGER.error("unsupported database {}", config.DB_SWITCH);

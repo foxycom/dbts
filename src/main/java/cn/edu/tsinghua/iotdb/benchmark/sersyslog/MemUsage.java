@@ -5,85 +5,51 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * 采集内存使用率
+ * Mem Usage reader.
  */
-public class MemUsage {
+public enum MemUsage {
+    INSTANCE;
 
-    private static Logger log = LoggerFactory.getLogger(MemUsage.class);
-    private static MemUsage INSTANCE = new MemUsage();
     private final double KB2GB = 1024 * 1024f;
 
-    private MemUsage(){
-
-    }
-
-    public static MemUsage getInstance(){
-        return INSTANCE;
-    }
-
-    /**
-     * Purpose:采集内存使用率
-     * @param
-     * @return float,内存使用率,小于1
-     */
-    public float get(){
-        //log.info("开始收集内存使用率");
+    public Map<String, Float> get() {
         float memUsage = 0.0f;
-        Process pro = null;
+        float swapUsage = 0.0f;
+        Map<String, Float> values = new HashMap<>(2);
+        Process process = null;
         Runtime r = Runtime.getRuntime();
         try {
             String command = "free";
-            pro = r.exec(command);
-            BufferedReader in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            process = r.exec(command);
+            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = null;
-            while((line=in.readLine()) != null) {
-                //log.info(line);
+
+            while((line=input.readLine()) != null) {
                 String[] temp = line.split("\\s+");
-                if (temp[0].startsWith("M")) {
+                if (temp[0].startsWith("Mem")) {
                     float memTotal = Float.parseFloat(temp[1]);
                     float memUsed = Float.parseFloat(temp[2]);
                     memUsage = memUsed / memTotal;
+                } else if (temp[0].startsWith("Swap")) {
+                    float swapTotal = Float.parseFloat(temp[1]);
+                    float swapUsed = Float.parseFloat(temp[2]);
+                    swapUsage = swapUsed / swapTotal;
                 }
-
             }
-            in.close();
-            pro.destroy();
+            input.close();
+            process.destroy();
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
         }
-        return memUsage;
-    }
-
-    public double getProcessMemUsage(){
-        double processMemUsage = 0.0d;
-        Process pro = null;
-        Runtime r = Runtime.getRuntime();
-        int pid = OpenFileNumber.getInstance().getPid();
-        if(pid > 0) {
-            //String command = "pmap -d " + String.valueOf(pid) + " | grep write | cut -d ' ' -f 7";
-            String command = "pmap -d " + String.valueOf(pid) ;
-            try {
-                pro = r.exec(command);
-                BufferedReader in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-                String line = null;
-                while ((line = in.readLine()) != null) {
-                    if(line.startsWith("map")) {
-                        String[] temp = line.split(" ");
-                        String[] tmp = temp[6].split("K");
-                        String size = tmp[0];
-                        processMemUsage = Long.parseLong(size) / KB2GB;
-                    }
-                }
-            } catch (IOException e) {
-                log.error("Get Process Memory Usage failed.");
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-            }
-        }
-        return processMemUsage;
+        values.put("memUsage", memUsage);
+        values.put("swapUsage", swapUsage);
+        return values;
     }
 
 }

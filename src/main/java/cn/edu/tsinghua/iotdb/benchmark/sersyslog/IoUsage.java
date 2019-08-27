@@ -6,11 +6,13 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
- * 采集磁盘IO使用率
+ * IO metrics reader.
  */
-public class IoUsage {
+public enum IoUsage {
+    INSTANCE;
 
     private static Logger log = LoggerFactory.getLogger(IoUsage.class);
     private final int  BEGIN_LINE = 10;
@@ -28,75 +30,50 @@ public class IoUsage {
         }
     };
 
-    private static class IoUsageHolder{
-        private static final IoUsage INSTANCE = new IoUsage();
-    }
-
-    private IoUsage(){
-
-    }
-
-    public static IoUsage getInstance(){
-        return IoUsageHolder.INSTANCE;
-    }
-
-    public HashMap<IOStatistics,Float> getIOStatistics(){
-        HashMap<IOStatistics,Float> ioStaMap = new HashMap<>();
-        for(IOStatistics iostat : IOStatistics.values()) {
-            iostat.max = 0;
-        }
-        Process pro = null;
+    public Map<String, Float> get(String driveName) {
+        float readsPerSec = 0.0f;
+        float writesPerSec = 0.0f;
+        Map<String, Float> values = new HashMap<>();
+        Process process;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "iostat -m 1 2";
-            pro = r.exec(command);
-            BufferedReader in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
-            String line = null;
-            int count =  0;
-            int flag = 1;
-            while((line=in.readLine()) != null) {
-                String[] temp = line.split("\\s+");
-                if (++count >= BEGIN_LINE) {
-                    if(temp.length > 1 && temp[0].startsWith("s")) {
-                        //返回设备中最大的
-                        for(IOStatistics iostat : IOStatistics.values()) {
-                            float t = Float.parseFloat(temp[iostat.pos]);
-                            iostat.max = (iostat.max > t) ? iostat.max : t;
-                            ioStaMap.put(iostat, iostat.max);
-                        }
-                    }
+            String command = "iostat -xd 1 2";
+            process = r.exec(command);
+            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = input.readLine()) != null) {
+                if (line.startsWith(driveName)) {
+                    String[] temp = line.split("\\s+");
+                    readsPerSec = Float.parseFloat(temp[1]);
+                    writesPerSec = Float.parseFloat(temp[2]);
+                    break;
                 }
             }
-            in.close();
-            pro.destroy();
         } catch (IOException e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
+            System.err.println("Could not read IO metrics because: " + e.getMessage());
         }
-        return ioStaMap;
+        values.put("readsPerSec", readsPerSec);
+        values.put("writesPerSec", writesPerSec);
+        return values;
     }
 
-    /**
-     * @Purpose:采集磁盘IO使用率
-     * @param
-     * @return float,磁盘IO使用率,小于1
-     */
+    // TODO legacy
     public ArrayList<Float> get() {
-        //log.info("开始收集磁盘IO使用率");
         ArrayList<Float> list = new ArrayList<>();
         float ioUsage = 0.0f;
         float cpuUsage = 0.0f;
-        Process pro = null;
+        Process process = null;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "iostat -x 1 2";
-            pro = r.exec(command);
-            BufferedReader in = new BufferedReader(new InputStreamReader(pro.getInputStream()));
+            String command = "iostat -xd 1 2";
+            process = r.exec(command);
+            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = null;
             int count =  0;
             int flag = 1;
+
             while((line=in.readLine()) != null) {
-                //log.info(line);
+
                 String[] temp = line.split("\\s+");
                 if (++count >= 8) {
                     if (temp[0].startsWith("a") && flag == 1) {
@@ -119,7 +96,7 @@ public class IoUsage {
             list.add(cpuUsage);
             list.add(ioUsage);
             in.close();
-            pro.destroy();
+            process.destroy();
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));

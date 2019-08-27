@@ -7,178 +7,60 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * 采集网络带宽使用率
+ * Net metrics reader.
  */
-public class NetUsage {
+public enum NetUsage {
+    INSTANCE;
 
-    private static Logger log = LoggerFactory.getLogger(NetUsage.class);
-    private static NetUsage INSTANCE = new NetUsage();
     private final static float TotalBandwidth = 1000;   //网口带宽,Mbps,假设是前兆以太网
-    private Config config;
-
-    private NetUsage() {
-        config = ConfigDescriptor.getInstance().getConfig();
-    }
-
-    public static NetUsage getInstance() {
-        return INSTANCE;
-    }
 
     /**
-     * @param
-     * @return float, 网络带宽使用率, 小于1
-     * @Purpose:采集网络带宽使用率
+     * Reads inet throughput in KB/s with bwm-ng, which has following output:
+     *
+     * bwm-ng v0.6.1 (probing every 0.500s), press 'h' for help
+     *   input: /proc/net/dev type: rate
+     *   -         iface                   Rx                   Tx                Total
+     *   ==============================================================================
+     *           enp0s25:           0.14 KB/s            0.24 KB/s            0.38 KB/s
+     *                lo:           0.00 KB/s            0.00 KB/s            0.00 KB/s
+     *   ------------------------------------------------------------------------------
+     *             total:           0.14 KB/s            0.24 KB/s            0.38 KB/s
+     *
+     * @param iface
+     * @return
      */
-    public float getTotalRate() {
-        //log.info("开始收集网络带宽使用率");
-        //float netUsage = 0.0f;
-        float curRate = 0.0f;
-        Process pro1, pro2;
+    public Map<String, Float> get(String iface) {
+        float recvPerSec = 0.0f;
+        float transPerSec = 0.0f;
+        Map<String, Float> values = new HashMap<>();
+        Process process;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "cat /proc/net/dev";
-            //第一次采集流量数据
+            String command = "bwm-ng";
+            process = r.exec(command);
+            BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = input.readLine()) != null) {
+                String[] temp = line.split("\\s+");
+                if (temp[0] != null && temp[0].startsWith(iface)) {
+                    String[] value = temp[1].split("\\s+");
+                    recvPerSec = Float.parseFloat(value[0]);
 
-            pro1 = r.exec(command);
-            BufferedReader in1 = new BufferedReader(new InputStreamReader(pro1.getInputStream()));
-            String line = null;
-            long inSize1 = 0, outSize1 = 0;
-            while ((line = in1.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith(config.NET_DEVICE)) {
-                    String[] temp = line.split("\\s+");
-                    inSize1 = Long.parseLong(temp[1]); //Receive bytes,单位为Byte
-                    outSize1 = Long.parseLong(temp[9]);             //Transmit bytes,单位为Byte
-                    //log.info("inSize1={},outSize1={}",inSize1,outSize1);
+                    value = temp[2].split("\\s+");
+                    transPerSec = Float.parseFloat(value[0]);
                     break;
                 }
             }
-            in1.close();
-            pro1.destroy();
-            long startTime = System.currentTimeMillis();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.info("NetUsage休眠时发生InterruptedException. " + e.getMessage());
-                log.error(sw.toString());
-            }
-            //第二次采集流量数据
-
-            pro2 = r.exec(command);
-            BufferedReader in2 = new BufferedReader(new InputStreamReader(pro2.getInputStream()));
-            long inSize2 = 0, outSize2 = 0;
-            while ((line = in2.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith(config.NET_DEVICE)) {
-                    String[] temp = line.split("\\s+");
-                    inSize2 = Long.parseLong(temp[1]);
-                    outSize2 = Long.parseLong(temp[9]);
-                    //log.info("inSize2={},outSize2={}",inSize2,outSize2);
-                    break;
-                }
-            }
-            long endTime = System.currentTimeMillis();
-            float interval = (float) (endTime - startTime) / 1000;
-            if (inSize1 != 0 && outSize1 != 0 && inSize2 != 0 && outSize2 != 0 && interval>0) {
-
-                //网口传输速度,单位为bps
-                //curRate = (float) (inSize2 - inSize1 + outSize2 - outSize1) * 8 / (1000000 * interval);
-                curRate = (float) (inSize2 - inSize1 + outSize2 - outSize1) / (1000 * interval);
-                //netUsage = curRate / TotalBandwidth;
-                //log.info("当前eth0网口接受和发送总速率为: " + curRate + "Mbps");
-                //log.info("本节点网络带宽使用率为: " + netUsage);
-
-                //log.info("当前eth0网口接受和发送总速率为: " + curRate + "KB/s");
-            }
-            in2.close();
-            pro2.destroy();
         } catch (IOException e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            log.error("NetUsage发生InstantiationException. " + e.getMessage());
-            log.error(sw.toString());
+            System.err.println("Could not read net metrics because: " + e.getMessage());
         }
-        //return netUsage;
-        //网口传输速度,单位为KB/s
-        return curRate;
-    }
-
-    public ArrayList<Float> get() {
-        //log.info("开始收集网络带宽使用率");
-        //float netUsage = 0.0f;
-        ArrayList<Float> list = new ArrayList<>();
-        float curInRate = 0.0f;
-        float curOutRate = 0.0f;
-        Process pro1, pro2;
-        Runtime r = Runtime.getRuntime();
-        try {
-            String command = "cat /proc/net/dev";
-            //第一次采集流量数据
-
-            pro1 = r.exec(command);
-            BufferedReader in1 = new BufferedReader(new InputStreamReader(pro1.getInputStream()));
-            String line = null;
-            long inSize1 = 0, outSize1 = 0;
-            while ((line = in1.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith(config.NET_DEVICE)) {
-                    String[] temp = line.split("\\s+");
-                    inSize1 = Long.parseLong(temp[1]); //Receive bytes,单位为Byte
-                    outSize1 = Long.parseLong(temp[9]);             //Transmit bytes,单位为Byte
-                    //log.info("inSize1={},outSize1={}",inSize1,outSize1);
-                    break;
-                }
-            }
-            in1.close();
-            pro1.destroy();
-            long startTime = System.currentTimeMillis();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                StringWriter sw = new StringWriter();
-                e.printStackTrace(new PrintWriter(sw));
-                log.info("NetUsage休眠时发生InterruptedException. " + e.getMessage());
-                log.error(sw.toString());
-            }
-            //第二次采集流量数据
-
-            pro2 = r.exec(command);
-            BufferedReader in2 = new BufferedReader(new InputStreamReader(pro2.getInputStream()));
-            long inSize2 = 0, outSize2 = 0;
-            while ((line = in2.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith(config.NET_DEVICE)) {
-                    String[] temp = line.split("\\s+");
-                    inSize2 = Long.parseLong(temp[1]);
-                    outSize2 = Long.parseLong(temp[9]);
-                    //log.info("inSize2={},outSize2={}",inSize2,outSize2);
-                    break;
-                }
-            }
-            long endTime = System.currentTimeMillis();
-            float interval = (float) (endTime - startTime) / 1000;
-            if (inSize1 != 0 && outSize1 != 0 && inSize2 != 0 && outSize2 != 0 && interval>0) {
-                //网口传输速度,单位为bps
-                curInRate = (float) (inSize2 - inSize1) / (1000 * interval);
-                curOutRate = (float) (outSize2 - outSize1) / (1000 * interval);
-            }
-            list.add(curInRate);
-            list.add(curOutRate);
-            in2.close();
-            pro2.destroy();
-        } catch (IOException e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            log.error("NetUsage发生InstantiationException. " + e.getMessage());
-            log.error(sw.toString());
-        }
-        //return netUsage;
-        //网口传输速度,单位为KB/s
-        return list;
+        values.put("recvPerSec", recvPerSec);
+        values.put("transPerSec", transPerSec);
+        return values;
     }
 
 }

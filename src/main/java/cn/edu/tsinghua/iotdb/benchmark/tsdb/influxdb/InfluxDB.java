@@ -97,6 +97,11 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
+  public float getSize() throws TsdbException {
+    return 0;
+  }
+
+  @Override
   public Status insertOneBatch(Batch batch) {
     BatchPoints batchPoints = BatchPoints.database(influxDbName)
         .retentionPolicy(defaultRp)

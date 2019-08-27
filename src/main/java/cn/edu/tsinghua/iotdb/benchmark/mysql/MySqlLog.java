@@ -70,7 +70,7 @@ public class MySqlLog {
         try {
             stat = mysqlConnection.createStatement();
             Mode mode = Mode.valueOf(config.BENCHMARK_WORK_MODE.trim().toUpperCase());
-            if (mode == Mode.SERVER_MODE || mode == Mode.CLIENT_SYSTEM_INFO) {
+            if (/*mode == Mode.SERVER_MODE || */mode == Mode.CLIENT_SYSTEM_INFO) {
                 if (!hasTable("SERVER_MODE_" + localName + "_" + day)) {
                     stat.executeUpdate("create table SERVER_MODE_"
                             + localName
@@ -87,8 +87,8 @@ public class MySqlLog {
                 }
                 return;
             }
-            switch (config.DB_SWITCH.trim()) {
-                case Constants.DB_IOT:
+            switch (config.DB_SWITCH) {
+                case IOTDB:
                     if (!hasTable("IOTDB_DATA_MODEL" + "_" + day)) {
                         stat.executeUpdate("create table IOTDB_DATA_MODEL"
                                 + "_"
@@ -98,7 +98,7 @@ public class MySqlLog {
                                 day);
                     }
                     break;
-                case Constants.DB_INFLUX:
+                case INFLUXDB:
                     int i = 0,
                             groupId = 0;
                     if (!hasTable("INFLUXDB_DATA_MODEL" + "_" + day)) {
@@ -133,27 +133,20 @@ public class MySqlLog {
             if (mode != Mode.QUERY_TEST_WITH_DEFAULT_PATH && !hasTable(projectID)) {
 
                 // Creates table for clients statistics
-                stat.executeUpdate("create table "
-                        + projectID + "Clients"
-                        + "(id BIGINT, clientName varchar(50), operation varchar(100), status varchar(20), "
-                        + "loopIndex INTEGER, costTime DOUBLE, "
-                        + "totalTime DOUBLE, rate DOUBLE, okPoint BIGINT, failPoint BIGINT, remark varchar(6000), "
-                        + "primary key(id, clientName))");
-                LOGGER.info("Table {} create success!", projectID + "Clients");
+                stat.executeUpdate(getCreateClientsTableSql());
+                LOGGER.info("Table {} was successfully created!", projectID + "Clients");
 
                 // Creates single loop table
-                stat.executeUpdate("create table "
-                        + projectID + "Loop"
-                        + "(id BIGINT, clientName varchar(50), "
-                        + "loopIndex INTEGER, rate DOUBLE, primary key(id, clientName))");
-                LOGGER.info("Table {} create success!", projectID + "Loop");
+                stat.executeUpdate(getCreateLoopTableSql());
+                LOGGER.info("Table {} was successfully created!", projectID + "Loop");
 
                 // Creates table for a whole measurement
-                stat.executeUpdate("create table " + projectID
-                        + "(id BIGINT, operation varchar(100), costTimeAvg DOUBLE, costTimeP99 DOUBLE, "
-                        + "costTimeMedian DOUBLE, totalTime DOUBLE, rate DOUBLE, okPoint BIGINT, errorPoint BIGINT, "
-                        + "remark varchar(6000), primary key(id));");
-                LOGGER.info("Table {} create success!", projectID);
+                stat.executeUpdate(getCreateMeasurementTableSql());
+                LOGGER.info("Table {} was successfully created!", projectID);
+
+                stat.executeUpdate(getCreateServerMonitorTableSql());
+                LOGGER.info("Table {} was successfully created!", projectID + "Server");
+
             }
         } catch (SQLException e) {
             LOGGER.error("mysql 创建表格失败,原因是：{}", e.getMessage());
@@ -166,6 +159,37 @@ public class MySqlLog {
                 e.printStackTrace();
             }
         }
+    }
+
+    private String getCreateClientsTableSql() {
+        String sql = "CREATE TABLE " + projectID + "Clients"
+                + "(time BIGINT, clientName varchar(50), operation varchar(100), status varchar(20), "
+                + "loopIndex INTEGER, costTime DOUBLE, "
+                + "totalTime DOUBLE, rate DOUBLE, okPoint BIGINT, failPoint BIGINT, remark varchar(6000), "
+                + "primary key(time, clientName));";
+        return sql;
+    }
+
+    private String getCreateLoopTableSql() {
+        String sql = "CREATE TABLE " + projectID + "Loop"
+                + "(time BIGINT, clientName varchar(50), "
+                + "loopIndex INTEGER, rate DOUBLE, primary key(time, clientName));";
+        return sql;
+    }
+
+    private String getCreateMeasurementTableSql() {
+        String sql = "CREATE TABLE " + projectID
+                + "(time BIGINT, operation varchar(100), costTimeAvg DOUBLE, costTimeP99 DOUBLE, "
+                + "costTimeMedian DOUBLE, totalTime DOUBLE, rate DOUBLE, okPoint BIGINT, errorPoint BIGINT, "
+                + "remark varchar(6000), primary key(time));";
+        return sql;
+    }
+
+    private String getCreateServerMonitorTableSql() {
+        String sql = "CREATE TABLE " + projectID + "Server "
+                + "(time BIGINT, db varchar(50), cpu DOUBLE, mem DOUBLE, swap DOUBLE, ioWrites DOUBLE, ioReads DOUBLE,"
+                + " net_recv DOUBLE, net_send DOUBLE, disk_usage DOUBLE, primary key(time)";
+        return sql;
     }
 
     /**
@@ -302,9 +326,23 @@ public class MySqlLog {
         }
     }
 
+    public void insertServerMetrics(double cpu, double mem, double swap, double ioWrites, double ioReads,
+                                    double netRecv, double netSend, double dataSize) {
+        String sql = "";
+        try (Statement statement = mysqlConnection.createStatement()) {
+            sql = String.format(Locale.US,"INSERT INTO " + projectID + "Server VALUES (%d, %s, %f, %f, %f, %f, %f, %f, %f, %f);",
+                 System.currentTimeMillis(), "'" + config.DB_SWITCH + "'", cpu, mem, swap, ioWrites, ioReads,
+                    netRecv, netSend, dataSize);
+            statement.executeUpdate(sql);
+        } catch (SQLException e) {
+            LOGGER.error("Could not insert server statistics, because: {}", e.getMessage());
+            LOGGER.error("{}", sql);
+            e.printStackTrace();
+        }
+    }
 
-    // 将系统资源利用信息存入mysql
-    public void insertSERVER_MODE(double cpu, double mem, double io, double net_recv, double net_send, double pro_mem_size,
+    /* TODO legacy code */
+    public void insertSERVER_MODELegacy(double cpu, double mem, double io, double net_recv, double net_send, double pro_mem_size,
                                   double dataSize, double infoSize, double metadataSize, double overflowSize, double deltaSize,double walSize,
                                   float tps, float io_read, float io_wrtn,
                                   List<Integer> openFileList, String remark) {
@@ -313,8 +351,8 @@ public class MySqlLog {
             String sql = "";
             try {
                 stat = mysqlConnection.createStatement();
-                sql = String.format("insert into SERVER_MODE_" + localName
-                                + "_" + day + " values(%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s)",
+                sql = String.format(Locale.US, "insert into " + projectID + "Server"
+                                + " values(%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s)",
                         System.currentTimeMillis(),
                         cpu,
                         mem,
@@ -340,11 +378,12 @@ public class MySqlLog {
                         openFileList.get(6),
                         openFileList.get(7),
                         openFileList.get(8),
-                        "'" + remark + "'");
+                        "'" + remark + "'"
+                        );
                 stat.executeUpdate(sql);
             } catch (SQLException e) {
-                LOGGER.error("{}将SERVER_MODE写入mysql失败,because:{}", sql,
-                        e.getMessage());
+                LOGGER.error("Could not insert server statistics, because: {}", e.getMessage());
+                LOGGER.error("{}", sql);
                 e.printStackTrace();
             } finally {
                 if (stat != null) {
@@ -484,17 +523,17 @@ public class MySqlLog {
             return;
         }
         if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
-            switch (config.DB_SWITCH.trim()) {
-                case Constants.DB_IOT:
+            switch (config.DB_SWITCH) {
+                case IOTDB:
                     this.saveIoTDBDataModel(config.TIMESERIES_NAME, config.STORAGE_GROUP_NAME + "." + config.TIMESERIES_NAME, type, encoding);
                     break;
-                case Constants.DB_INFLUX:
+                case INFLUXDB:
                     break;
             }
             return;
         }
-        switch (config.DB_SWITCH.trim()) {
-            case Constants.DB_IOT:
+        switch (config.DB_SWITCH) {
+            case IOTDB:
                 for (String d : config.DEVICE_CODES) {
                     for (String s : config.SENSOR_CODES) {
                         this.saveIoTDBDataModel(d + "." + s,
@@ -503,7 +542,7 @@ public class MySqlLog {
                     }
                 }
                 break;
-            case Constants.DB_INFLUX:
+            case INFLUXDB:
                 int i = 0,
                         groupId = 0;
                 for (String d : config.DEVICE_CODES) {
@@ -552,17 +591,17 @@ public class MySqlLog {
                         "'MODE'", "'INSERT_TEST_MODE'");
                 stat.addBatch(sql);
             }
-            switch (config.DB_SWITCH.trim()) {
-                case Constants.DB_IOT:
-                case Constants.DB_TIMESCALE:
+            switch (config.DB_SWITCH) {
+                case IOTDB:
+                case TIMESCALEDB:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'ServerIP'", "'" + config.host + "'");
                     stat.addBatch(sql);
                     break;
-                case Constants.DB_INFLUX:
-                case Constants.DB_OPENTS:
-                case Constants.DB_KAIROS:
-                case Constants.DB_CTS:
+                case INFLUXDB:
+                case OPENTSDB:
+                case KAIROSDB:
+                case CTSDB:
                     String TSHost = config.DB_URL.substring(config.DB_URL.lastIndexOf('/') + 1, config.DB_URL.lastIndexOf(':'));
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'ServerIP'", "'" + TSHost + "'");

@@ -1,5 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.conf;
 
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.DataSet;
 import java.io.File;
 import java.io.FileInputStream;
@@ -127,7 +128,7 @@ public class ConfigDescriptor {
 
 				config.DB_URL = properties.getProperty("DB_URL", "localhost");
 				config.DB_NAME = properties.getProperty("DB_NAME", "test");
-				config.DB_SWITCH = properties.getProperty("DB_SWITCH", Constants.DB_IOT);
+				config.DB_SWITCH = DB.valueOf(properties.getProperty("DB_SWITCH", Constants.DB_IOT).toUpperCase());
 
 				config.QUERY_CHOICE = Integer.parseInt(properties.getProperty("QUERY_CHOICE", config.QUERY_CHOICE+""));
 				config.QUERY_SENSOR_NUM  = Integer.parseInt(properties.getProperty("QUERY_SENSOR_NUM", config.QUERY_SENSOR_NUM+""));

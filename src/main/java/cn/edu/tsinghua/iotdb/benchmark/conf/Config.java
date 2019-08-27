@@ -1,5 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.conf;
 
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.DataSet;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -23,7 +24,6 @@ import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionXml;
 
 import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.GEO_DATA_TYPE;
-import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.START_TIMESTAMP;
 
 public class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
@@ -247,7 +247,7 @@ public class Config {
 	public String DB_NAME = "test";
 	
 	/** Name of database to benchmark */
-	public String DB_SWITCH = "IoTDB";
+	public DB DB_SWITCH = DB.TIMESCALEDB;
 
 	public String BENCHMARK_WORK_MODE="";
 

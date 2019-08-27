@@ -57,6 +57,11 @@ public class FakeDB implements IDatabase {
   }
 
   @Override
+  public float getSize() throws TsdbException {
+    return 0;
+  }
+
+  @Override
   public Status insertOneBatch(Batch batch) {
     return new Status(true, 1000000L);
   }

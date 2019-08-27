@@ -28,7 +28,7 @@ public class OpenFileNumber {
 
     private OpenFileNumber() {
         config = ConfigDescriptor.getInstance().getConfig();
-        pid = getPID(config.DB_SWITCH);
+        pid = getPID(config.DB_SWITCH.name());
     }
 
     public static final OpenFileNumber getInstance() {
@@ -119,20 +119,17 @@ public class OpenFileNumber {
 
         String filter = "";
         switch (config.DB_SWITCH) {
-            case Constants.DB_IOT:
+            case IOTDB:
                 filter = "/data/";
                 break;
-            case Constants.DB_INFLUX:
+            case INFLUXDB:
                 filter = ".influxdb";
                 break;
-            case Constants.DB_KAIROS:
+            case KAIROSDB:
                 filter = "kairosdb";
                 break;
-            case Constants.DB_TIMESCALE:
+            case TIMESCALEDB:
                 filter = "postgresql";
-                break;
-            case Constants.BENCHMARK_IOTDB:
-                filter = "iotdb-benchmark";
                 break;
             default:
                 throw new SQLException("unsupported db name :" + config.DB_SWITCH);
@@ -212,7 +209,7 @@ public class OpenFileNumber {
         ArrayList<Integer> list = null;
         //如果port和pid不合理，再次尝试获取
         if (!(pid > 0)) {
-            pid = getPID(config.DB_SWITCH);
+            pid = getPID(config.DB_SWITCH.name());
         }
         //如果pid合理，则加入打开文件总数和数据文件数目以及socket数目
         if (pid > 0) {
@@ -244,7 +241,7 @@ public class OpenFileNumber {
     }
 
     public int getPid() {
-        return getPID(config.DB_SWITCH);
+        return getPID(config.DB_SWITCH.name());
     }
 
 

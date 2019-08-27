@@ -39,14 +39,12 @@ public class FileSize {
         config = ConfigDescriptor.getInstance().getConfig();
 
         switch (config.DB_SWITCH){
-            case Constants.DB_IOT:
+            case IOTDB:
 
                 break;
-            case Constants.DB_INFLUX:
+            case INFLUXDB:
                 FileSizeKinds.DATA.path = config.LOG_STOP_FLAG_PATH + "/data/" + config.DB_NAME;
                 FileSizeKinds.DELTA.path = config.LOG_STOP_FLAG_PATH + "/data/" + config.DB_NAME + "/autogen";
-                break;
-            case Constants.BENCHMARK_IOTDB:
                 break;
             default:
                 log.error("unsupported db name :" + config.DB_SWITCH);

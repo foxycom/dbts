@@ -41,6 +41,13 @@ public interface IDatabase {
   void registerSchema(List<DeviceSchema> schemaList) throws TsdbException;
 
   /**
+   * Returns the size of the benchmarked data.
+   *
+   * @return The size of the data in GB.
+   */
+  float getSize() throws TsdbException;
+
+  /**
    * Insert one batch into the database, the DB implementation needs to resolve the data in batch
    * which contains device schema and Map[Long, List[String]] records. The key of records is a
    * timestamp and the value is a list of sensor value data.

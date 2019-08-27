@@ -15,7 +15,7 @@ cd $BENCHMARK_HOME
 
 mvn clean package -Dmaven.test.skip=true
 
-echo '------Server Test Begin Time------'
+echo '------ServerMonitoring Test Begin Time------'
 
 date
 
@@ -23,7 +23,7 @@ cd bin
 
 sh startup.sh -cf ../conf/clientSystemInfo.properties
 
-echo '------Server Test Complete Time------'
+echo '------ServerMonitoring Test Complete Time------'
 
 date
 
