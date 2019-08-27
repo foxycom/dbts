@@ -68,6 +68,10 @@ public class DBWrapper implements IDatabase {
     return status;
   }
 
+  public void incrementLoopIndex() {
+    measurement.incrementLoopIndex();
+  }
+
   @Override
   public Status preciseQuery(PreciseQuery preciseQuery) {
     Status status = null;
@@ -242,9 +246,6 @@ public class DBWrapper implements IDatabase {
   }
 
   private void measureOperation(Status status, Operation operation, int okPointNum) {
-    //measurement.addOperationLatency(operation, status.getCostTime() / NANO_TO_MILLIS);
-    //measurement.addOkOperation(operation);
-    //measurement.addOkPointNum(operation, okPointNum);
     measurement.addOkOperation(operation, status.getCostTime() / NANO_TO_MILLIS, okPointNum);
   }
 

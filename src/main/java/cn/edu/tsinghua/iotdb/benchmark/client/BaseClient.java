@@ -1,7 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
-import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.SingletonWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
@@ -39,6 +38,7 @@ public abstract class BaseClient extends Client implements Runnable {
 
   void doTest() {
     for (long loopIndex = 0; loopIndex < config.LOOP; loopIndex++) {
+      dbWrapper.incrementLoopIndex();
       Operation operation = operationController.getNextOperationType();
       switch (operation) {
         case INGESTION:

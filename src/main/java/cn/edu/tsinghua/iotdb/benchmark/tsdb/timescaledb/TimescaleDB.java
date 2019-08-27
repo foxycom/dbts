@@ -141,6 +141,8 @@ public class TimescaleDB implements IDatabase {
       statement.executeBatch();
       connection.commit();
 
+      createIndexes(schemaList);
+
       LOGGER.debug("CreateTableSQL Statement: FIXME");
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
@@ -157,6 +159,25 @@ public class TimescaleDB implements IDatabase {
       LOGGER.error("Can't convert Postgres table to a Timescale hypertable.");
       throw new TsdbException(e);
     }
+  }
+
+  private void createIndexes(List<DeviceSchema> schemaList) {
+    try (Statement statement = connection.createStatement()) {
+      connection.setAutoCommit(false);
+      for (Sensor sensor : schemaList.get(0).getSensors()) {
+        String createIndexSql = createIndex(sensor.getName() + "_series");
+        statement.addBatch(createIndexSql);
+      }
+      statement.executeBatch();
+      connection.commit();
+    } catch (SQLException e) {
+      LOGGER.error("Could not create PG indexes because: {}", e.getMessage());
+    }
+  }
+
+  private String createIndex(String tableName) {
+    String createIndexSql = "CREATE INDEX ON " + tableName + " (bike_id, time DESC);";
+    return createIndexSql;
   }
 
   @Override

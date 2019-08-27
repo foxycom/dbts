@@ -105,16 +105,14 @@ public class Measurement {
   }
 
   public void addOkOperation(Operation operation) {
-    incrementLoopIndex();
     okOperationNumMap.put(operation, okOperationNumMap.get(operation) + 1);
   }
 
   public void addFailOperation(Operation operation) {
-    incrementLoopIndex();
     failOperationNumMap.put(operation, failOperationNumMap.get(operation) + 1);
   }
 
-  private void incrementLoopIndex() {
+  public void incrementLoopIndex() {
     loopIndex++;
   }
 
@@ -123,7 +121,6 @@ public class Measurement {
   }
 
   public void addOkOperation(Operation operation, double latency, long okPointNum) {
-    incrementLoopIndex();
     okOperationNumMap.put(operation, okOperationNumMap.get(operation) + 1);
     operationLatencies.get(operation).add(latency);
     okPointNumMap.put(operation, okPointNumMap.get(operation) + okPointNum);
@@ -133,7 +130,6 @@ public class Measurement {
   }
 
   public void addFailOperation(Operation operation, long failPointNum) {
-    incrementLoopIndex();
     failOperationNumMap.put(operation, failOperationNumMap.get(operation) + 1);
     failPointNumMap.put(operation, failPointNumMap.get(operation) + failPointNum);
 
