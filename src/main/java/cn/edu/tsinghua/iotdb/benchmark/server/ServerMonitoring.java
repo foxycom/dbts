@@ -85,7 +85,7 @@ public enum ServerMonitoring {
                     /*mySql.insertServerMetrics(cpu, memValues.get("memUsage"), memValues.get("swapUsage"),
                             ioValues.get("writesPerSec"), ioValues.get("readsPerSec"), netValues.get("recvPerSec"),
                             netValues.get("transPerSec"), dataSize);*/
-                    String log = "CPU: %f% | RAM: %f%  | Swap: %f% | IO writes: %f/s | IO reads: %f/s | Net Recv: %f KB/s | Net Trans: %f KB/s | Size: %f";
+                    String log = "CPU: %f % | RAM: %f %  | Swap: %f % | IO writes: %f/s | IO reads: %f/s | Net Recv: %f KB/s | Net Trans: %f KB/s | Size: %f";
                     System.out.println(String.format(Locale.US, log, cpu, memValues.get("memUsage"), memValues.get("swapUsage"),
                             ioValues.get("writesPerSec"), ioValues.get("readsPerSec"), netValues.get("recvPerSec"), netValues.get("transPerSec"), dataSize));
 

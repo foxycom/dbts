@@ -25,15 +25,15 @@ public enum CpuUsage  {
         Process process;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "iostat -c 1 1";
+            String command = "iostat -c 1 2";
             process = r.exec(command);
             BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
-            boolean rightLine = false;
+            int section = 0;
             while ((line = input.readLine()) != null) {
-                if (line.startsWith("avg-cpu")) {
-                    rightLine = true;
-                } else if (rightLine) {
+                if (line.contains("avg-cpu")) {
+                    section++;
+                } else if (section == 2) {
                     String[] values = line.split("\\s+");
                     cpu = Float.parseFloat(values[1]);
                     break;
