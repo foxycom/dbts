@@ -73,9 +73,13 @@ public enum ServerMonitoring {
                             fileSizeStatistics.get(FileSize.FileSizeKinds.DELTA),
                             fileSizeStatistics.get(FileSize.FileSizeKinds.WAL));*/
                     float cpu = cpuUsage.get();
+                    System.out.println("generated cpu " + cpu);
                     Map<String, Float> memValues = memUsage.get();
+                    System.out.println("generated mem: " + memValues.get("memUsage") + " " + memValues.get("swapUsage"));
                     Map<String, Float> ioValues = ioUsage.get("sdb");
+                    System.out.println("generated io values " + ioValues.get("readsPerSec") + " " + ioValues.get("writerPerSec"));
                     Map<String, Float> netValues = netUsage.get("enp0s25");
+                    System.out.println("generated net values " + netValues.get("recvPerSec") + " " + netValues.get("transPerSec"));
 
                     float dataSize = 0.0f;
                     try {
@@ -83,6 +87,7 @@ public enum ServerMonitoring {
                     } catch (TsdbException e) {
                         LOGGER.error("Could not read the data size of {} because: {}", config.DB_SWITCH, e.getMessage());
                     }
+                    System.out.println("data size " + dataSize);
 
                     /*mySql.insertServerMetrics(cpu, memValues.get("memUsage"), memValues.get("swapUsage"),
                             ioValues.get("writesPerSec"), ioValues.get("readsPerSec"), netValues.get("recvPerSec"),
