@@ -17,6 +17,7 @@ public enum DB {
         switch (this) {
             case TIMESCALEDB:
                 IDatabase db = new TimescaleDB();
+                db.init();
                 size = db.getSize();
                 break;
             default:
