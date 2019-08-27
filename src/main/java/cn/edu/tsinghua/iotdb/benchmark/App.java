@@ -117,6 +117,7 @@ public class App {
         mySql.saveTestConfig();
 
         Measurement measurement = new Measurement();
+        measurement.setRemark("this is my remark");
         DBWrapper dbWrapper = new DBWrapper(measurement);
 
         // register schema if needed

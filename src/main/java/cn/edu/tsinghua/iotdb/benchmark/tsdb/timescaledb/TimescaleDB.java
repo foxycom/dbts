@@ -157,8 +157,6 @@ public class TimescaleDB implements IDatabase {
       LOGGER.error("Can't convert Postgres table to a Timescale hypertable.");
       throw new TsdbException(e);
     }
-
-
   }
 
   @Override
@@ -169,6 +167,7 @@ public class TimescaleDB implements IDatabase {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
       sqlQueries = getInsertOneBatchSql(batch);
+      batch = null;
       for (String query : sqlQueries) {
         statement.addBatch(query);
       }
@@ -511,19 +510,19 @@ public class TimescaleDB implements IDatabase {
   }
 
   private List<String> getInsertOneBatchSingleTableSql(Batch batch) {
-    Map<Sensor, List<Point>> entries = batch.getEntries();
+    //Map<Sensor, List<Point>> entries = batch.getEntries();
     // TODO fix
     return null;
   }
 
   private List<String> getInsertOneBatchSql(Batch batch) {
-    Map<Sensor, List<Point>> entries = batch.getEntries();
+    Map<Sensor, Point[]> entries = batch.getEntries();
     DeviceSchema deviceSchema = batch.getDeviceSchema();
     List<String> sensorQueries = new ArrayList<>(deviceSchema.getSensors().size());
     StringBuilder sb = new StringBuilder();
     // FIXME different table names for different sensors
     for (Sensor sensor : entries.keySet()) {
-      if (entries.get(sensor).isEmpty()) {
+      if (entries.get(sensor).length == 0) {
         continue;
       }
 

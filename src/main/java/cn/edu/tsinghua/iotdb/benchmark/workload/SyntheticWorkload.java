@@ -120,13 +120,17 @@ public class SyntheticWorkload implements IWorkload {
   static void addSensorData(Sensor sensor, Batch batch, long loopIndex) {
     long valuesNum = batch.getTimeRange() / sensor.getInterval();
     Integer valNum = Math.toIntExact(valuesNum);
-    List<Point> values = new ArrayList<>(valNum);
-    for (long i = 0; i < valuesNum; i++) {
+    Point[] values = new Point[valNum];
+    long st = System.nanoTime();
+    for (int i = 0; i < valuesNum; i++) {
       long stepOffset = loopIndex * valuesNum + i;    // point step
       long timestamp = sensor.getTimestamp(stepOffset);
       String value = sensor.getValue(timestamp);
-      values.add(new Point(timestamp, value));
+      values[i] = new Point(timestamp, value);
     }
+    long en = System.nanoTime();
+    //LOGGER.info("One sensor data of {} point took {} ms with function: {}", valNum, (en - st) / 1000000.0d,
+    //        sensor.getFunctionParam().getFunctionType());
 
     batch.add(sensor, values);
   }

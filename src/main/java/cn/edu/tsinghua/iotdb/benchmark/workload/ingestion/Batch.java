@@ -14,7 +14,7 @@ public class Batch {
   private DeviceSchema deviceSchema;
   private List<Record> records;
   private long timeRange;
-  private Map<Sensor, List<Point>> entries = new HashMap<>();
+  private Map<Sensor, Point[]> entries = new HashMap<>();
 
   public Batch() {
     records = new ArrayList<>();
@@ -41,13 +41,8 @@ public class Batch {
     records.add(new Record(timestamp, values));
   }
 
-  public void add(Sensor sensor, List<Point> values) {
-    if (!entries.containsKey(sensor)) {
-      entries.put(sensor, values);
-    } else {
-      System.err.println("BATCH ALREADY CONTAINS SENSOR DATA");
-      System.exit(2);
-    }
+  public void add(Sensor sensor, Point[] values) {
+    entries.put(sensor, values);
   }
 
   /**
@@ -58,7 +53,7 @@ public class Batch {
   public int pointNum() {
     int pointNum = 0;
     for (Sensor sensor : entries.keySet()) {
-      pointNum += entries.get(sensor).size();
+      pointNum += entries.get(sensor).length;
     }
     return pointNum;
   }
@@ -71,7 +66,7 @@ public class Batch {
     return this.timeRange;
   }
 
-  public Map<Sensor, List<Point>> getEntries() {
+  public Map<Sensor, Point[]> getEntries() {
     return entries;
   }
 }

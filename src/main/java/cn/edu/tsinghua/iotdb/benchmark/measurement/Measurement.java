@@ -16,10 +16,13 @@ public class Measurement {
   private static Config config = ConfigDescriptor.getInstance().getConfig();
   private static final double[] MID_AVG_RANGE = {0.1, 0.9};
   private Map<Operation, List<Double>> operationLatencies;
+
+  /* The sums of latencies per operation per thread. */
   private Map<Operation, List<Double>> getOperationLatencySumsList;
   private Map<Operation, Double> operationLatencySums;
   private double createSchemaTime;
   private int loopIndex = -1;
+  private String remark;
 
   private MySqlLog mysql;
 
@@ -140,13 +143,13 @@ public class Measurement {
   private void flushOk(String operation, double latency, double rate, long okPointNum) {
     String clientName = Thread.currentThread().getName();
     mysql.saveClientInsertProcess(clientName, operation, "OK", loopIndex, latency, elapseTime, rate, okPointNum,
-            0, "");
+            0, remark);
   }
 
   private void flushFail(String operation, long failPointNum) {
     String clientName = Thread.currentThread().getName();
     mysql.saveClientInsertProcess(clientName, operation, "FAILED", loopIndex, elapseTime, 0, 0,
-            0, failPointNum, "");
+            0, failPointNum, remark);
   }
 
   public void save() {
@@ -155,15 +158,21 @@ public class Measurement {
         continue;
       }
 
+      double accTime = Metric.MAX_THREAD_LATENCY_SUM.getTypeValueMap().get(operation);
+      double accRate = 0;
+      if (accTime != 0) {
+        accRate = okPointNumMap.get(operation) * 1000 / accTime;
+      }
+
       mysql.saveCompleteMeasurement(operation.getName(),
               Metric.AVG_LATENCY.getTypeValueMap().get(operation),
               Metric.P99_LATENCY.getTypeValueMap().get(operation),
               Metric.MEDIAN_LATENCY.getTypeValueMap().get(operation),
-              elapseTime,
-              operationLatencySums.get(operation),
+              accTime,
+              accRate,
               okPointNumMap.get(operation),
               failPointNumMap.get(operation),
-              ""
+              remark
               );
       try {
         Thread.sleep(10);
@@ -171,6 +180,14 @@ public class Measurement {
         e.printStackTrace();
       }
     }
+  }
+
+  public String getRemark() {
+    return remark;
+  }
+
+  public void setRemark(String remark) {
+    this.remark = remark;
   }
 
   public void setOperationLatencies(
@@ -221,10 +238,11 @@ public class Measurement {
         for (double latency : latencyList) {
           sumLatency += latency;
         }
-        double avgLatency = 0;
-        avgLatency = sumLatency / totalOps;
+        double avgLatency = sumLatency / totalOps;
 
+        // Time elapsed since the start and the time the last thread completed the operation.
         double maxThreadLatencySum = getDoubleListMax(getOperationLatencySumsList.get(operation));
+
         Metric.MAX_THREAD_LATENCY_SUM.getTypeValueMap().put(operation, maxThreadLatencySum);
         Metric.AVG_LATENCY.getTypeValueMap().put(operation, avgLatency);
         latencyList.sort(new DoubleComparator());
@@ -272,7 +290,7 @@ public class Measurement {
         "--------------------------------------------------Result Matrix--------------------------------------------------");
     String intervalString = "\t\t";
     System.out.println(
-        "Operation\t\tokOperation\tokPoint\t\tfailOperation\tfailPoint\telapseRate\taccRate");
+        "Operation\t\tokOperation\tokPoint\t\tfailOperation\tfailPoint\telapseRate\taccTime\taccRate");
     for (Operation operation : Operation.values()) {
       System.out.print(operation.getName() + intervalString);
       System.out.print(okOperationNumMap.get(operation) + intervalString);
@@ -287,6 +305,9 @@ public class Measurement {
       }
       String rate = String.format("%.2f", accRate);
       System.out.print(elapseRate + intervalString);
+
+      String time = String.format("%.2f", accTime);
+      System.out.print(time + intervalString);
       System.out.println(rate + intervalString);
 
     }
