@@ -25,7 +25,7 @@ public enum CpuUsage  {
         Process process;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "iostat -xc 1 2";
+            String command = "iostat -c 1 1";
             process = r.exec(command);
             BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;

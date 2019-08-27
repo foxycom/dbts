@@ -21,14 +21,9 @@ public enum NetUsage {
     /**
      * Reads inet throughput in KB/s with bwm-ng, which has following output:
      *
-     * bwm-ng v0.6.1 (probing every 0.500s), press 'h' for help
-     *   input: /proc/net/dev type: rate
-     *   -         iface                   Rx                   Tx                Total
-     *   ==============================================================================
-     *           enp0s25:           0.14 KB/s            0.24 KB/s            0.38 KB/s
-     *                lo:           0.00 KB/s            0.00 KB/s            0.00 KB/s
-     *   ------------------------------------------------------------------------------
-     *             total:           0.14 KB/s            0.24 KB/s            0.38 KB/s
+     *     enp0s25
+     *  KB/s in  KB/s out
+     *     0.20      0.14
      *
      * @param iface
      * @return
@@ -40,19 +35,26 @@ public enum NetUsage {
         Process process;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "bwm-ng";
+            String command = "ifstat 1 1";
             process = r.exec(command);
             BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
+            boolean rightSection = false;
             while ((line = input.readLine()) != null) {
-                String[] temp = line.split("\\s+");
-                if (temp[0] != null && temp[0].startsWith(iface)) {
-                    String[] value = temp[1].split("\\s+");
-                    recvPerSec = Float.parseFloat(value[0]);
+                if (line.contains(iface)) {
+                    rightSection = true;
+                } else if (rightSection) {
+                    if (line.startsWith("KB/s")) {
 
-                    value = temp[2].split("\\s+");
-                    transPerSec = Float.parseFloat(value[0]);
-                    break;
+                    } else {
+                        String[] temp = line.split("\\s+");
+                        String[] value = temp[1].split("\\s+");
+                        recvPerSec = Float.parseFloat(value[0]);
+
+                        value = temp[2].split("\\s+");
+                        transPerSec = Float.parseFloat(value[0]);
+                        break;
+                    }
                 }
             }
         } catch (IOException e) {
