@@ -43,8 +43,6 @@ public enum ServerMonitoring {
 
             if (dir.exists() && dir.isDirectory()) {
                 File file = new File(config.LOG_STOP_FLAG_PATH + "/log_stop_flag");
-                HashMap<FileSize.FileSizeKinds, Double> fileSizeStatistics;
-                HashMap<IoUsage.IOStatistics, Float> ioStatistics;
                 int interval = config.INTERVAL;
                 // 检测所需的时间在目前代码的参数下至少为2秒
                 LOGGER.info("----------New Test Begin with interval about {} s----------", interval + 2);
@@ -76,9 +74,9 @@ public enum ServerMonitoring {
                     System.out.println("generated cpu " + cpu);
                     Map<String, Float> memValues = memUsage.get();
                     System.out.println("generated mem: " + memValues.get("memUsage") + " " + memValues.get("swapUsage"));
-                    Map<String, Float> ioValues = ioUsage.get("sdb");
+                    Map<String, Float> ioValues = ioUsage.get(config.DRIVE_NAME);
                     System.out.println("generated io values " + ioValues.get("readsPerSec") + " " + ioValues.get("writerPerSec"));
-                    Map<String, Float> netValues = netUsage.get("enp0s25");
+                    Map<String, Float> netValues = netUsage.get(config.IFACE_NAME);
                     System.out.println("generated net values " + netValues.get("recvPerSec") + " " + netValues.get("transPerSec"));
 
                     float dataSize = 0.0f;

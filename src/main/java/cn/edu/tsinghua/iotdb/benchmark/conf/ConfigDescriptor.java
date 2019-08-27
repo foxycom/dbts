@@ -174,6 +174,8 @@ public class ConfigDescriptor {
 				config.IS_RANDOM_TIMESTAMP_INTERVAL = Boolean.parseBoolean(properties.getProperty("IS_RANDOM_TIMESTAMP_INTERVAL", config.IS_RANDOM_TIMESTAMP_INTERVAL+""));
 				config.START_TIMESTAMP_INDEX = Integer.parseInt(properties.getProperty("START_TIMESTAMP_INDEX", config.START_TIMESTAMP_INDEX+""));
 				config.USE_OPS = Boolean.parseBoolean(properties.getProperty("USE_OPS", config.USE_OPS+""));
+				config.DRIVE_NAME = properties.getProperty("DRIVE_NAME", config.DRIVE_NAME);
+				config.IFACE_NAME = properties.getProperty("IFACE_NAME", config.IFACE_NAME);
 				config.CLIENT_MAX_WRT_RATE = Double.parseDouble(properties.getProperty("CLIENT_MAX_WRT_RATE", config.CLIENT_MAX_WRT_RATE+""));
 				config.QUERY_LIMIT_N = Integer.parseInt(properties.getProperty("QUERY_LIMIT_N", config.QUERY_LIMIT_N+""));
 				config.QUERY_LIMIT_OFFSET = Integer.parseInt(properties.getProperty("QUERY_LIMIT_OFFSET", config.QUERY_LIMIT_OFFSET+""));

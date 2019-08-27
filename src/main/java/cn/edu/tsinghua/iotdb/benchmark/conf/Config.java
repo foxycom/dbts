@@ -83,6 +83,10 @@ public class Config {
 
 	public boolean USE_OPS = false;
 
+	public String DRIVE_NAME = "sdb";
+
+	public String IFACE_NAME = "enp0s25";
+
 	public double CLIENT_MAX_WRT_RATE = 10000000.0;
 
 	public int LIMIT_CLAUSE_MODE = 0;
