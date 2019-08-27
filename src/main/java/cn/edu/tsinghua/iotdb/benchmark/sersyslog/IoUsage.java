@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +46,7 @@ public enum IoUsage {
                 if (line.startsWith(driveName)) {
                     String[] temp = line.split("\\s+");
                     readsPerSec = Float.parseFloat(temp[1]);
+                    System.out.println(Arrays.asList(temp));
                     writesPerSec = Float.parseFloat(temp[2]);
                     break;
                 }

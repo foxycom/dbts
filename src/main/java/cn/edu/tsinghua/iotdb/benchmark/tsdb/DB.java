@@ -12,12 +12,16 @@ public enum DB {
     TIMESCALEDB,
     FAKEDB;
 
+    private IDatabase db;
+
     public float getSize() throws TsdbException {
         float size = 0.0f;
         switch (this) {
             case TIMESCALEDB:
-                IDatabase db = new TimescaleDB();
-                db.init();
+                if (db == null) {
+                    db = new TimescaleDB();
+                    db.init();
+                }
                 size = db.getSize();
                 break;
             default:

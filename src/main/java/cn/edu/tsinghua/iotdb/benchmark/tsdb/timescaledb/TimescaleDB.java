@@ -170,7 +170,7 @@ public class TimescaleDB implements IDatabase {
       ResultSet rs = statement.executeQuery(selectSizeSql);
       if (rs.next()) {
         long resultInB = rs.getLong("pg_database_size");
-        resultInGB = resultInB / B2GB;
+        resultInGB = (float) resultInB / B2GB;
       }
       return resultInGB;
     } catch (SQLException e) {

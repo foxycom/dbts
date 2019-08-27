@@ -70,14 +70,14 @@ public enum ServerMonitoring {
                             fileSizeStatistics.get(FileSize.FileSizeKinds.OVERFLOW),
                             fileSizeStatistics.get(FileSize.FileSizeKinds.DELTA),
                             fileSizeStatistics.get(FileSize.FileSizeKinds.WAL));*/
-                    float cpu = cpuUsage.get();
+                    /*float cpu = cpuUsage.get();
                     System.out.println("generated cpu " + cpu);
                     Map<String, Float> memValues = memUsage.get();
                     System.out.println("generated mem: " + memValues.get("memUsage") + " " + memValues.get("swapUsage"));
                     Map<String, Float> ioValues = ioUsage.get(config.DRIVE_NAME);
                     System.out.println("generated io values " + ioValues.get("readsPerSec") + " " + ioValues.get("writerPerSec"));
                     Map<String, Float> netValues = netUsage.get(config.IFACE_NAME);
-                    System.out.println("generated net values " + netValues.get("recvPerSec") + " " + netValues.get("transPerSec"));
+                    System.out.println("generated net values " + netValues.get("recvPerSec") + " " + netValues.get("transPerSec"));*/
 
                     float dataSize = 0.0f;
                     try {
@@ -90,9 +90,9 @@ public enum ServerMonitoring {
                     /*mySql.insertServerMetrics(cpu, memValues.get("memUsage"), memValues.get("swapUsage"),
                             ioValues.get("writesPerSec"), ioValues.get("readsPerSec"), netValues.get("recvPerSec"),
                             netValues.get("transPerSec"), dataSize);*/
-                    String log = "CPU: %f% | RAM: %f%  | Swap: %f% | IO writes: %f/s | IO reads: %f/s | Net Recv: %f KB/s | Net Trans: %f KB/s | Size: %f";
+                    /*String log = "CPU: %f% | RAM: %f%  | Swap: %f% | IO writes: %f/s | IO reads: %f/s | Net Recv: %f KB/s | Net Trans: %f KB/s | Size: %f";
                     System.out.println(String.format(Locale.US, log, cpu, memValues.get("memUsage"), memValues.get("swapUsage"),
-                            ioValues.get("writesPerSec"), ioValues.get("readsPerSec"), netValues.get("recvPerSec"), netValues.get("transPerSec"), dataSize));
+                            ioValues.get("writesPerSec"), ioValues.get("readsPerSec"), netValues.get("recvPerSec"), netValues.get("transPerSec"), dataSize));*/
 
                     /*if (write2File) {
                         out.write(String.format("%d%14f%14f%15f", System.currentTimeMillis(),
