@@ -44,7 +44,7 @@ public enum NetUsage {
                 if (line.contains(iface)) {
                     rightSection = true;
                 } else if (rightSection) {
-                    if (line.startsWith("KB/s")) {
+                    if (line.contains("KB/s")) {
 
                     } else {
                         String[] temp = line.split("\\s+");
