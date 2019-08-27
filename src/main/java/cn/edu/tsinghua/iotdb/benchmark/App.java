@@ -440,7 +440,7 @@ public class App {
                 write2File = true;
                 // if the file doesn't exits, then create the file, else append.
                 out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(config.SERVER_MODE_INFO_FILE, true)));
-                out.write(String.format("时间%15cCPU使用率%7c内存使用率%5c磁盘IO使用率%5ceth0接收速率%5ceth0发送速率%5cTotalFiles%5cDataAndWalFiles%5cSockets"
+                out.write(String.format("Time%15cCPUUsage%7cRAM%5cDiskIO%5ceth0In%5ceth0Out%5cTotalFiles%5cDataAndWalFiles%5cSockets"
                                 + "%5cdeltaFileNum%5cderbyFileNum%5cdigestFileNum%5cmetadataFileNum%5coverflowFileNum%5cwalsFileNum\r\n",
                         space, space, space, space, space, space, space, space));
             }
