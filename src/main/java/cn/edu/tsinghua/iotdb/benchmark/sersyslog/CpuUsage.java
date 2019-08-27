@@ -23,12 +23,14 @@ public enum CpuUsage  {
             process = r.exec(command);
             BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
+            boolean rightLine = false;
             while ((line = input.readLine()) != null) {
                 if (line.startsWith("avg-cpu")) {
-                    continue;
-                } else {
+                    rightLine = true;
+                } else if (rightLine) {
                     String[] values = line.split("\\s+");
                     cpu = Float.parseFloat(values[0]);
+                    break;
                 }
             }
 
