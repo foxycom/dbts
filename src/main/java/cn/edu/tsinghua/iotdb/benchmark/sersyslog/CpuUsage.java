@@ -3,10 +3,6 @@ package cn.edu.tsinghua.iotdb.benchmark.sersyslog;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * CPU Usage reader.
@@ -14,6 +10,16 @@ import org.slf4j.LoggerFactory;
 public enum CpuUsage  {
     INSTANCE;
 
+    /**
+     * Reads the CPU usage of %user with iostat. Sample output:
+     *
+     * Linux 5.0.0-21-generic (tim-ba-client) 	08/27/2019 	_x86_64_	(4 CPU)
+     *
+     * avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+     *            0.06    0.00    0.01    0.18    0.00   99.75
+     *
+     * @return The average CPU usage;
+     */
     public float get() {
         float cpu = 0.0f;
         Process process;
@@ -29,7 +35,7 @@ public enum CpuUsage  {
                     rightLine = true;
                 } else if (rightLine) {
                     String[] values = line.split("\\s+");
-                    cpu = Float.parseFloat(values[0]);
+                    cpu = Float.parseFloat(values[1]);
                     break;
                 }
             }
