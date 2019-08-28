@@ -18,6 +18,7 @@
 **/logs/
 
 ./routine.sh
+./server.sh
 
 *.jar
 *.gz

@@ -57,7 +57,7 @@ public enum IoUsage {
      * @param driveName
      * @return
      */
-    public Map<String, Float> get(String driveName) {
+    public Map<String, Float> get(String driveName) throws IOException {
         float readsPerSec = 0.0f;
         float writesPerSec = 0.0f;
         Map<String, Float> values = new HashMap<>();
@@ -84,6 +84,7 @@ public enum IoUsage {
             }
         } catch (IOException e) {
             System.err.println("Could not read IO metrics because: " + e.getMessage());
+            throw new IOException(e);
         }
         values.put("readsPerSec", readsPerSec);
         values.put("writesPerSec", writesPerSec);
