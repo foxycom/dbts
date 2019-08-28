@@ -8,7 +8,7 @@ fi
 # ssh-keygen -t rsa
 # ssh-copy-id [hostname]@[IP]
 
-#configure the related path and host name
+#configure the related path and HOST name
 IOTDB_HOME=/Users/tim/iotdb/iotdb/bin
 REMOTE_BENCHMARK_HOME=/Users/tim/iotdb-benchmark
 HOST_NAME=tim

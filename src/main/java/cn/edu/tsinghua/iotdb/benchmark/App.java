@@ -28,6 +28,8 @@ import cn.edu.tsinghua.iotdb.benchmark.sersyslog.IoUsage;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.MemUsage;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.NetUsage;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.OpenFileNumber;
+import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
+import cn.edu.tsinghua.iotdb.benchmark.server.MonitorController;
 import cn.edu.tsinghua.iotdb.benchmark.server.ServerMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.tool.ImportDataFromCSV;
 import cn.edu.tsinghua.iotdb.benchmark.tool.MetaDateBuilder;
@@ -58,7 +60,7 @@ public class App {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
     private static final double unitTransfer = 1000000.0;
-    private static final double NANO_TO_SECOND = 1000000000.0d;
+    private static ClientMonitoring clientMonitoring;
 
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
 
@@ -113,6 +115,8 @@ public class App {
         MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
         mySql.initMysql(true);
         mySql.saveTestConfig();
+        clientMonitoring = ClientMonitoring.INSTANCE;
+        clientMonitoring.connect();
 
         Measurement measurement = new Measurement();
         measurement.setRemark("this is my remark");
@@ -150,8 +154,9 @@ public class App {
         // create CLIENT_NUMBER client threads to do the workloads
         List<Measurement> threadsMeasurements = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
+        MonitorController controller = new MonitorController();
         CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER);
+        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER, controller);
         long st;
         st = System.nanoTime();
         ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
@@ -255,6 +260,7 @@ public class App {
         try {
             // wait for all clients finish test
             downLatch.await();
+            clientMonitoring.stop();
         } catch (InterruptedException e) {
             LOGGER.error("Exception occurred during waiting for all threads finish.", e);
             Thread.currentThread().interrupt();
@@ -263,7 +269,7 @@ public class App {
         LOGGER.info("All clients finished.");
 
         // sum up all the measurements and calculate statistics
-        measurement.setElapseTime((en - st) / NANO_TO_SECOND);
+        measurement.setElapseTime((en - st) / Constants.NANO_TO_SECONDS);
         for (Client client : clients) {
             threadsMeasurements.add(client.getMeasurement());
         }
@@ -423,7 +429,11 @@ public class App {
 
     private static void serverMode(Config config) {
         ServerMonitoring monitor = ServerMonitoring.INSTANCE;
-        monitor.start(config);
+        try {
+            monitor.listen();
+        } catch (IOException e) {
+            LOGGER.error("Could not start server monitor.");
+        }
     }
 
     /**

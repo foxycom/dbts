@@ -145,10 +145,12 @@ public class SyntheticWorkload implements IWorkload {
 
   public Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException {
     if (!config.IS_OVERFLOW) {
+      long st = System.nanoTime();
       Batch batch = getOrderedBatch(deviceSchema, loopIndex);
-      LOGGER.info("Generated one batch of size {}", batch.pointNum());
+      long en = System.nanoTime();
+      double time = (en - st) / Constants.NANO_TO_SECONDS;
+      LOGGER.info(String.format(Locale.US, "Generated one batch of size %d in %.3f s", batch.pointNum(), time));
       return batch;
-      // return getOrderedBatch(deviceSchema, loopIndex);
     } else {
       Batch batch;
       switch (config.OVERFLOW_MODE) {

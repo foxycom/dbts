@@ -33,14 +33,14 @@ public class MySqlLog {
             InetAddress localhost = InetAddress.getLocalHost();
             localName = localhost.getHostName();
         } catch (UnknownHostException e) {
-            LOGGER.error("Error connecting host; UnknownHostException：{}", e.getMessage());
+            LOGGER.error("Error connecting HOST; UnknownHostException：{}", e.getMessage());
             e.printStackTrace();
         }
         localName = localName.replace("-", "_").replace(".", "_");
     }
 
     public void initMysql(boolean initTables) {
-        projectID = config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID;
+        projectID = config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH.name() + "_" + config.REMARK + labID;
         if (config.IS_USE_MYSQL) {
             Date date = new Date(labID);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
@@ -188,7 +188,7 @@ public class MySqlLog {
     private String getCreateServerMonitorTableSql() {
         String sql = "CREATE TABLE " + projectID + "Server "
                 + "(time BIGINT, db varchar(50), cpu DOUBLE, mem DOUBLE, swap DOUBLE, ioWrites DOUBLE, ioReads DOUBLE,"
-                + " net_recv DOUBLE, net_send DOUBLE, disk_usage DOUBLE, primary key(time)";
+                + " net_recv DOUBLE, net_send DOUBLE, disk_usage DOUBLE, primary key(time));";
         return sql;
     }
 
@@ -334,10 +334,10 @@ public class MySqlLog {
                  System.currentTimeMillis(), "'" + config.DB_SWITCH + "'", cpu, mem, swap, ioWrites, ioReads,
                     netRecv, netSend, dataSize);
             statement.executeUpdate(sql);
+            System.out.println("writing " + sql);
         } catch (SQLException e) {
             LOGGER.error("Could not insert server statistics, because: {}", e.getMessage());
             LOGGER.error("{}", sql);
-            e.printStackTrace();
         }
     }
 
@@ -595,7 +595,7 @@ public class MySqlLog {
                 case IOTDB:
                 case TIMESCALEDB:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                            "'ServerIP'", "'" + config.host + "'");
+                            "'ServerIP'", "'" + config.HOST + "'");
                     stat.addBatch(sql);
                     break;
                 case INFLUXDB:

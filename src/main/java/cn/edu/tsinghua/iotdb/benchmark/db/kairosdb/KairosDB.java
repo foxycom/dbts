@@ -277,7 +277,7 @@ public class KairosDB extends TSDB implements IDatebase {
    "metrics": [
        {
            "tags": {
-               "host": ["foo", "foo2"],
+               "HOST": ["foo", "foo2"],
                "customer": ["bar"]
            },
            "name": "abc.123",
@@ -294,7 +294,7 @@ public class KairosDB extends TSDB implements IDatebase {
        },
        {
            "tags": {
-               "host": ["foo", "foo2"],
+               "HOST": ["foo", "foo2"],
                "customer": ["bar"]
            },
            "name": "xyz.123",

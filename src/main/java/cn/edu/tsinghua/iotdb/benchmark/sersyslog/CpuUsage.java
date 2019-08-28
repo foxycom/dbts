@@ -34,8 +34,8 @@ public enum CpuUsage  {
                 if (line.contains("avg-cpu")) {
                     section++;
                 } else if (section == 2) {
-                    String[] values = line.split("\\s+");
-                    cpu = Float.parseFloat(values[1]);
+                    String[] values = line.trim().split("\\s+");
+                    cpu = Float.parseFloat(values[0]);
                     break;
                 }
             }

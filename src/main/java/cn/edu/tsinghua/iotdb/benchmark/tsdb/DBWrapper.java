@@ -5,6 +5,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
+import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
@@ -30,6 +31,7 @@ public class DBWrapper implements IDatabase {
   private static final double NANO_TO_MILLIS = 1000000.0d;
   private Measurement measurement;
   private static final String ERROR_LOG = "Failed to do {} because unexpected exception: ";
+  private static ClientMonitoring clientMonitoring = ClientMonitoring.INSTANCE;
 
 
   public DBWrapper(Measurement measurement) {
@@ -47,6 +49,8 @@ public class DBWrapper implements IDatabase {
     Status status = null;
     Operation operation = Operation.INGESTION;
     try {
+      clientMonitoring.start();
+      System.out.println("started monitor controller from " + Thread.currentThread().getName());
       status = db.insertOneBatch(batch);
       if (status.isOk()) {
         double timeInMillis = status.getCostTime() / NANO_TO_MILLIS;

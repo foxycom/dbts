@@ -57,8 +57,8 @@ public class ConfigDescriptor {
 			Properties properties = new Properties();
 			try {
 				properties.load(inputStream);
-				config.host = properties.getProperty("HOST", "no host");
-				config.port = properties.getProperty("PORT", "no port");
+				config.HOST = properties.getProperty("HOST", "no HOST");
+				config.PORT = properties.getProperty("PORT", "no PORT");
 				config.DEVICE_NUMBER = Integer.parseInt(properties.getProperty("DEVICE_NUMBER", config.DEVICE_NUMBER+""));
 				config.SENSOR_NUMBER = Integer.parseInt(properties.getProperty("SENSOR_NUMBER", config.SENSOR_NUMBER+""));
 
@@ -153,6 +153,7 @@ public class ConfigDescriptor {
 				config.MUL_DEV_BATCH = Boolean.parseBoolean(properties.getProperty("MUL_DEV_BATCH", config.MUL_DEV_BATCH+""));
 				config.NET_DEVICE = properties.getProperty("NET_DEVICE", "e");
 				config.SERVER_MODE_INFO_FILE = properties.getProperty("SERVER_MODE_INFO_FILE", "");
+				config.SERVER_MONITOR_PORT = Integer.parseInt(properties.getProperty("SERVER_MONITOR_PORT", config.SERVER_MONITOR_PORT + ""));
 
 				config.STORAGE_GROUP_NAME = properties.getProperty("STORAGE_GROUP_NAME", config.STORAGE_GROUP_NAME);
 				config.TIMESERIES_NAME = properties.getProperty("TIMESERIES_NAME", config.TIMESERIES_NAME);

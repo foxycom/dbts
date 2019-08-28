@@ -32,8 +32,8 @@ public class Config {
 	public Config(){
 	}
 
-	public String host="127.0.0.1";
-	public String port="6667";
+	public String HOST ="127.0.0.1";
+	public String PORT ="6667";
 
 	/** 设备数量 */
 	public int DEVICE_NUMBER = 2;
@@ -99,6 +99,7 @@ public class Config {
  	public String NET_DEVICE = "e";
  	/**存储系统性能信息的文件路径*/
  	public String SERVER_MODE_INFO_FILE = "";
+ 	public int SERVER_MONITOR_PORT = 56565;
 	/**一个样例数据的存储组名称*/
  	public String STORAGE_GROUP_NAME ;
 	/**一个样例数据的时序名称*/
@@ -232,7 +233,7 @@ public class Config {
 	public long REAL_QUERY_START_TIME = 0;
 	public long REAL_QUERY_STOP_TIME = Long.MAX_VALUE;
 
-	/** MySQL logging DB host and user credentials */
+	/** MySQL logging DB HOST and user credentials */
 	public String MYSQL_URL = "jdbc:mysql://166.111.141.168:3306/benchmark?"
 			+ "user=root&password=Ise_Nel_2017&useUnicode=true&characterEncoding=UTF8&useSSL=false";
 

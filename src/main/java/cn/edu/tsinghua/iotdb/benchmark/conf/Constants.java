@@ -31,6 +31,9 @@ public class Constants {
 
     public static final String MYSQL_DRIVENAME = "com.mysql.jdbc.Driver";
 
+    public static final double NANO_TO_MILLIS = 1000 * 1000d;
+    public static final double NANO_TO_SECONDS = 1000 * 1000 * 1000d;
+
     public static final String[] QUERY_CHOICE_NAME = {
             " ",
             "Precise",

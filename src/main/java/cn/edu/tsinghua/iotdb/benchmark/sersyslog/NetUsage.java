@@ -47,12 +47,10 @@ public enum NetUsage {
                     if (line.contains("KB/s")) {
 
                     } else {
-                        String[] temp = line.split("\\s+");
-                        String[] value = temp[1].split("\\s+");
-                        recvPerSec = Float.parseFloat(value[0]);
+                        String[] temp = line.trim().split("\\s+");
 
-                        value = temp[2].split("\\s+");
-                        transPerSec = Float.parseFloat(value[0]);
+                        recvPerSec = Float.parseFloat(temp[0]);
+                        transPerSec = Float.parseFloat(temp[1]);
                         break;
                     }
                 }
