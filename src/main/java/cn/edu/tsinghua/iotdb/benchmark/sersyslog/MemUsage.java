@@ -17,7 +17,7 @@ public enum MemUsage {
 
     private final double KB2GB = 1024 * 1024f;
 
-    public Map<String, Float> get() throws IOException {
+    public Map<String, Float> get() {
         float memUsage = 0.0f;
         float swapUsage = 0.0f;
         Map<String, Float> values = new HashMap<>(2);
@@ -46,7 +46,6 @@ public enum MemUsage {
         } catch (IOException e) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
-            throw new IOException(e);
         }
         values.put("memUsage", memUsage);
         values.put("swapUsage", swapUsage);

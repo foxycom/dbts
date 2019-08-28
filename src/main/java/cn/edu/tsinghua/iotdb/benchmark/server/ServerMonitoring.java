@@ -84,20 +84,11 @@ public enum ServerMonitoring {
 
         @Override
         public void run() {
-            float cpu = 0.0f;
-            Map<String, Float> memValues = new HashMap<>();
-            Map<String, Float> ioValues = new HashMap<>();
-            Map<String, Float> netValues = new HashMap<>();
+            float cpu = cpuUsage.get();
+            Map<String, Float> memValues = memUsage.get();
+            Map<String, Float> ioValues = ioUsage.get(config.DRIVE_NAME);
+            Map<String, Float> netValues = netUsage.get(config.IFACE_NAME);
 
-            try {
-                cpu = cpuUsage.get();
-                memValues = memUsage.get();
-                ioValues = ioUsage.get(config.DRIVE_NAME);
-                netValues = netUsage.get(config.IFACE_NAME);
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-                System.exit(0);
-            }
             float dataSize = 0.0f;
             try {
                 dataSize = config.DB_SWITCH.getSize();

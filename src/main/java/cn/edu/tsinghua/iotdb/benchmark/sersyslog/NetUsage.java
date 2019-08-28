@@ -28,7 +28,7 @@ public enum NetUsage {
      * @param iface
      * @return
      */
-    public Map<String, Float> get(String iface) throws IOException {
+    public Map<String, Float> get(String iface) {
         float recvPerSec = 0.0f;
         float transPerSec = 0.0f;
         Map<String, Float> values = new HashMap<>();
@@ -57,7 +57,6 @@ public enum NetUsage {
             }
         } catch (IOException e) {
             System.err.println("Could not read net metrics because: " + e.getMessage());
-            throw new IOException(e);
         }
         values.put("recvPerSec", recvPerSec);
         values.put("transPerSec", transPerSec);

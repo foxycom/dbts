@@ -20,7 +20,7 @@ public enum CpuUsage  {
      *
      * @return The average CPU usage;
      */
-    public float get() throws IOException {
+    public float get() {
         float cpu = 0.0f;
         Process process;
         Runtime r = Runtime.getRuntime();
@@ -44,7 +44,6 @@ public enum CpuUsage  {
             process.destroy();
         } catch (IOException e) {
             System.err.println("Could not read CPU usage because: " + e.getMessage());
-            throw new IOException(e);
         }
         return cpu;
     }
