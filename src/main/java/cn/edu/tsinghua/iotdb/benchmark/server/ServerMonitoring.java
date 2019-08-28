@@ -84,7 +84,7 @@ public enum ServerMonitoring {
 
         @Override
         public void run() {
-            /*float cpu = cpuUsage.get();
+            float cpu = cpuUsage.get();
             Map<String, Float> memValues = memUsage.get();
             Map<String, Float> ioValues = ioUsage.get(config.DRIVE_NAME);
             Map<String, Float> netValues = netUsage.get(config.IFACE_NAME);
@@ -94,19 +94,8 @@ public enum ServerMonitoring {
                 dataSize = config.DB_SWITCH.getSize();
             } catch (TsdbException e) {
                 LOGGER.error("Could not read the data size of {} because: {}", config.DB_SWITCH, e.getMessage());
-            }*/
-            float cpu = 2;
-            Map<String, Float> memValues = new HashMap<>();
-            memValues.put("memUsage", 34.0f);
-            memValues.put("swapUsage", 23.0f);
-            Map<String, Float> ioValues = new HashMap<>();
-            ioValues.put("writesPerSec", 23f);
-            ioValues.put("readsPerSec", 23f);
-            Map<String, Float> netValues = new HashMap<>();
-            netValues.put("transPerSec", 45f);
-            netValues.put("recvPerSec", 23f);
+            }
 
-            float dataSize = 23f;
             while (proceed) {
                 KPI kpi = new KPI(cpu, memValues.get("memUsage"), memValues.get("swapUsage"), ioValues.get("writesPerSec"),
                         ioValues.get("readsPerSec"), netValues.get("recvPerSec"), netValues.get("transPerSec"), dataSize);

@@ -1,9 +1,11 @@
 package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
+import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.SingletonWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
+import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import java.util.List;
@@ -24,6 +26,7 @@ public abstract class BaseClient extends Client implements Runnable {
   private final SingletonWorkload singletonWorkload;
   private long insertLoopIndex;
   private DataSchema dataSchema = DataSchema.getInstance();
+  private static ClientMonitoring clientMonitoring = ClientMonitoring.INSTANCE;
 
 
   public BaseClient(int id, CountDownLatch countDownLatch, CyclicBarrier barrier,
@@ -46,8 +49,11 @@ public abstract class BaseClient extends Client implements Runnable {
             try {
               List<DeviceSchema> schema = dataSchema.getClientBindSchema().get(clientThreadId);
               for (DeviceSchema deviceSchema : schema) {
-                dbWrapper.insertOneBatch(syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex));
-
+                barrier.await();
+                Batch batch = syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex);
+                clientMonitoring.start();
+                dbWrapper.insertOneBatch(batch);
+                clientMonitoring.stop();
               }
             } catch (Exception e) {
               LOGGER.error("Failed to insert one batch data because ", e);

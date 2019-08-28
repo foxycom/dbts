@@ -203,6 +203,8 @@ public class Config {
 	/** Delete data after benchmark test */
 	public boolean IS_DELETE_DATA = false;
 
+	public boolean MONITOR_SERVER = false;
+
 	public double WRITE_RATIO = 0.2;
 	public double SIMPLE_QUERY_RATIO = 0.2;
 	public double MAX_QUERY_RATIO = 0.2;

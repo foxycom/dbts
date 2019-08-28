@@ -24,12 +24,7 @@ import cn.edu.tsinghua.iotdb.benchmark.loadData.Resolve;
 import cn.edu.tsinghua.iotdb.benchmark.loadData.Storage;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.IoUsage;
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.MemUsage;
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.NetUsage;
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.OpenFileNumber;
 import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
-import cn.edu.tsinghua.iotdb.benchmark.server.MonitorController;
 import cn.edu.tsinghua.iotdb.benchmark.server.ServerMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.tool.ImportDataFromCSV;
 import cn.edu.tsinghua.iotdb.benchmark.tool.MetaDateBuilder;
@@ -45,7 +40,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -154,9 +148,8 @@ public class App {
         // create CLIENT_NUMBER client threads to do the workloads
         List<Measurement> threadsMeasurements = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
-        MonitorController controller = new MonitorController();
         CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER, controller);
+        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER);
         long st;
         st = System.nanoTime();
         ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
@@ -260,7 +253,7 @@ public class App {
         try {
             // wait for all clients finish test
             downLatch.await();
-            clientMonitoring.stop();
+            clientMonitoring.shutdown();
         } catch (InterruptedException e) {
             LOGGER.error("Exception occurred during waiting for all threads finish.", e);
             Thread.currentThread().interrupt();

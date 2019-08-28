@@ -6,23 +6,37 @@ import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public enum ClientMonitoring {
     INSTANCE;
 
-    private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private Config config = ConfigDescriptor.getInstance().getConfig();
 
     private Socket clientSocket;
     private PrintWriter out;
     private ObjectInputStream in;
     private Client client;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static MySqlLog mySqlLog = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+    private MySqlLog mySqlLog = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
     private volatile State state = State.DEAD;
+    private int countDown;
+    private List<KPI> kpis;
+
+    ClientMonitoring() {
+        mySqlLog.initMysql(false);
+        kpis = new ArrayList<>();
+        countDown = config.CLIENT_NUMBER;
+    }
 
     public void connect() {
+        if (!config.MONITOR_SERVER) {
+            return;
+        }
+
         try {
             clientSocket = new Socket(config.HOST, config.SERVER_MONITOR_PORT);
             out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -36,24 +50,50 @@ public enum ClientMonitoring {
     }
 
     public void start() {
+        if (!config.MONITOR_SERVER) {
+            return;
+        }
+
         if (state == State.DEAD) {
             state = State.RUNNING;
+            client = new Client(in);
             executor.submit(client);
             out.println(Message.START);
-        } else {
-            System.err.println(".start(), but monitor is already running");
-
         }
     }
 
     public void stop() {
+        if (!config.MONITOR_SERVER) {
+            return;
+        }
+
+        if (state == State.RUNNING) {
+            countDown--;
+            System.out.println(String.format("%s is ready, remaining threads to wait: %d",
+                    Thread.currentThread().getName(), countDown));
+            if (countDown == 0) {
+                countDown = config.CLIENT_NUMBER;
+                out.println(Message.STOP);
+                client.proceed = false;
+                state = State.DEAD;
+            }
+        }
+    }
+
+    public void shutdown() {
+        if (config.MONITOR_SERVER) {
+            return;
+        }
+
         if (state == State.RUNNING) {
             out.println(Message.STOP);
             client.proceed = false;
-            executor.shutdownNow();
             state = State.DEAD;
-        } else {
-            System.err.println(".stop(), but monitor is already dead");
+            executor.shutdownNow();
+        }
+        for (KPI kpi : kpis) {
+            mySqlLog.insertServerMetrics(kpi.getCpu(), kpi.getMem(), kpi.getSwap(), kpi.getIoWrites(),
+                    kpi.getIoReads(), kpi.getNetRecv(), kpi.getNetTrans(), kpi.getDataSize());
         }
     }
 
@@ -74,18 +114,14 @@ public enum ClientMonitoring {
         public void run() {
             KPI kpi;
             try {
-                System.out.println("Start reading.");
                 while (proceed && (kpi = (KPI) in.readObject()) != null) {
-                    mySqlLog.insertServerMetrics(kpi.getCpu(), kpi.getMem(), kpi.getSwap(), kpi.getIoWrites(),
-                            kpi.getIoReads(), kpi.getNetRecv(), kpi.getNetTrans(), kpi.getDataSize());
+                    kpis.add(kpi);
                 }
-                System.out.println("Stop reading.");
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 System.err.println("Could not read KPI object from socket.");
             }
-            System.out.println("end of run()");
         }
     }
 

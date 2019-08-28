@@ -31,7 +31,6 @@ public class DBWrapper implements IDatabase {
   private static final double NANO_TO_MILLIS = 1000000.0d;
   private Measurement measurement;
   private static final String ERROR_LOG = "Failed to do {} because unexpected exception: ";
-  private static ClientMonitoring clientMonitoring = ClientMonitoring.INSTANCE;
 
 
   public DBWrapper(Measurement measurement) {
@@ -49,8 +48,6 @@ public class DBWrapper implements IDatabase {
     Status status = null;
     Operation operation = Operation.INGESTION;
     try {
-      clientMonitoring.start();
-      System.out.println("started monitor controller from " + Thread.currentThread().getName());
       status = db.insertOneBatch(batch);
       if (status.isOk()) {
         double timeInMillis = status.getCostTime() / NANO_TO_MILLIS;
@@ -67,7 +64,7 @@ public class DBWrapper implements IDatabase {
       }
     } catch (Exception e) {
       measurement.addFailOperation(operation, batch.pointNum());
-      LOGGER.error("Failed to insert one batch because unexpected exception: ", e);
+      LOGGER.error("Failed to insert one batch because ofç unexpected exception: ", e);
     }
     return status;
   }
