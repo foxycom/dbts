@@ -97,8 +97,10 @@ public enum ServerMonitoring {
             }
 
             while (proceed) {
+                System.out.println("start reading KPI");
                 KPI kpi = new KPI(cpu, memValues.get("memUsage"), memValues.get("swapUsage"), ioValues.get("writesPerSec"),
                         ioValues.get("readsPerSec"), netValues.get("recvPerSec"), netValues.get("transPerSec"), dataSize);
+                System.out.println("KPI read in");
                 try {
                     System.out.println("Sending object to socket");
                     out.writeObject(kpi);
