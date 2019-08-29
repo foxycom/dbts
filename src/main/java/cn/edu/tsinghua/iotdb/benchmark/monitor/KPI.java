@@ -1,4 +1,4 @@
-package cn.edu.tsinghua.iotdb.benchmark.server;
+package cn.edu.tsinghua.iotdb.benchmark.monitor;
 
 
 import java.io.Serializable;

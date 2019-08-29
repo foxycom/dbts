@@ -1,4 +1,4 @@
-package cn.edu.tsinghua.iotdb.benchmark.server;
+package cn.edu.tsinghua.iotdb.benchmark.monitor;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
@@ -68,16 +68,6 @@ public enum ClientMonitoring {
         state = State.DEAD;
     }
 
-    public void stopNow() {
-        if (!config.MONITOR_SERVER) {
-            return;
-        }
-
-        if (state == State.RUNNING) {
-            sendStop();
-        }
-    }
-
     public void stop() {
         if (!config.MONITOR_SERVER) {
             return;
@@ -100,7 +90,7 @@ public enum ClientMonitoring {
         }
 
         if (state == State.RUNNING) {
-            out.println(Message.STOP);
+            out.println(Message.CLOSE);
             client.proceed = false;
             state = State.DEAD;
             executor.shutdownNow();

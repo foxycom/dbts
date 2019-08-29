@@ -24,8 +24,8 @@ import cn.edu.tsinghua.iotdb.benchmark.loadData.Resolve;
 import cn.edu.tsinghua.iotdb.benchmark.loadData.Storage;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
-import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
-import cn.edu.tsinghua.iotdb.benchmark.server.ServerMonitoring;
+import cn.edu.tsinghua.iotdb.benchmark.monitor.ClientMonitoring;
+import cn.edu.tsinghua.iotdb.benchmark.monitor.ServerMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.tool.ImportDataFromCSV;
 import cn.edu.tsinghua.iotdb.benchmark.tool.MetaDateBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
@@ -254,7 +254,6 @@ public class App {
         try {
             // wait for all clients finish test
             downLatch.await();
-            clientMonitoring.stopNow();
             clientMonitoring.shutdown();
         } catch (InterruptedException e) {
             LOGGER.error("Exception occurred during waiting for all threads finish.", e);
@@ -427,7 +426,7 @@ public class App {
         try {
             monitor.listen(config);
         } catch (IOException e) {
-            LOGGER.error("Could not start server monitor.");
+            LOGGER.error("Could not start server monitor because: {}", e.getMessage());
         }
     }
 

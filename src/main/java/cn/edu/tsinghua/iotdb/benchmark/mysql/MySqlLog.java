@@ -4,7 +4,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Mode;
-import cn.edu.tsinghua.iotdb.benchmark.server.KPI;
+import cn.edu.tsinghua.iotdb.benchmark.monitor.KPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

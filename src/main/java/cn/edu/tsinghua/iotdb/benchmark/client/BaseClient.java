@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
-import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
+import cn.edu.tsinghua.iotdb.benchmark.monitor.ClientMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.SingletonWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
