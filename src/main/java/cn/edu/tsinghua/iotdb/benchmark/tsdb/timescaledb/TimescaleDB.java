@@ -75,7 +75,6 @@ public class TimescaleDB implements IDatabase {
       statement.executeBatch();
       connection.commit();
 
-
       //String deleteAllTables = String.format(DROP_TABLE, "bikes");
       //statement.addBatch(deleteAllTables);
 
@@ -92,12 +91,15 @@ public class TimescaleDB implements IDatabase {
         LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
         Thread.sleep(config.INIT_WAIT_TIME);
       //}
-    } catch (Exception e) {
+    } catch (SQLException e) {
       LOGGER.warn("delete old data table {} failed, because: {}", tableName, e.getMessage());
+      LOGGER.warn(e.getNextException().getMessage());
 
       if (!e.getMessage().contains("does not exist")) {
         throw new TsdbException(e);
       }
+    } catch (InterruptedException e) {
+      LOGGER.error(e.getMessage());
     }
   }
 
