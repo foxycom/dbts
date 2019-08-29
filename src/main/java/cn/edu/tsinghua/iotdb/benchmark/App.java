@@ -153,7 +153,6 @@ public class App {
         long st;
         st = System.nanoTime();
         ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-        clientMonitoring.start();
         for (int i = 0; i < config.CLIENT_NUMBER; i++) {
             SyntheticClient client = new SyntheticClient(i, downLatch, barrier);
             clients.add(client);

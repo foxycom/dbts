@@ -55,15 +55,16 @@ public enum ServerMonitoring {
                 switch (message) {
                     case START:
                         System.out.println("Starting monitoring.");
+                        monitor.proceed = true;
                         executor.submit(monitor);
                         break;
                     case CLOSE:
                         System.out.println("closing socket");
-                        monitor.stop();
+                        monitor.proceed = false;
                         clientSocket.close();
                         break;
                     case STOP:
-                        monitor.stop();
+                        monitor.proceed = false;
                         System.out.println("Stopping monitoring.");
                         break;
                     default:
@@ -75,7 +76,7 @@ public enum ServerMonitoring {
 
     private class Monitor implements Runnable {
         private ObjectOutputStream out;
-        private boolean proceed = true;
+        private volatile boolean proceed = true;
 
         public Monitor(ObjectOutputStream out) {
             this.out = out;
@@ -112,10 +113,6 @@ public enum ServerMonitoring {
                 long en = System.nanoTime();
                 System.out.println("KPI took: " + ((en - st) / Constants.NANO_TO_MILLIS) + " ms");
             }
-        }
-
-        public synchronized void stop() {
-            proceed = false;
         }
     }
 }

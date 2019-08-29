@@ -41,6 +41,7 @@ public enum ClientMonitoring {
             clientSocket = new Socket(config.HOST, config.SERVER_MONITOR_PORT);
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new ObjectInputStream(clientSocket.getInputStream());
+            state = State.STOPPED;
             client = new Client(in);
 
         } catch (IOException e) {
@@ -54,7 +55,7 @@ public enum ClientMonitoring {
             return;
         }
 
-        if (state == State.DEAD) {
+        if (state == State.STOPPED) {
             state = State.RUNNING;
             client = new Client(in);
             executor.submit(client);
@@ -65,7 +66,7 @@ public enum ClientMonitoring {
     private void sendStop() {
         out.println(Message.STOP);
         client.proceed = false;
-        state = State.DEAD;
+        state = State.STOPPED;
     }
 
     public void stop() {
@@ -89,7 +90,7 @@ public enum ClientMonitoring {
             return;
         }
 
-        if (state == State.RUNNING) {
+        if (state != state.DEAD) {
             out.println(Message.CLOSE);
             client.proceed = false;
             state = State.DEAD;
@@ -101,6 +102,7 @@ public enum ClientMonitoring {
 
     private enum State {
         RUNNING,
+        STOPPED,
         DEAD;
     }
 
