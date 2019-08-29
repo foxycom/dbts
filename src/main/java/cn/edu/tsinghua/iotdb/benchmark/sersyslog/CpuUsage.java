@@ -3,6 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.sersyslog;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 /**
  * CPU Usage reader.
@@ -34,7 +35,8 @@ public enum CpuUsage  {
                 if (line.contains("avg-cpu")) {
                     section++;
                 } else if (section == 2) {
-                    String[] values = line.trim().split("\\s+");
+                    line = Usage.parseShellValues(line);
+                    String[] values = line.split("\\s+");
                     cpu = Float.parseFloat(values[0]);
                     break;
                 }

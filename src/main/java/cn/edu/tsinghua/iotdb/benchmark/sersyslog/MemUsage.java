@@ -30,12 +30,13 @@ public enum MemUsage {
             String line = null;
 
             while((line=input.readLine()) != null) {
+                line = Usage.parseShellValues(line);
                 String[] temp = line.split("\\s+");
-                if (temp[0].startsWith("Mem")) {
+                if (temp[0].startsWith("Mem") || temp[0].startsWith("Speicher")) {
                     float memTotal = Float.parseFloat(temp[1]);
                     float memUsed = Float.parseFloat(temp[2]);
                     memUsage = memUsed / memTotal;
-                } else if (temp[0].startsWith("Swap")) {
+                } else if (temp[0].startsWith("Swap") || temp[0].startsWith("Auslagerungsspeicher")) {
                     float swapTotal = Float.parseFloat(temp[1]);
                     float swapUsed = Float.parseFloat(temp[2]);
                     swapUsage = swapUsed / swapTotal;

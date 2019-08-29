@@ -4,6 +4,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Mode;
+import cn.edu.tsinghua.iotdb.benchmark.server.KPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -326,15 +327,32 @@ public class MySqlLog {
         }
     }
 
-    public void insertServerMetrics(double cpu, double mem, double swap, double ioWrites, double ioReads,
-                                    double netRecv, double netSend, double dataSize) {
+    public void insertServerMetrics(List<KPI> kpis) {
+        if (kpis.size() == 0) {
+            return;
+        }
         String sql = "";
+
         try (Statement statement = mysqlConnection.createStatement()) {
-            sql = String.format(Locale.US,"INSERT INTO " + projectID + "Server VALUES (%d, %s, %f, %f, %f, %f, %f, %f, %f, %f);",
-                 System.currentTimeMillis(), "'" + config.DB_SWITCH + "'", cpu, mem, swap, ioWrites, ioReads,
-                    netRecv, netSend, dataSize);
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("INSERT INTO ").append(projectID).append("Server VALUES ");
+
+            boolean firstIteration = true;
+            for (KPI kpi : kpis) {
+                if (firstIteration) {
+                    firstIteration = false;
+                } else {
+                    sqlBuilder.append(", ");
+                }
+                sqlBuilder.append("(").append(kpi.getTimestamp()).append(", '").append(config.DB_SWITCH.name())
+                        .append("', ").append(kpi.getCpu()).append(", ").append(kpi.getMem()).append(", ")
+                        .append(kpi.getSwap()).append(", ").append(kpi.getIoWrites()).append(", ").append(kpi.getIoReads())
+                        .append(", ").append(kpi.getNetRecv()).append(", ").append(kpi.getNetTrans()).append(", ")
+                        .append(kpi.getDataSize()).append(")");
+            }
+            sqlBuilder.append(";");
+            sql = sqlBuilder.toString();
             statement.executeUpdate(sql);
-            System.out.println("writing " + sql);
         } catch (SQLException e) {
             LOGGER.error("Could not insert server statistics, because: {}", e.getMessage());
             LOGGER.error("{}", sql);

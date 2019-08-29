@@ -143,8 +143,6 @@ public class TimescaleDB implements IDatabase {
       connection.commit();
 
       createIndexes(schemaList);
-
-      LOGGER.debug("CreateTableSQL Statement: FIXME");
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
       System.out.println(e.getNextException());

@@ -153,6 +153,7 @@ public class App {
         long st;
         st = System.nanoTime();
         ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
+        clientMonitoring.start();
         for (int i = 0; i < config.CLIENT_NUMBER; i++) {
             SyntheticClient client = new SyntheticClient(i, downLatch, barrier);
             clients.add(client);
@@ -253,6 +254,7 @@ public class App {
         try {
             // wait for all clients finish test
             downLatch.await();
+            clientMonitoring.stopNow();
             clientMonitoring.shutdown();
         } catch (InterruptedException e) {
             LOGGER.error("Exception occurred during waiting for all threads finish.", e);
@@ -423,21 +425,10 @@ public class App {
     private static void serverMode(Config config) {
         ServerMonitoring monitor = ServerMonitoring.INSTANCE;
         try {
-            monitor.listen();
+            monitor.listen(config);
         } catch (IOException e) {
             LOGGER.error("Could not start server monitor.");
         }
-    }
-
-    /**
-     * 服务器端模式，监测系统内存等性能指标，获得插入的数据文件大小
-     *
-     * @throws SQLException
-     * @throws ClassNotFoundException
-     */
-    private static void serverModeLegacy(Config config) {
-
-
     }
 
     private static void executeSQLFromFile(Config config) throws SQLException, ClassNotFoundException {

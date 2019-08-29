@@ -4,7 +4,6 @@ package cn.edu.tsinghua.iotdb.benchmark.server;
 import cn.edu.tsinghua.iotdb.benchmark.App;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
-import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
 import cn.edu.tsinghua.iotdb.benchmark.sersyslog.*;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,25 +25,23 @@ public enum ServerMonitoring {
     private IoUsage ioUsage = IoUsage.INSTANCE;
     private NetUsage netUsage = NetUsage.INSTANCE;
 
-    private Config config = ConfigDescriptor.getInstance().getConfig();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private ServerSocket serverSocket;
     private Socket clientSocket;
     private ObjectOutputStream out;
     private BufferedReader in;
     private Monitor monitor;
+    private Config config;
 
     ServerMonitoring() {
-        try {
-            serverSocket = new ServerSocket(config.SERVER_MONITOR_PORT);
-            System.out.println("Listening on port " + config.SERVER_MONITOR_PORT);
-            listen();
-        } catch (IOException e) {
-            System.err.println("Could not create server socket at PORT " + config.SERVER_MONITOR_PORT);
-        }
+
     }
 
-    public void listen() throws IOException {
+    public void listen(Config config) throws IOException {
+        this.config = config;
+        serverSocket = new ServerSocket(config.SERVER_MONITOR_PORT);
+        System.out.println("Listening on port " + config.SERVER_MONITOR_PORT);
+
         while (true) {
             clientSocket = serverSocket.accept();
             out = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -84,25 +80,21 @@ public enum ServerMonitoring {
 
         @Override
         public void run() {
-            float cpu = cpuUsage.get();
-            Map<String, Float> memValues = memUsage.get();
-            Map<String, Float> ioValues = ioUsage.get(config.DRIVE_NAME);
-            Map<String, Float> netValues = netUsage.get(config.IFACE_NAME);
-
-            float dataSize = 0.0f;
-            try {
-                dataSize = config.DB_SWITCH.getSize();
-            } catch (TsdbException e) {
-                LOGGER.error("Could not read the data size of {} because: {}", config.DB_SWITCH, e.getMessage());
-            }
-
             while (proceed) {
-                System.out.println("start reading KPI");
+                float cpu = cpuUsage.get();
+                Map<String, Float> memValues = memUsage.get();
+                Map<String, Float> ioValues = ioUsage.get(config.DRIVE_NAME);
+                Map<String, Float> netValues = netUsage.get(config.IFACE_NAME);
+                float dataSize = 0.0f;
+                try {
+                    dataSize = config.DB_SWITCH.getSize();
+                } catch (TsdbException e) {
+                    LOGGER.error("Could not read the data size of {} because: {}", config.DB_SWITCH, e.getMessage());
+                }
                 KPI kpi = new KPI(cpu, memValues.get("memUsage"), memValues.get("swapUsage"), ioValues.get("writesPerSec"),
                         ioValues.get("readsPerSec"), netValues.get("recvPerSec"), netValues.get("transPerSec"), dataSize);
-                System.out.println("KPI read in");
                 try {
-                    System.out.println("Sending object to socket");
+                    System.out.println("Sending object to socket.");
                     out.writeObject(kpi);
                 } catch (IOException e) {
                     proceed = false;
@@ -119,7 +111,7 @@ public enum ServerMonitoring {
             try {
                 out.writeObject(null);
             } catch (IOException e) {
-                System.out.println("Cant write null");
+                System.out.println("Can't write null.");
             }
         }
 

@@ -3,6 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.server.ClientMonitoring;
@@ -19,6 +20,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,11 +57,11 @@ public class DBWrapper implements IDatabase {
         measureOperation(status, operation, batch.pointNum());
         String formatTimeInMillis = String.format("%.2f", timeInMillis);
         String currentThread = Thread.currentThread().getName();
-        BigDecimal throughput = new BigDecimal(batch.pointNum() * 1000 / timeInMillis);
-        throughput = throughput.setScale(2, BigDecimal.ROUND_HALF_UP);
-        LOGGER.info("{} INSERT ONE batch latency (DEVICE: {}, GROUP: {}), {} ms, THROUGHPUT: {} points/s",
-            currentThread, batch.getDeviceSchema().getDevice(),
-            batch.getDeviceSchema().getGroup(), formatTimeInMillis, throughput);
+        double throughput = batch.pointNum() / (timeInMillis / Constants.MILLIS_TO_SECONDS);
+        String log = String.format(Locale.US, "%s INSERT ONE batch latency (DEVICE: %s, GROUP: %s), %s ms, THROUGHPUT: %.2f points/s",
+                currentThread, batch.getDeviceSchema().getDevice(),
+                batch.getDeviceSchema().getGroup(), formatTimeInMillis, throughput);
+        LOGGER.info(log);
       } else {
         measurement.addFailOperation(operation, batch.pointNum());
       }

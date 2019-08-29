@@ -71,12 +71,12 @@ public enum IoUsage {
             boolean rightSection = false;
             while ((line = input.readLine()) != null) {
                 if (line.contains(driveName)) {
-                    if (rightSection) {
+                    if (!rightSection) {
                         rightSection = true;
                     } else if (rightSection) {
+                        line = Usage.parseShellValues(line);
                         String[] temp = line.split("\\s+");
                         readsPerSec = Float.parseFloat(temp[1]);
-                        System.out.println(Arrays.asList(temp));
                         writesPerSec = Float.parseFloat(temp[2]);
                         break;
                     }

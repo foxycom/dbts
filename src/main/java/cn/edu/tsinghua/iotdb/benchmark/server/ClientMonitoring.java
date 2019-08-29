@@ -62,6 +62,22 @@ public enum ClientMonitoring {
         }
     }
 
+    private void sendStop() {
+        out.println(Message.STOP);
+        client.proceed = false;
+        state = State.DEAD;
+    }
+
+    public void stopNow() {
+        if (!config.MONITOR_SERVER) {
+            return;
+        }
+
+        if (state == State.RUNNING) {
+            sendStop();
+        }
+    }
+
     public void stop() {
         if (!config.MONITOR_SERVER) {
             return;
@@ -73,15 +89,13 @@ public enum ClientMonitoring {
                     Thread.currentThread().getName(), countDown));
             if (countDown == 0) {
                 countDown = config.CLIENT_NUMBER;
-                out.println(Message.STOP);
-                client.proceed = false;
-                state = State.DEAD;
+                sendStop();
             }
         }
     }
 
     public void shutdown() {
-        if (config.MONITOR_SERVER) {
+        if (!config.MONITOR_SERVER) {
             return;
         }
 
@@ -91,10 +105,8 @@ public enum ClientMonitoring {
             state = State.DEAD;
             executor.shutdownNow();
         }
-        for (KPI kpi : kpis) {
-            mySqlLog.insertServerMetrics(kpi.getCpu(), kpi.getMem(), kpi.getSwap(), kpi.getIoWrites(),
-                    kpi.getIoReads(), kpi.getNetRecv(), kpi.getNetTrans(), kpi.getDataSize());
-        }
+
+        mySqlLog.insertServerMetrics(kpis);
     }
 
     private enum State {

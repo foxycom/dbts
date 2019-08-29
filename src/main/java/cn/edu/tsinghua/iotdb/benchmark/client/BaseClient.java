@@ -51,9 +51,7 @@ public abstract class BaseClient extends Client implements Runnable {
               for (DeviceSchema deviceSchema : schema) {
                 barrier.await();
                 Batch batch = syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex);
-                clientMonitoring.start();
                 dbWrapper.insertOneBatch(batch);
-                clientMonitoring.stop();
               }
             } catch (Exception e) {
               LOGGER.error("Failed to insert one batch data because ", e);

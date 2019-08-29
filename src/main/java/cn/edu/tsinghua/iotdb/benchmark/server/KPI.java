@@ -12,9 +12,11 @@ public class KPI implements Serializable {
     private float netRecv;
     private float netTrans;
     private float dataSize;
+    private long timestamp;
 
     public KPI(float cpu, float mem, float swap, float ioWrites, float ioReads, float netRecv, float netTrans,
                float dataSize) {
+        this.timestamp = System.currentTimeMillis();
         this.cpu = cpu;
         this.mem = mem;
         this.swap = swap;
@@ -23,6 +25,10 @@ public class KPI implements Serializable {
         this.netRecv = netRecv;
         this.netTrans = netTrans;
         this.dataSize = dataSize;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     public double getCpu() {
@@ -55,5 +61,19 @@ public class KPI implements Serializable {
 
     public double getDataSize() {
         return dataSize;
+    }
+
+    @Override
+    public String toString() {
+        return "KPI{" +
+                "cpu=" + cpu +
+                ", mem=" + mem +
+                ", swap=" + swap +
+                ", ioWrites=" + ioWrites +
+                ", ioReads=" + ioReads +
+                ", netRecv=" + netRecv +
+                ", netTrans=" + netTrans +
+                ", dataSize=" + dataSize +
+                '}';
     }
 }

@@ -35,7 +35,7 @@ public enum NetUsage {
         Process process;
         Runtime r = Runtime.getRuntime();
         try {
-            String command = "ifstat 1 1";
+            String command = "ifstat -i " + iface + " 1 1";
             process = r.exec(command);
             BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
@@ -47,7 +47,8 @@ public enum NetUsage {
                     if (line.contains("KB/s")) {
 
                     } else {
-                        String[] temp = line.trim().split("\\s+");
+                        line = Usage.parseShellValues(line);
+                        String[] temp = line.split("\\s+");
 
                         recvPerSec = Float.parseFloat(temp[0]);
                         transPerSec = Float.parseFloat(temp[1]);
@@ -56,7 +57,7 @@ public enum NetUsage {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Could not read net metrics because: " + e.getMessage());
+            System.err.println("Could not read net metrics of " + iface + " because: " + e.getMessage());
         }
         values.put("recvPerSec", recvPerSec);
         values.put("transPerSec", transPerSec);
