@@ -38,6 +38,7 @@ public class TimescaleDB implements IDatabase {
   private static final String CONVERT_TO_HYPERTABLE =
       "SELECT create_hypertable('%s', 'time');";
   private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
+  private long initialDbSize;
 
   public TimescaleDB() {
     config = ConfigDescriptor.getInstance().getConfig();
@@ -53,10 +54,26 @@ public class TimescaleDB implements IDatabase {
           Constants.POSTGRESQL_USER,
           Constants.POSTGRESQL_PASSWD
       );
+      initialDbSize = getInitialSize();
     } catch (Exception e) {
       LOGGER.error("Initialize TimescaleDB failed because ", e);
       throw new TsdbException(e);
     }
+  }
+
+  private long getInitialSize() {
+    String sql = "";
+    long initialSize = 0;
+    try (Statement statement = connection.createStatement()) {
+      sql = "SELECT pg_database_size('test') as initial_size;";
+      ResultSet rs = statement.executeQuery(sql);
+      if (rs.next()) {
+        initialSize = rs.getLong("initial_size");
+      }
+    } catch (SQLException e) {
+      LOGGER.warn("Could not query the initial DB size of TimescaleDB with: {}", sql);
+    }
+    return initialSize;
   }
 
   @Override
@@ -65,32 +82,23 @@ public class TimescaleDB implements IDatabase {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
 
-      statement.addBatch("DROP SCHEMA public CASCADE;");
-      statement.addBatch("CREATE SCHEMA public;");
-      statement.addBatch("GRANT ALL ON SCHEMA public TO postgres");
-      statement.addBatch("GRANT ALL ON SCHEMA public TO public;");
-      statement.addBatch("CREATE EXTENSION IF NOT EXISTS postgis;");
-      statement.addBatch("CREATE EXTENSION IF NOT EXISTS timescaledb;");
+      String deleteBikesSql = String.format(DROP_TABLE, "bikes");
+      statement.addBatch(deleteBikesSql);
 
-      statement.executeBatch();
-      connection.commit();
+      String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
+              "tablename LIKE '%series'";
+      try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
 
-      //String deleteAllTables = String.format(DROP_TABLE, "bikes");
-      //statement.addBatch(deleteAllTables);
-
-      //String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE tablename LIKE '%series'";
-      //try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
-
-      //  while (rs.next()) {
-      //    statement.addBatch(String.format(DROP_TABLE, rs.getString("tablename")));
-      //  }
-      //  statement.executeBatch();
-      //  connection.commit();
+        while (rs.next()) {
+          statement.addBatch(String.format(DROP_TABLE, rs.getString("tablename")));
+        }
+        statement.executeBatch();
+        connection.commit();
 
         // wait for deletion complete
         LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
         Thread.sleep(config.INIT_WAIT_TIME);
-      //}
+      }
     } catch (SQLException e) {
       LOGGER.warn("delete old data table {} failed, because: {}", tableName, e.getMessage());
       LOGGER.warn(e.getNextException().getMessage());
@@ -183,10 +191,11 @@ public class TimescaleDB implements IDatabase {
   public float getSize() throws TsdbException {
     float resultInGB = 0.0f;
     try (Statement statement = connection.createStatement()) {
-      String selectSizeSql = String.format("SELECT pg_database_size('%s');", config.DB_NAME);
+      String selectSizeSql = String.format("SELECT pg_database_size('%s') as db_size;", config.DB_NAME);
       ResultSet rs = statement.executeQuery(selectSizeSql);
       if (rs.next()) {
-        long resultInB = rs.getLong("pg_database_size");
+        long resultInB = rs.getLong("db_size");
+        resultInB -= initialDbSize;
         resultInGB = (float) resultInB / B2GB;
       }
       return resultInGB;
