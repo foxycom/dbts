@@ -36,7 +36,7 @@ public class TimescaleDB implements IDatabase {
   private static final Logger LOGGER = LoggerFactory.getLogger(TimescaleDB.class);
   //chunk_time_interval=7d
   private static final String CONVERT_TO_HYPERTABLE =
-      "SELECT create_hypertable('%s', 'time', chunk_time_interval => 86400000);";
+      "SELECT create_hypertable('%s', 'time');";
   private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
 
   public TimescaleDB() {
@@ -62,25 +62,36 @@ public class TimescaleDB implements IDatabase {
   @Override
   public void cleanup() throws TsdbException {
     //delete old data
-    try (Statement statement = connection.createStatement()){
+    try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
 
-      String deleteAllTables = String.format(DROP_TABLE, "bikes");
-      statement.addBatch(deleteAllTables);
+      statement.addBatch("DROP SCHEMA public CASCADE;");
+      statement.addBatch("CREATE SCHEMA public;");
+      statement.addBatch("GRANT ALL ON SCHEMA public TO postgres");
+      statement.addBatch("GRANT ALL ON SCHEMA public TO public;");
+      statement.addBatch("CREATE EXTENSION IF NOT EXISTS postgis;");
+      statement.addBatch("CREATE EXTENSION IF NOT EXISTS timescaledb;");
 
-      String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE tablename LIKE '%series'";
-      try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
+      statement.executeBatch();
+      connection.commit();
 
-        while (rs.next()) {
-          statement.addBatch(String.format(DROP_TABLE, rs.getString("tablename")));
-        }
-        statement.executeBatch();
-        connection.commit();
+
+      //String deleteAllTables = String.format(DROP_TABLE, "bikes");
+      //statement.addBatch(deleteAllTables);
+
+      //String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE tablename LIKE '%series'";
+      //try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
+
+      //  while (rs.next()) {
+      //    statement.addBatch(String.format(DROP_TABLE, rs.getString("tablename")));
+      //  }
+      //  statement.executeBatch();
+      //  connection.commit();
 
         // wait for deletion complete
         LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
         Thread.sleep(config.INIT_WAIT_TIME);
-      }
+      //}
     } catch (Exception e) {
       LOGGER.warn("delete old data table {} failed, because: {}", tableName, e.getMessage());
 
@@ -160,6 +171,12 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
+  /**
+   * Returns the size of the benchmarked database in GB.
+   *
+   * @return The size of the benchmarked database, i. e., 'test'.
+   * @throws TsdbException
+   */
   @Override
   public float getSize() throws TsdbException {
     float resultInGB = 0.0f;
