@@ -54,7 +54,6 @@ public class TimescaleDB implements IDatabase {
           Constants.POSTGRESQL_USER,
           Constants.POSTGRESQL_PASSWD
       );
-      initialDbSize = getInitialSize();
     } catch (Exception e) {
       LOGGER.error("Initialize TimescaleDB failed because ", e);
       throw new TsdbException(e);
@@ -65,10 +64,11 @@ public class TimescaleDB implements IDatabase {
     String sql = "";
     long initialSize = 0;
     try (Statement statement = connection.createStatement()) {
-      sql = "SELECT pg_database_size('test') as initial_size;";
+      sql = "SELECT pg_database_size('%s') as initial_db_size;";
+      sql = String.format(sql, config.DB_NAME);
       ResultSet rs = statement.executeQuery(sql);
       if (rs.next()) {
-        initialSize = rs.getLong("initial_size");
+        initialSize = rs.getLong("initial_db_size");
       }
     } catch (SQLException e) {
       LOGGER.warn("Could not query the initial DB size of TimescaleDB with: {}", sql);
@@ -98,6 +98,8 @@ public class TimescaleDB implements IDatabase {
         // wait for deletion complete
         LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
         Thread.sleep(config.INIT_WAIT_TIME);
+
+        initialDbSize = getInitialSize();
       }
     } catch (SQLException e) {
       LOGGER.warn("delete old data table {} failed, because: {}", tableName, e.getMessage());
