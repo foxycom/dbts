@@ -45,7 +45,7 @@
         <sensorGroup name="gps" dataType="double precision">
             <sensor frequency="1" type="gps"/>
         </sensorGroup>
-        <sensorGroup name="rotaryEcoder" dataType="double precision">
+        <sensorGroup name="rotaryEncoder" dataType="double precision">
             <sensor frequency="10" type="basic"/>
             <sensor frequency="10" type="basic"/>
             <sensor frequency="10" type="basic"/>
@@ -110,7 +110,7 @@
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="false">
+    <serverMonitor active="true">
         <drive>sdb</drive>
         <iface>enp3s0</iface>
         <port>56565</port>
