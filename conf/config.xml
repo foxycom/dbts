@@ -105,8 +105,8 @@
     </sensorGroups>
 
 
-    <batch size="100000"/>
-    <loops>8</loops>
+    <batch size="90000"/>
+    <loops>10</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
