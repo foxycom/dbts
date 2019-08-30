@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.sersyslog;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
@@ -36,7 +36,7 @@ public class FileSize {
     }
 
     private FileSize(){
-        config = ConfigDescriptor.getInstance().getConfig();
+        config = ConfigParser.INSTANCE.config();
 
         switch (config.DB_SWITCH){
             case IOTDB:

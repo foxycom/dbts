@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.mysql;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Mode;
 import cn.edu.tsinghua.iotdb.benchmark.monitor.KPI;
@@ -22,7 +22,7 @@ public class MySqlLog {
     private final String SAVE_CONFIG = "insert into CONFIG values(NULL, %s, %s, %s)";
     private final String SAVE_RESULT = "insert into RESULT values(NULL, %s, %s, %s)";
     private Connection mysqlConnection = null;
-    private Config config = ConfigDescriptor.getInstance().getConfig();
+    private Config config = ConfigParser.INSTANCE.config();
     private String localName = "";
     private long labID;
     private String day = "";
@@ -533,59 +533,13 @@ public class MySqlLog {
 
     }
 
-    public void saveTestModel(String type, String encoding) throws SQLException {
-        if (!config.USE_MYSQL) {
-            return;
-        }
-        if (!config.IS_SAVE_DATAMODEL) {
-            return;
-        }
-        if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
-            switch (config.DB_SWITCH) {
-                case IOTDB:
-                    this.saveIoTDBDataModel(config.TIMESERIES_NAME, config.STORAGE_GROUP_NAME + "." + config.TIMESERIES_NAME, type, encoding);
-                    break;
-                case INFLUXDB:
-                    break;
-            }
-            return;
-        }
-        switch (config.DB_SWITCH) {
-            case IOTDB:
-                for (String d : config.DEVICE_CODES) {
-                    for (String s : config.SENSOR_CODES) {
-                        this.saveIoTDBDataModel(d + "." + s,
-                                getFullGroupDevicePathByName(d) + "." + s, type,
-                                encoding);
-                    }
-                }
-                break;
-            case INFLUXDB:
-                int i = 0,
-                        groupId = 0;
-                for (String d : config.DEVICE_CODES) {
-                    for (String s : config.SENSOR_CODES) {
-                        this.saveInfluxDBDataModel("group_" + groupId, "device=" + d, s, type);
-                    }
-                    i++;
-                    if (i % config.DEVICE_GROUPS_NUMBER == 0) {
-                        groupId++;
-                    }
-                }
-                break;
-            default:
-                throw new SQLException("unsupported database " + config.DB_SWITCH);
-        }
-
-    }
-
     private String getFullGroupDevicePathByName(String d) {
         String[] spl = d.split("_");
         int id = Integer.parseInt(spl[1]);
         int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupIndex = id / groupSize;
-        return Constants.ROOT_SERIES_NAME + ".group_" + groupIndex + "."
-                + config.DEVICE_CODES.get(id);
+        return Constants.ROOT_SERIES_NAME + ".group_" + groupIndex + ".";
+                //+ config.DEVICE_CODES.get(id);
     }
 
     public void saveTestConfig() {

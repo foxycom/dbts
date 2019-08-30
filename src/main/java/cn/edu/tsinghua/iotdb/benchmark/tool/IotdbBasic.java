@@ -13,22 +13,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
-import cn.edu.tsinghua.iotdb.benchmark.db.iotdb.IoTDB;
 
 public class IotdbBasic {
 	private Config config;
 	private Connection connection;
 	private DatabaseMetaData databaseMetaData;
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(IoTDB.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(IotdbBasic.class);
 	private static final String createTimeseriesSQL = "create timeseries %s with datatype=%s,encoding=%s";
 	private static final String setStorageLevelSQL = "set storage group to %s";
 	
 	public IotdbBasic() throws ClassNotFoundException, SQLException {
 		Class.forName("org.apache.iotdb.jdbc.IoTDBDriver");
-		config = ConfigDescriptor.getInstance().getConfig();	
+		config = ConfigParser.INSTANCE.config();
 	}
 	
 	public void init() throws SQLException {

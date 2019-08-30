@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.sersyslog;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public class OpenFileNumber {
     }
 
     private OpenFileNumber() {
-        config = ConfigDescriptor.getInstance().getConfig();
+        config = ConfigParser.INSTANCE.config();
         pid = getPID(config.DB_SWITCH.name());
     }
 

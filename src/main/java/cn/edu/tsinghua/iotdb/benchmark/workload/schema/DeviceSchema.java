@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public class DeviceSchema {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DeviceSchema.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+  private static Config config = ConfigParser.INSTANCE.config();
   public static final String GROUP_NAME_PREFIX = "group_";
   private static final String DEVICE_NAME_PREFIX = "bike_";
 

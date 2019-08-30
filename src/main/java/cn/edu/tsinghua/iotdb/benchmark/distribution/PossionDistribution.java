@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.distribution;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class PossionDistribution {
     }
 
     public PossionDistribution(Random ran) {
-        this.config = ConfigDescriptor.getInstance().getConfig();
+        this.config = ConfigParser.INSTANCE.config();
         this.random = ran;
         this.lambda = config.LAMBDA;
         this.deltaKinds = config.MAX_K;

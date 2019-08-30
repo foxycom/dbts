@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public class OperationControllerTest {
 
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
   private static OperationController operationController = new OperationController(0);
 
   @Before

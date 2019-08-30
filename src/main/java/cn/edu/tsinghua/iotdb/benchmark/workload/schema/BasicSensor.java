@@ -17,7 +17,7 @@ public class BasicSensor implements Sensor {
     protected FunctionParam functionParam;
 
     private String name;
-    private String sensorGroup;
+    private SensorGroup sensorGroup;
     private long interval;
     private String dataType;
 
@@ -31,7 +31,7 @@ public class BasicSensor implements Sensor {
      * @param functionParam The parameters of data function.
      * @param freq The frequency the sensor samples its data (in Hz).
      */
-    public BasicSensor(String name, String sensorGroup, FunctionParam functionParam, int freq, String dataType) {
+    public BasicSensor(String name, SensorGroup sensorGroup, FunctionParam functionParam, int freq, String dataType) {
         nf.setRoundingMode(RoundingMode.HALF_UP);
         nf.setMaximumFractionDigits(2);
         nf.setMinimumFractionDigits(2);
@@ -72,10 +72,6 @@ public class BasicSensor implements Sensor {
         this.interval = interval;
     }
 
-    public String getTableName() {
-        return name + "_series";
-    }
-
     public String getDataType() {
         return dataType;
     }
@@ -91,6 +87,11 @@ public class BasicSensor implements Sensor {
     @Override
     public FunctionParam getFunctionParam() {
         return functionParam;
+    }
+
+    @Override
+    public SensorGroup getSensorGroup() {
+        return sensorGroup;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public class OperationController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OperationController.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
   private Random random;
 
   OperationController(int seed) {
@@ -24,7 +24,7 @@ public class OperationController {
   Operation getNextOperationType() {
     List<Double> proportion = resolveOperationProportion();
     double[] p = new double[Operation.values().length + 1];
-    p[0] = 0.0;
+
     // split [0,1] to n regions, each region corresponds to a operation type whose probability
     // is the region range size.
     for (int i = 1; i <= Operation.values().length; i++) {

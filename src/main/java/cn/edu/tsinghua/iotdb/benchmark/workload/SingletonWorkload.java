@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class SingletonWorkload {
 
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
   private ProbTool probTool;
   private Random poissonRandom;
   private AtomicLong insertLoop;

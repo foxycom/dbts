@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class TimescaleDB implements IDatabase {
   private long initialDbSize;
 
   public TimescaleDB() {
-    config = ConfigDescriptor.getInstance().getConfig();
+    config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
   }
 
@@ -86,7 +87,7 @@ public class TimescaleDB implements IDatabase {
       statement.addBatch(deleteBikesSql);
 
       String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
-              "tablename LIKE '%series'";
+              "tablename LIKE '%benchmark'";
       try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
 
         while (rs.next()) {
@@ -156,29 +157,24 @@ public class TimescaleDB implements IDatabase {
       String insertBikesSql = getInsertBikesSql(schemaList);
       statement.addBatch(insertBikesSql);
 
-      // Creates sensor series tables
-      for (Sensor sensor : schemaList.get(0).getSensors()) {
-        String createTableSql = getCreateTableSql(sensor);
+      for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+        String createTableSql = getCreateTableSql(sensorGroup);
         statement.addBatch(createTableSql);
-        //statement.addBatch(convertToHyperTableSql);
       }
+
       statement.executeBatch();
       connection.commit();
 
-      createIndexes(schemaList);
+      for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+        String convertToHyperTableSql = getConvertToHypertableSql(sensorGroup);
+        statement.execute(convertToHyperTableSql);
+      }
+
+
+      createIndexes();
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
       System.out.println(e.getNextException());
-      throw new TsdbException(e);
-    }
-
-    try (Statement statement = connection.createStatement()) {
-      for (Sensor sensor : schemaList.get(0).getSensors()) {
-        String convertToHyperTableSql = getConvertToHypertableSql(sensor);
-        statement.execute(convertToHyperTableSql);
-      }
-    } catch (SQLException e) {
-      LOGGER.error("Can't convert Postgres table to a Timescale hypertable.");
       throw new TsdbException(e);
     }
   }
@@ -207,12 +203,14 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
-  private void createIndexes(List<DeviceSchema> schemaList) {
+  private void createIndexes() {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
-      for (Sensor sensor : schemaList.get(0).getSensors()) {
-        String createIndexSql = createIndex(sensor.getName() + "_series");
-        statement.addBatch(createIndexSql);
+      for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+        String createIndexOnBikeSql = createIndexOnBike(sensorGroup.getTableName());
+        String createIndexOnBikeAndSensorSql = createIndexOnBikeAndSensor(sensorGroup.getTableName());
+        statement.addBatch(createIndexOnBikeSql);
+        statement.addBatch(createIndexOnBikeAndSensorSql);
       }
       statement.executeBatch();
       connection.commit();
@@ -221,8 +219,13 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
-  private String createIndex(String tableName) {
+  private String createIndexOnBike(String tableName) {
     String createIndexSql = "CREATE INDEX ON " + tableName + " (bike_id, time DESC);";
+    return createIndexSql;
+  }
+
+  private String createIndexOnBikeAndSensor(String tableName) {
+    String createIndexSql = "CREATE INDEX ON " + tableName + " (bike_id, sensor_id, time DESC)";
     return createIndexSql;
   }
 
@@ -307,7 +310,8 @@ public class TimescaleDB implements IDatabase {
       sqlBuilder.append(column);
     }
 
-    sqlBuilder.append(" FROM ").append(sensor.getTableName());
+    // TODO fix
+    sqlBuilder.append(" FROM ").append("SOMENAME");
     return sqlBuilder;
   }
 
@@ -537,12 +541,11 @@ public class TimescaleDB implements IDatabase {
    * </p>
    * @return create table SQL String
    */
-  private String getCreateTableSql(Sensor sensor) {
+  private String getCreateTableSql(SensorGroup sensorGroup) {
     StringBuilder sqlBuilder = new StringBuilder();
-    sqlBuilder.append("CREATE TABLE ").append(sensor.getTableName()).append(" (");
-    sqlBuilder.append("time TIMESTAMPTZ NOT NULL, group_id TEXT NOT NULL, bike_id VARCHAR REFERENCES bikes (bike_id)");
-    sqlBuilder.append(", ").append(sensor.getName()).append(" ")
-            .append(sensor.getDataType()).append(" NULL").append(");");
+    sqlBuilder.append("CREATE TABLE ").append(sensorGroup.getTableName()).append(" (time TIMESTAMPTZ NOT NULL, "
+            + "bike_id VARCHAR(20) REFERENCES bikes (bike_id), sensor_id VARCHAR(20) NOT NULL, value ")
+            .append(sensorGroup.getDataType()).append(" NULL);");
     return sqlBuilder.toString();
   }
 
@@ -572,8 +575,8 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
-  private String getConvertToHypertableSql(Sensor sensor) {
-    return String.format(CONVERT_TO_HYPERTABLE, sensor.getTableName());
+  private String getConvertToHypertableSql(SensorGroup sensorGroup) {
+    return String.format(CONVERT_TO_HYPERTABLE, sensorGroup.getTableName());
   }
 
   private List<String> getInsertOneBatchSingleTableSql(Batch batch) {
@@ -588,13 +591,14 @@ public class TimescaleDB implements IDatabase {
     List<String> sensorQueries = new ArrayList<>(deviceSchema.getSensors().size());
     StringBuilder sb = new StringBuilder();
     // FIXME different table names for different sensors
-    for (Sensor sensor : entries.keySet()) {
+    for (Sensor sensor : deviceSchema.getSensors()) {
       if (entries.get(sensor).length == 0) {
         continue;
       }
 
-      sb.append("insert into ").append(sensor.getTableName()).append("(time, group_id, bike_id, ").append(sensor.getName())
-              .append(") values ");
+
+      sb.append("insert into ").append(sensor.getSensorGroup().getTableName()).append(" (time, bike_id, sensor_id, value)")
+              .append(" values ");
 
       boolean firstIteration = true;
       for (Point point : entries.get(sensor)) {
@@ -606,10 +610,9 @@ public class TimescaleDB implements IDatabase {
         }
         Timestamp timestamp = new Timestamp(point.getTimestamp());
         sb.append("('").append(timestamp).append("', ")
-                .append("'").append(deviceSchema.getGroup()).append("', ")
                 .append("'").append(deviceSchema.getDevice()).append("', ")
-                .append(point.getValue())
-                .append(")");
+                .append("'").append(sensor.getName()).append("', ")
+                .append(point.getValue()).append(")");
       }
       sb.append(";");
       sensorQueries.add(sb.toString());

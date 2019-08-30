@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.loadData;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +13,7 @@ public class Point {
 	public List<String> fieldName = new ArrayList<String>();
 	public List<Number> fieldValue = new ArrayList<Number>();
 	public long time;
-	private Config config =  ConfigDescriptor.getInstance().getConfig();
+	private Config config = ConfigParser.INSTANCE.config();
 	
 	public String creatInsertStatement(){
 		StringBuilder builder = new StringBuilder();

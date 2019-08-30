@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 public abstract class Client implements Runnable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);
-  protected static Config config = ConfigDescriptor.getInstance().getConfig();
+  protected static Config config = ConfigParser.INSTANCE.config();
   protected Measurement measurement;
   private CountDownLatch countDownLatch;
   protected CyclicBarrier barrier;

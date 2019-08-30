@@ -2,7 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.monitor;
 
 import cn.edu.tsinghua.iotdb.benchmark.App;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ public enum ClientMonitoring {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
-    private Config config = ConfigDescriptor.getInstance().getConfig();
+    private Config config = ConfigParser.INSTANCE.config();
     private Socket clientSocket;
     private PrintWriter out;
     private ObjectInputStream in;

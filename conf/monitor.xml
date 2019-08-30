@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<config xmlns="https://uni-passau.de"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://uni-passau.de  config.xsd">
+    <version>0.4.0</version>
+    <db>
+        <type>TimescaleDB</type>
+        <name>test</name>
+        <host>127.0.0.1</host>
+        <port>5432</port>
+        <erase wait="5000">true</erase>
+        <createSchema>true</createSchema>
+    </db>
+    <mode>server_mode</mode>
+
+    <serverMonitor active="true">
+        <drive>sdb</drive>
+        <iface>enp3s0</iface>
+        <port>56565</port>
+    </serverMonitor>
+
+    <timestamp>
+        <startIndex>20</startIndex>
+        <seed>666</seed>
+    </timestamp>
+
+</config>

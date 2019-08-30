@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class DataSchema {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DataSchema.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
   private static final Map<Integer, List<DeviceSchema>> CLIENT_BIND_SCHEMA = new HashMap<>();
 
   public Map<Integer, List<DeviceSchema>> getClientBindSchema() {

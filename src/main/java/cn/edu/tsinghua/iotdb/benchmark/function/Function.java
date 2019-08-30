@@ -3,7 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.function;
 import java.util.Random;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.enums.FunctionType;
 import cn.edu.tsinghua.iotdb.benchmark.utils.TimeUtils;
@@ -26,7 +26,7 @@ public class Function {
 //		}
 //		return value;
 //	}
-	private static Config config = ConfigDescriptor.getInstance().getConfig();
+	  private static Config config = ConfigParser.INSTANCE.config();
 	private static Random r = new Random(config.DATA_SEED);
 
 

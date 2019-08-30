@@ -2,7 +2,8 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.fakedb.FakeDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.influxdb.InfluxDB;
@@ -16,7 +17,7 @@ import org.slf4j.LoggerFactory;
 public class DBFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DBFactory.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+  private static Config config = ConfigParser.INSTANCE.config();
 
   public IDatabase getDatabase() throws SQLException {
 

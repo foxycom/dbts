@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.tsdb.kairosdb;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.model.KairosDataModel;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 public class KairosDB implements IDatabase {
 
   private static final Logger LOGGER = LoggerFactory
-      .getLogger(cn.edu.tsinghua.iotdb.benchmark.db.kairosdb.KairosDB.class);
+      .getLogger(KairosDB.class);
   private String writeUrl;
   private HttpClient client;
   private Config config;
@@ -52,7 +52,7 @@ public class KairosDB implements IDatabase {
   private static final String DEVICE_STR = "device";
 
   public KairosDB() {
-    config = ConfigDescriptor.getInstance().getConfig();
+    config = ConfigParser.INSTANCE.config();
     writeUrl = config.DB_URL + "/api/v1/datapoints";
 
   }

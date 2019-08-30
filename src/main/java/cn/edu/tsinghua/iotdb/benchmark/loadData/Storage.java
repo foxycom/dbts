@@ -3,7 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.loadData;
 import java.util.LinkedList;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public class Storage {
     
     public Storage() {
     	list = new LinkedList<String>();
-        config = ConfigDescriptor.getInstance().getConfig();
+        config = ConfigParser.INSTANCE.config();
     	storagedProductNum = 0;
         MAX_SIZE = config.BATCH_OP_NUM*config.DEVICES_NUMBER *4;
     	isEnd = false;

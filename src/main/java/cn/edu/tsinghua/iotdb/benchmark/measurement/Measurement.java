@@ -2,7 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.measurement;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 
 import java.util.*;
 
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 public class Measurement {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Measurement.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
   private static final double[] MID_AVG_RANGE = {0.1, 0.9};
   private Map<Operation, List<Double>> operationLatencies;
 

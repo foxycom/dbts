@@ -1,21 +1,21 @@
 package cn.edu.tsinghua.iotdb.benchmark.conf;
 
+import cn.edu.tsinghua.iotdb.benchmark.function.Function;
+import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
+import cn.edu.tsinghua.iotdb.benchmark.function.FunctionXml;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.BasicSensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorType;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.*;
 import org.apache.commons.configuration2.HierarchicalConfiguration;
 import org.apache.commons.configuration2.XMLConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.tree.ImmutableNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.util.List;
-import java.util.Set;
+import java.util.Random;
 
 import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.GEO_DATA_TYPE;
 
@@ -29,15 +29,21 @@ public enum ConfigParser {
         load();
     }
 
+    public Config config() {
+        return config;
+    }
+
     private void load() {
-        String xmlPath = "/home/tim/iotdb-benchmark/conf/config.xml";
+        String xmlPath = System.getProperty(Constants.BENCHMARK_CONF);
         File configFile = new File(xmlPath);
         Configurations configurations = new Configurations();
         XMLConfiguration xml = null;
         try {
              xml = configurations.xml(configFile);
         } catch (ConfigurationException e) {
+            System.err.println(e.getMessage());
             System.err.println("Could not parse config.");
+            e.printStackTrace();
             System.exit(1);
         }
 
@@ -75,11 +81,12 @@ public enum ConfigParser {
         config.START_TIMESTAMP_INDEX = xml.getInt("timestamp.startIndex", config.START_TIMESTAMP_INDEX);
         config.DATA_SEED = xml.getLong("timestamp.seed", config.DATA_SEED);
 
-        config.LINE_RATIO = xml.getDouble("functions.line", config.LINE_RATIO);
-        config.SIN_RATIO = xml.getDouble("functions.sin", config.SIN_RATIO);
-        config.SQUARE_RATIO = xml.getDouble("functions.square", config.SQUARE_RATIO);
-        config.RANDOM_RATIO = xml.getDouble("functions.random", config.RANDOM_RATIO);
-        config.CONSTANT_RATIO = xml.getDouble("functions.constant", config.CONSTANT_RATIO);
+
+        config.ratio.put("line", xml.getDouble("functions.line[@ratio]"));
+        config.ratio.put("sin", xml.getDouble("functions.sin[@ratio]"));
+        config.ratio.put("square", xml.getDouble("functions.square[@ratio]"));
+        config.ratio.put("random", xml.getDouble("functions.random[@ratio]"));
+        config.ratio.put("constant", xml.getDouble("functions.constant[@ratio]"));
 
         // TODO reimplement
         config.QUERY_CHOICE = xml.getInt("query.type", config.QUERY_CHOICE);
@@ -100,41 +107,132 @@ public enum ConfigParser {
         config.QUERY_SLIMIT_N = xml.getInt("query.sLimitN", config.QUERY_SLIMIT_N);
         config.QUERY_SLIMIT_OFFSET = xml.getInt("query.sLimitOffset", config.QUERY_SLIMIT_OFFSET);
 
-        initSensorGroups(xml);
+        initInnerFunctions();
         initSensors(xml);
     }
 
     private void initSensors(XMLConfiguration xml) {
-        List<HierarchicalConfiguration<ImmutableNode>> sensorsConfigurations
-                = xml.configurationsAt("sensors.sensor");
-        String prefix = xml.getString("sensors[@prefix]");
-        config.SENSORS_NUMBER = sensorsConfigurations.size();
-        for (int i = 0; i < sensorsConfigurations.size(); i++) {
-            HierarchicalConfiguration<ImmutableNode> configuration = sensorsConfigurations.get(i);
-            String name = prefix + i;
-            int freq = configuration.getInt("[@frequency]");
-            String dataType = configuration.getString("[@dataType]");
-            SensorType type = SensorType.valueOf(configuration.getString("[@type]").toUpperCase());
-            String sensorGroup = configuration.getString("[@sensorGroup]");
+        String sensorNamePrefix = xml.getString("sensorGroups[@prefix]");
+        List<HierarchicalConfiguration<ImmutableNode>> sensorGroups
+                = xml.configurationsAt("sensorGroups.sensorGroup");
 
-            switch (type) {
-                case BASIC:
-                    config.SENSORS.add(new BasicSensor(name, sensorGroup, null, freq, dataType));
-                    break;
-                case GPS:
-                    config.SENSORS.add(new GpsSensor(name, sensorGroup, null, freq, GEO_DATA_TYPE));
-                    break;
-                default:
-                    System.err.println("Inapropriate sensor type.");
+        for (int i = 0; i < sensorGroups.size(); i++) {
+            String sensorGroupName = sensorGroups.get(i).getString("[@name]");
+            String sensorGroupDataType = sensorGroups.get(i).getString("[@dataType]");
+            SensorGroup sensorGroup = new SensorGroup(sensorGroupName);
+            config.SENSOR_GROUPS.add(sensorGroup);
+            List<HierarchicalConfiguration<ImmutableNode>> sensors = sensorGroups.get(i).configurationsAt("sensor");
+            for (int j = 0; j < sensors.size(); j++) {
+                HierarchicalConfiguration<ImmutableNode> sensorConfig = sensors.get(j);
+                int sensorIndex = config.SENSORS.size();
+                String name = sensorNamePrefix + sensorIndex;
+                int freq = sensorConfig.getInt("[@frequency]");
+                SensorType type = SensorType.valueOf(sensorConfig.getString("[@type]").toUpperCase());
+
+                Sensor sensor;
+                switch (type) {
+                    case BASIC:
+                        sensor = new BasicSensor(name, sensorGroup, getFunction(sensorIndex), freq, sensorGroupDataType);
+                        config.SENSORS.add(sensor);
+                        break;
+                    case GPS:
+                        sensor = new GpsSensor(name, sensorGroup, config.GEO_LIST.get(0), freq, GEO_DATA_TYPE);
+                        config.SENSORS.add(sensor);
+                        break;
+                    default:
+                        throw new IllegalStateException("Inappropriate sensor type.");
+                }
+                sensorGroup.addSensor(sensor);
             }
         }
     }
 
-    private void initSensorGroups(XMLConfiguration xml) {
-        List<HierarchicalConfiguration<ImmutableNode>> sensorGroupsConfigurations
-                = xml.configurationsAt("sensorGroups.sensorGroup");
-        for (HierarchicalConfiguration<ImmutableNode> configuration : sensorGroupsConfigurations) {
-            config.SENSOR_GROUPS.add(configuration.getString(""));
+    private void initInnerFunctions() {
+        FunctionXml xml = null;
+        try {
+            InputStream input = Function.class.getResourceAsStream("function.xml");
+            JAXBContext context = JAXBContext.newInstance(FunctionXml.class, FunctionParam.class);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            xml = (FunctionXml) unmarshaller.unmarshal(input);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
+        List<FunctionParam> xmlFuctions = xml.getFunctions();
+        for (FunctionParam param : xmlFuctions) {
+            if (param.getFunctionType().contains("_mono_k")) {
+                config.LINE_LIST.add(param);
+            } else if (param.getFunctionType().contains("_mono")) {
+                if (param.getMin() == param.getMax()) {
+                    config.CONSTANT_LIST.add(param);
+                }
+            } else if (param.getFunctionType().contains("_sin")) {
+                config.SIN_LIST.add(param);
+            } else if (param.getFunctionType().contains("_square")) {
+                config.SQUARE_LIST.add(param);
+            } else if (param.getFunctionType().contains("_random")) {
+                config.RANDOM_LIST.add(param);
+            } else if (param.getFunctionType().contains("point_geo")) {
+                config.GEO_LIST.add(param);
+            }
+        }
+    }
+
+    /**
+     * Initialize sensor functions based on a random generator deterministically. Each sensor out of
+     * <code>SENSOR_NUMBER</code> gets a mathematical function, which simulates data stream. Each function can be
+     * assigned with a predefined proportional probability.
+     *
+     * @param i The index of a sensor.
+     */
+    private FunctionParam getFunction(int i) {
+        double constant = config.ratio.get("constant");
+        double line = config.ratio.get("line");
+        double random = config.ratio.get("random");
+        double sin = config.ratio.get("sin");
+        double square = config.ratio.get("square");
+
+        double sumRatio = config.ratio.values().stream().reduce(0.0, Double::sum);
+        if (sumRatio != 0 && constant >= 0 && line >= 0 && random >= 0 && sin >= 0 && square >= 0) {
+            double constantArea = constant / sumRatio;
+            double lineArea = constantArea + line / sumRatio;
+            double randomArea = lineArea + random / sumRatio;
+            double sinArea = randomArea + sin / sumRatio;
+            double squareArea = sinArea + square / sumRatio;
+            Random r = new Random(config.DATA_SEED);
+
+            double property = r.nextDouble();
+            FunctionParam param = null;
+            Random fr = new Random(config.DATA_SEED + 1 + i);
+            double middle = fr.nextDouble();
+            if (property >= 0 && property < constantArea) {// constant
+                int index = (int) (middle * config.CONSTANT_LIST.size());
+                param = config.CONSTANT_LIST.get(index);
+            }
+            if (property >= constantArea && property < lineArea) {// line
+                int index = (int) (middle * config.LINE_LIST.size());
+                param = config.LINE_LIST.get(index);
+            }
+            if (property >= lineArea && property < randomArea) {// random
+                int index = (int) (middle * config.RANDOM_LIST.size());
+                param = config.RANDOM_LIST.get(index);
+            }
+            if (property >= randomArea && property < sinArea) {// sin
+                int index = (int) (middle * config.SIN_LIST.size());
+                param = config.SIN_LIST.get(index);
+            }
+            if (property >= sinArea && property < squareArea) {// square
+                int index = (int) (middle * config.SQUARE_LIST.size());
+                param = config.SQUARE_LIST.get(index);
+            }
+            if (param == null) {
+                System.err.println(" initSensorFunctions() 初始化函数比例有问题！");
+                System.exit(0);
+            }
+            return param;
+
+        } else {
+            throw new IllegalStateException("function ration must >=0 and sum>0");
         }
     }
 

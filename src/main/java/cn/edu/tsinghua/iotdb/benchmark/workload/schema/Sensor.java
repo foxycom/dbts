@@ -15,8 +15,6 @@ public interface Sensor {
 
     void setInterval(long interval);
 
-    String getTableName();
-
     String getDataType();
 
     void setDataType(String dataType);
@@ -24,5 +22,7 @@ public interface Sensor {
     void setFrequency(int freq);
 
     FunctionParam getFunctionParam();
+
+    SensorGroup getSensorGroup();
 
 }

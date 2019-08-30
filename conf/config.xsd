@@ -46,29 +46,29 @@
   <xs:simpleType name="sensorCategory">
     <xs:restriction base="xs:string">
       <xs:enumeration value="basic"/>
-      <xs:enumeration value="geo"/>
+      <xs:enumeration value="gps"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:complexType name="sensorType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
         <xs:attribute type="xs:integer" name="frequency" use="required"/>
-        <xs:attribute type="xs:string" name="sensorGroup" use="required"/>
-        <xs:attribute type="xs:string" name="dataType" use="required"/>
         <xs:attribute type="uni:sensorCategory" name="type" use="required" xmlns:uni="https://uni-passau.de"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
-  <xs:complexType name="sensorsType">
+  <xs:complexType name="sensorGroupType">
     <xs:sequence>
       <xs:element type="uni:sensorType" name="sensor" maxOccurs="unbounded" minOccurs="1" xmlns:uni="https://uni-passau.de"/>
     </xs:sequence>
-    <xs:attribute type="xs:string" name="prefix" use="required"/>
+    <xs:attribute type="xs:string" name="name" use="required"/>
+    <xs:attribute type="xs:string" name="dataType" use="required"/>
   </xs:complexType>
   <xs:complexType name="sensorGroupsType">
     <xs:sequence>
-      <xs:element type="xs:string" name="sensorGroup" maxOccurs="unbounded" minOccurs="1" xmlns:uni="https://uni-passau.de"/>
+      <xs:element type="uni:sensorGroupType" name="sensorGroup" maxOccurs="unbounded" minOccurs="1" xmlns:uni="https://uni-passau.de"/>
     </xs:sequence>
+    <xs:attribute type="xs:string" name="prefix" use="required"/>
   </xs:complexType>
   <xs:complexType name="batchType">
     <xs:simpleContent>
@@ -102,21 +102,21 @@
   <xs:complexType name="lineType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute type="xs:integer" name="ratio"/>
+        <xs:attribute type="xs:double" name="ratio"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
   <xs:complexType name="sinType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute type="xs:integer" name="ratio"/>
+        <xs:attribute type="xs:double" name="ratio"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
   <xs:complexType name="squareType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute type="xs:integer" name="ratio"/>
+        <xs:attribute type="xs:double" name="ratio"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -130,14 +130,22 @@
   <xs:complexType name="randomType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute type="xs:integer" name="ratio"/>
+        <xs:attribute type="xs:double" name="ratio"/>
       </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="modeType">
+    <xs:simpleContent>
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="server_mode"/>
+        <xs:enumeration value="test_with_default_path"/>
+      </xs:restriction>
     </xs:simpleContent>
   </xs:complexType>
   <xs:complexType name="constantType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
-        <xs:attribute type="xs:integer" name="ratio"/>
+        <xs:attribute type="xs:double" name="ratio"/>
       </xs:extension>
     </xs:simpleContent>
   </xs:complexType>
@@ -173,23 +181,22 @@
     <xs:sequence>
       <xs:element type="xs:string" name="version"/>
       <xs:element type="uni:dbType" name="db" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="xs:string" name="mode"/>
-      <xs:element type="uni:mysqlLogType" name="mysqlLog" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="uni:clientsType" name="clients" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="xs:integer" name="deviceGroups"/>
-      <xs:element type="uni:devicesType" name="devices"/>
-      <xs:element type="uni:sensorGroupsType" name="sensorGroups" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="uni:sensorsType" name="sensors" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="uni:batchType" name="batch" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="xs:integer" name="loops"/>
-      <xs:element type="xs:integer" name="pointStep"/>
-      <xs:element type="xs:string" name="encoding"/>
+      <xs:element type="uni:modeType" name="mode" xmlns:uni="https://uni-passau.de"/>
+      <xs:element type="uni:mysqlLogType" name="mysqlLog" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="uni:clientsType" name="clients" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="xs:integer" name="deviceGroups" minOccurs="0"/>
+      <xs:element type="uni:devicesType" name="devices" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="uni:sensorGroupsType" name="sensorGroups" xmlns:uni="https://uni-passau.de" minOccurs="0" />
+      <xs:element type="uni:batchType" name="batch" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="xs:integer" name="loops" minOccurs="0"/>
+      <xs:element type="xs:integer" name="pointStep" minOccurs="0"/>
+      <xs:element type="xs:string" name="encoding" minOccurs="0"/>
       <xs:element type="uni:serverMonitorType" name="serverMonitor" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="xs:boolean" name="mulDevBatch"/>
-      <xs:element type="uni:overflowType" name="overflow" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="uni:timestampType" name="timestamp" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="uni:functionsType" name="functions" xmlns:uni="https://uni-passau.de"/>
-      <xs:element type="uni:queryType" name="query" xmlns:uni="https://uni-passau.de"/>
+      <xs:element type="xs:boolean" name="mulDevBatch" minOccurs="0"/>
+      <xs:element type="uni:overflowType" name="overflow" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="uni:timestampType" name="timestamp" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="uni:functionsType" name="functions" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="uni:queryType" name="query" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
     </xs:sequence>
   </xs:complexType>
 </xs:schema>

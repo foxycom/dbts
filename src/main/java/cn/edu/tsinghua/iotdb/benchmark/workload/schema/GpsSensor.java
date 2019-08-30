@@ -5,7 +5,7 @@ import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 
 public class GpsSensor extends BasicSensor {
 
-    public GpsSensor(String name, String sensorGroup, FunctionParam functionParam, int freq, String dataType) {
+    public GpsSensor(String name, SensorGroup sensorGroup, FunctionParam functionParam, int freq, String dataType) {
         super(name, sensorGroup, functionParam, freq, dataType);
     }
 

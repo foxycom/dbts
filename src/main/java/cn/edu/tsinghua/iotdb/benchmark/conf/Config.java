@@ -16,6 +16,7 @@ import javax.xml.bind.Unmarshaller;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.BasicSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class Config {
 	/** The number of working devices. */
 	public int DEVICES_NUMBER = 2;
 
-	public List<String> SENSOR_GROUPS = new ArrayList<>();
+	public List<SensorGroup> SENSOR_GROUPS = new ArrayList<>();
 
 	/** 设备和客户端是否绑定 */
 	public boolean BIND_CLIENTS_TO_DEVICES = true;
@@ -48,8 +49,6 @@ public class Config {
 	/** 每个设备的传感器数量 */
 	public int SENSORS_NUMBER = 5;
 
-	public List<Integer> SENSOR_FREQ = new ArrayList<>();
-	public List<String> SENSOR_DATA_TYPES = new ArrayList<>();
 	/** 数据采集步长 */
 	public long POINT_STEP = 7000;
 	/** 查询时间戳变化增加步长 */
@@ -95,7 +94,7 @@ public class Config {
 
 	public int LIMIT_CLAUSE_MODE = 0;
 
-	public String OPERATION_PROPORTION = "1:0:0:0:0:0:0:0:0";
+	public String OPERATION_PROPORTION = "1:0:0:0:0:0:0:0:0:0";
 
 	/**系统性能检测时间间隔-2秒*/
  	public int INTERVAL = 0;
@@ -166,6 +165,8 @@ public class Config {
 	// public static double CONSTANT_RATIO= 0.002;//0.352
 	public double CONSTANT_RATIO = 0.352;// 0.352
 
+	public Map<String, Double> ratio = new HashMap<>();
+
 	/** Make random generator deterministic again! */
 	public long DATA_SEED = 666L;
 
@@ -176,9 +177,6 @@ public class Config {
 	public List<FunctionParam> RANDOM_LIST = new ArrayList<>();
 	public List<FunctionParam> CONSTANT_LIST = new ArrayList<>();
 	public List<FunctionParam> GEO_LIST = new ArrayList<>();
-
-	/** Device names */
-	public List<String> DEVICE_CODES = new ArrayList<>();
 
 	/** Sensor names */
 	public List<String> SENSOR_CODES = new ArrayList<>();
@@ -296,119 +294,8 @@ public class Config {
 		}
 	}
 
-	public void initInnerFunction() {
-		FunctionXml xml = null;
-		try {
-			InputStream input = Function.class.getResourceAsStream("function.xml");
-			JAXBContext context = JAXBContext.newInstance(FunctionXml.class, FunctionParam.class);
-			Unmarshaller unmarshaller = context.createUnmarshaller();
-			xml = (FunctionXml) unmarshaller.unmarshal(input);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-		List<FunctionParam> xmlFuctions = xml.getFunctions();
-		for (FunctionParam param : xmlFuctions) {
-			if (param.getFunctionType().indexOf("_mono_k") != -1) {
-				LINE_LIST.add(param);
-			} else if (param.getFunctionType().indexOf("_mono") != -1) {
-				// 如果min==max则为常数，系统没有非常数的
-				if (param.getMin() == param.getMax()) {
-					CONSTANT_LIST.add(param);
-				}
-			} else if (param.getFunctionType().indexOf("_sin") != -1) {
-				SIN_LIST.add(param);
-			} else if (param.getFunctionType().indexOf("_square") != -1) {
-				SQUARE_LIST.add(param);
-			} else if (param.getFunctionType().indexOf("_random") != -1) {
-				RANDOM_LIST.add(param);
-			} else if (param.getFunctionType().indexOf("point_geo") != -1) {
-				GEO_LIST.add(param);
-			}
-		}
-	}
 
-	/**
-	 * Initialize sensor functions based on a random generator deterministically. Each sensor out of
-	 * <code>SENSOR_NUMBER</code> gets a mathematical function, which simulates data stream. Each function can be
-	 * assigned with a predefined proportional probability.
-	 */
-	public void initSensorFunction() {
-		double sumRatio = CONSTANT_RATIO + LINE_RATIO + RANDOM_RATIO + SIN_RATIO + SQUARE_RATIO;
-		if (sumRatio != 0 && CONSTANT_RATIO >= 0 && LINE_RATIO >= 0 && RANDOM_RATIO >= 0 && SIN_RATIO >= 0
-				&& SQUARE_RATIO >= 0) {
-			double constantArea = CONSTANT_RATIO / sumRatio;
-			double lineArea = constantArea + LINE_RATIO / sumRatio;
-			double randomArea = lineArea + RANDOM_RATIO / sumRatio;
-			double sinArea = randomArea + SIN_RATIO / sumRatio;
-			double squareArea = sinArea + SQUARE_RATIO / sumRatio;
-			Random r = new Random(DATA_SEED);
-			for (int i = 0; i < SENSORS_NUMBER; i++) {
-				double property = r.nextDouble();
-				FunctionParam param = null;
-				Random fr = new Random(DATA_SEED + 1 + i);
-				double middle = fr.nextDouble();
-				if (property >= 0 && property < constantArea) {// constant
-					int index = (int) (middle * CONSTANT_LIST.size());
-					param = CONSTANT_LIST.get(index);
-				}
-				if (property >= constantArea && property < lineArea) {// line
-					int index = (int) (middle * LINE_LIST.size());
-					param = LINE_LIST.get(index);
-				}
-				if (property >= lineArea && property < randomArea) {// random
-					int index = (int) (middle * RANDOM_LIST.size());
-					param = RANDOM_LIST.get(index);
-				}
-				if (property >= randomArea && property < sinArea) {// sin
-					int index = (int) (middle * SIN_LIST.size());
-					param = SIN_LIST.get(index);
-				}
-				if (property >= sinArea && property < squareArea) {// square
-					int index = (int) (middle * SQUARE_LIST.size());
-					param = SQUARE_LIST.get(index);
-				}
-				if (param == null) {
-					System.err.println(" initSensorFunction() 初始化函数比例有问题！");
-					System.exit(0);
-				}
-				SENSOR_FUNCTION.put(i, param);
-			}
-		} else {
-			System.err.println("function ration must >=0 and sum>0");
-			System.exit(0);
-		}
-	}
 
-	/**
-	 * Initializes the sensor names for each sensor out of <code>SENSOR_NUMBER</code>.
-	 */
-	public List<String> initSensorCodes() {
-		for (int i = 0; i < SENSORS_NUMBER; i++) {
-			String sensorCode = "s_" + i;
-			SENSOR_CODES.add(sensorCode);
-		}
-		return SENSOR_CODES;
-	}
-
-	/**
- 	 * Initializes the devices names for each device out of <code>DEVICE_NUMBER</code>.
-	 */
-	public List<String> initDeviceCodes() {
-		for (int i = 0; i < DEVICES_NUMBER; i++) {
-			String deviceCode = "d_" + i;
-			DEVICE_CODES.add(deviceCode);
-		}
-		return DEVICE_CODES;
-	}
-
-	/** Initializes deterministically sensor names based on a random generator. */
-	public String getSensorCodeByRandom() {
-		List<String> sensors = SENSOR_CODES;
-		int size = sensors.size();
-		Random r = new Random(QUERY_SEED);
-		return sensors.get(r.nextInt(size));
-	}
 
 
 	public void initRealDataSetSchema() {
@@ -432,14 +319,6 @@ public class Config {
 			default:
 				throw new RuntimeException(DATA_SET + " is not supported.");
 		}
-	}
-
-
-	public String getDeviceCodeByRandom() {
-		List<String> devices = DEVICE_CODES;
-		int size = devices.size();
-		Random r = new Random(QUERY_SEED);
-		return devices.get(r.nextInt(size));
 	}
 
 	public static void main(String[] args) {

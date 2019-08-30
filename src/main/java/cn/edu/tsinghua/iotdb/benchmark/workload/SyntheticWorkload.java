@@ -2,7 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.workload;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
@@ -26,7 +26,7 @@ import java.util.*;
 public class SyntheticWorkload implements IWorkload {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SyntheticWorkload.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
   private static Random timestampRandom = new Random(config.DATA_SEED);
   private ProbTool probTool;
   private long maxTimestampIndex;

@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class DataSchemaTest {
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+    private static Config config = ConfigParser.INSTANCE.config();
 
   @Test
   public void test(){

@@ -2,7 +2,8 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
@@ -26,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class DBWrapper implements IDatabase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(IDatabase.class);
-  private static Config config = ConfigDescriptor.getInstance().getConfig();
+  private static Config config = ConfigParser.INSTANCE.config();
   private IDatabase db;
   private static final double NANO_TO_SECOND = 1000000000.0d;
   private static final double NANO_TO_MILLIS = 1000000.0d;

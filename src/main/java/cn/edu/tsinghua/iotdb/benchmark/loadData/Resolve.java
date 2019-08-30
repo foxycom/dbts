@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
+import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 
 
 
@@ -22,7 +22,7 @@ public class Resolve implements Runnable{
 	
 	public Resolve(String fileName,Storage storage){
 		this.storage = storage;
-		config = ConfigDescriptor.getInstance().getConfig();
+		config = ConfigParser.INSTANCE.config();
 		READ_LINES = config.BATCH_OP_NUM*config.DEVICES_NUMBER *2;
         try {
         	file = new File(fileName);
