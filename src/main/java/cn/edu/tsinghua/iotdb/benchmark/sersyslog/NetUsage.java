@@ -50,8 +50,12 @@ public enum NetUsage {
                         line = Usage.parseShellValues(line);
                         String[] temp = line.split("\\s+");
 
-                        recvPerSec = Float.parseFloat(temp[0]);
-                        transPerSec = Float.parseFloat(temp[1]);
+                        try {
+                            recvPerSec = Float.parseFloat(temp[0]);
+                            transPerSec = Float.parseFloat(temp[1]);
+                        } catch (NumberFormatException e) {
+                            System.err.println("Net values are not numbers: " + temp[0] + " | " + temp[1]);
+                        }
                         break;
                     }
                 }
