@@ -110,7 +110,7 @@
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="false">
+    <serverMonitor active="true">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>

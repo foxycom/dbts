@@ -112,7 +112,7 @@
 
     <serverMonitor active="false">
         <drive>sdb</drive>
-        <iface>enp3s0</iface>
+        <iface>enp0s25</iface>
         <port>56565</port>
     </serverMonitor>
 

@@ -10,4 +10,4 @@ sed -i "s/BENCHMARK_WORK_MODE=.*/BENCHMARK_WORK_MODE=test_with_default_path/" "$
 rm -rf lib
 mvn clean package -Dmaven.test.skip=true
 cd bin
-sh startup.sh -cf ../conf/config.properties
+sh startup.sh -cf ../conf/monitor.xml
