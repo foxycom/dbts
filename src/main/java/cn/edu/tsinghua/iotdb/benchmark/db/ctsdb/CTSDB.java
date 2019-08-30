@@ -72,7 +72,7 @@ public class CTSDB extends TSDB implements IDatebase {
         String response = null;
 
         //delete old metric
-        for(int i = 0;i < config.GROUP_NUMBER;i++){
+        for(int i = 0; i < config.DEVICE_GROUPS_NUMBER; i++){
             String url = metricUrl + metric + "group_" + i;
             try {
                 response = HttpRequest.sendDelete(url,"");
@@ -85,7 +85,7 @@ public class CTSDB extends TSDB implements IDatebase {
         }
 
         //create new metric
-        for(int i = 0;i < config.GROUP_NUMBER;i++){
+        for(int i = 0; i < config.DEVICE_GROUPS_NUMBER; i++){
             String url = metricUrl + metric + "group_" + i;
             CTSDBMetricModel ctsdbMetricModel = new CTSDBMetricModel();
             Map<String, String> tags = new HashMap<>();
@@ -127,7 +127,7 @@ public class CTSDB extends TSDB implements IDatebase {
     private String getMetricName(String device) {
         String[] parts = device.split("_");
         int deviceNum = Integer.parseInt(parts[1]);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         String groupId = "group_" + groupNum;
         return metric + groupId;
@@ -172,7 +172,7 @@ public class CTSDB extends TSDB implements IDatebase {
         }
         LOGGER.debug(body.toString());
         writeUrl = Url + "/" + getMetricName(device) + "/doc/_bulk";
-        int batch_point_num = config.BATCH_SIZE * config.SENSOR_NUMBER;
+        int batch_point_num = config.BATCH_SIZE * config.SENSORS_NUMBER;
         long costTime = 0;
         try {
             startTime = System.nanoTime();

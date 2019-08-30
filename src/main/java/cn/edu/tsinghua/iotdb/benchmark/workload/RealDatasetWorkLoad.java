@@ -69,7 +69,7 @@ public class RealDatasetWorkLoad implements IWorkload {
     deviceSchemaList = new ArrayList<>();
     for (int i = 1; i <= config.QUERY_DEVICE_NUM; i++) {
       String deviceIdStr = "" + i;
-      DeviceSchema deviceSchema = new DeviceSchema(calGroupIdStr(deviceIdStr, config.GROUP_NUMBER),
+      DeviceSchema deviceSchema = new DeviceSchema(calGroupIdStr(deviceIdStr, config.DEVICE_GROUPS_NUMBER),
           deviceIdStr, sensorList);
       deviceSchemaList.add(deviceSchema);
     }

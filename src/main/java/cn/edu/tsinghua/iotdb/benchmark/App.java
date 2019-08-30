@@ -63,8 +63,7 @@ public class App {
             return;
         }
         Config config = ConfigDescriptor.getInstance().getConfig();
-        Mode mode = Mode.valueOf(config.BENCHMARK_WORK_MODE.trim().toUpperCase());
-        switch (mode) {
+        switch (config.WORK_MODE) {
             case TEST_WITH_DEFAULT_PATH:
                 testWithDefaultPath(config);
                 break;
@@ -96,7 +95,7 @@ public class App {
                 //clientSystemInfo(config);
                 throw new NotImplementedException();
             default:
-                throw new SQLException("unsupported mode " + config.BENCHMARK_WORK_MODE);
+                throw new SQLException("unsupported mode " + config.WORK_MODE);
         }
 
     }
@@ -119,7 +118,7 @@ public class App {
         // register schema if needed
         try {
             dbWrapper.init();
-            if (config.IS_DELETE_DATA) {
+            if (config.ERASE_DATA) {
                 try {
                     dbWrapper.cleanup();
                 } catch (TsdbException e) {
@@ -148,12 +147,12 @@ public class App {
         // create CLIENT_NUMBER client threads to do the workloads
         List<Measurement> threadsMeasurements = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER);
+        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
+        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER);
         long st;
         st = System.nanoTime();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-        for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
+        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
             SyntheticClient client = new SyntheticClient(i, downLatch, barrier);
             clients.add(client);
             executorService.submit(client);
@@ -195,7 +194,7 @@ public class App {
         try {
             LOGGER.info("start to init database {}", config.DB_SWITCH);
             dbWrapper.init();
-            if(config.IS_DELETE_DATA){
+            if(config.ERASE_DATA){
                 try {
                     LOGGER.info("start to clean old data");
                     dbWrapper.cleanup();
@@ -219,26 +218,26 @@ public class App {
                 LOGGER.error("Close {} failed because ", config.DB_SWITCH, e);
             }
         }
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER);
+        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER);
 
         List<List<String>> thread_files = new ArrayList<>();
-        for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
             thread_files.add(new ArrayList<>());
         }
 
         for (int i = 0; i < files.size(); i++) {
             String filePath = files.get(i);
-            int thread = i % config.CLIENT_NUMBER;
+            int thread = i % config.CLIENTS_NUMBER;
             thread_files.get(thread).add(filePath);
         }
 
         // create CLIENT_NUMBER client threads to do the workloads
         List<Measurement> threadsMeasurements = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
+        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
         long st = System.nanoTime();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-        for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
+        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
             Client client = new RealDatasetClient(i, downLatch, config, thread_files.get(i), barrier);
             clients.add(client);
             executorService.submit(client);
@@ -293,15 +292,15 @@ public class App {
         }
 
         Measurement measurement = new Measurement();
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENT_NUMBER);
+        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER);
 
         // create CLIENT_NUMBER client threads to do the workloads
         List<Measurement> threadsMeasurements = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
+        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
         long st = System.nanoTime();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-        for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
+        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
             Client client = new QueryRealDatasetClient(i, downLatch, barrier, config);
             clients.add(client);
             executorService.submit(client);
@@ -322,7 +321,7 @@ public class App {
         }
         if(!split[0].trim().equals("0")){
           LOGGER.error("OPERATION_PROPORTION {} error, {} can't have write operation.",
-              config.OPERATION_PROPORTION, config.BENCHMARK_WORK_MODE);
+              config.OPERATION_PROPORTION, config.WORK_MODE);
           return false;
         }
         return true;
@@ -494,10 +493,10 @@ public class App {
         ArrayList<ArrayList> latenciesOfClients = new ArrayList<>();
         long totalErrorPoint;
 
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
+        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
         ArrayList<Long> totalTimes = new ArrayList<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-        for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
+        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
             executorService.submit(new ClientThread(idbFactory.buildDB(mySql.getLabID()), i, downLatch, totalTimes,
                     totalInsertErrorNums, latenciesOfClients));
         }
@@ -543,17 +542,17 @@ public class App {
 
         long totalPoints = config.LOOP * config.BATCH_SIZE;
         if (config.DB_SWITCH.equals(Constants.DB_IOT) && config.MUL_DEV_BATCH) {
-            totalPoints = config.SENSOR_NUMBER * config.CLIENT_NUMBER * config.LOOP * config.BATCH_SIZE;
+            totalPoints = config.SENSORS_NUMBER * config.CLIENTS_NUMBER * config.LOOP * config.BATCH_SIZE;
         }
 
         totalErrorPoint = getErrorNum(config, totalInsertErrorNums, datebase);
         LOGGER.info(
                 "GROUP_NUMBER = ,{}, DEVICE_NUMBER = ,{}, SENSOR_NUMBER = ,{}, BATCH_SIZE = ,{}, POINT_STEP = ,{}, LOOP = ,{}, MUL_DEV_BATCH = ,{}",
-                config.GROUP_NUMBER, config.DEVICE_NUMBER, config.SENSOR_NUMBER, config.BATCH_SIZE, config.POINT_STEP,
+                config.DEVICE_GROUPS_NUMBER, config.DEVICES_NUMBER, config.SENSORS_NUMBER, config.BATCH_SIZE, config.POINT_STEP,
                 config.LOOP, config.MUL_DEV_BATCH);
 
         LOGGER.info("Loaded ,{}, points in ,{},s with ,{}, workers (mean rate ,{}, points/s)", totalPoints,
-                totalTime / 1000000000.0f, config.CLIENT_NUMBER,
+                totalTime / 1000000000.0f, config.CLIENTS_NUMBER,
                 1000000000.0f * (totalPoints - totalErrorPoint) / (float) totalTime);
 
         LOGGER.info("Total Operations {}; Latency(ms): Avg {}, MiddleAvg {}, Min {}, Max {}, p1 {}, p5 {}, p50 {}, p90 {}, p95 {}, p99 {}, p99.9 {}, p99.99 {}",
@@ -635,12 +634,12 @@ public class App {
         ArrayList<Long> totalInsertErrorNums = new ArrayList<>();
         long totalErrorPoint;
         if (config.READ_FROM_FILE) {
-            CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
+            CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
             ArrayList<Long> totalTimes = new ArrayList<>();
             Storage storage = new Storage();
-            ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER + 1);
+            ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER + 1);
             executorService.submit(new Resolve(config.FILE_PATH, storage));
-            for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+            for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
                 executorService.submit(new ClientThread(idbFactory.buildDB(mySql.getLabID()), i, storage, downLatch,
                         totalTimes, totalInsertErrorNums, latenciesOfClients));
             }
@@ -692,15 +691,15 @@ public class App {
             LOGGER.info("READ_FROM_FILE = true, TAG_PATH = ,{}, STORE_MODE = ,{}, BATCH_OP_NUM = ,{}", config.TAG_PATH,
                     config.STORE_MODE, config.BATCH_OP_NUM);
             LOGGER.info("loaded ,{}, items in ,{},s with ,{}, workers (mean rate ,{}, items/s)", totalItem,
-                    totalTime / 1000000000.0f, config.CLIENT_NUMBER, (1000000000.0f * totalItem) / ((float) totalTime));
+                    totalTime / 1000000000.0f, config.CLIENTS_NUMBER, (1000000000.0f * totalItem) / ((float) totalTime));
             LOGGER.info("Total Operations {}; Latency(ms): Avg {}, MiddleAvg {}, Min {}, Max {}, p1 {}, p5 {}, p50 {}, p90 {}, p95 {}, p99 {}, p99.9 {}, p99.99 {}",
                     totalOps, avgLatency, midAvgLatency, min, max, p1, p5, p50, p90, p95, p99, p999, p9999);
 
         } else {
-            CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
+            CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
             ArrayList<Long> totalTimes = new ArrayList<>();
-            ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-            for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+            ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
+            for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
                 executorService.submit(new ClientThread(idbFactory.buildDB(mySql.getLabID()), i, downLatch, totalTimes,
                         totalInsertErrorNums, latenciesOfClients));
             }
@@ -745,9 +744,9 @@ public class App {
             }
             float midAvgLatency = (float) (midSum / (int) (totalOps * 0.9) / unitTransfer);
 
-            long totalPoints = config.SENSOR_NUMBER * config.DEVICE_NUMBER * config.LOOP * config.BATCH_SIZE;
+            long totalPoints = config.SENSORS_NUMBER * config.DEVICES_NUMBER * config.LOOP * config.BATCH_SIZE;
             if (config.DB_SWITCH.equals(Constants.DB_IOT) && config.MUL_DEV_BATCH) {
-                totalPoints = config.SENSOR_NUMBER * config.CLIENT_NUMBER * config.LOOP * config.BATCH_SIZE;
+                totalPoints = config.SENSORS_NUMBER * config.CLIENTS_NUMBER * config.LOOP * config.BATCH_SIZE;
             }
             long insertEndTime = System.nanoTime();
             float insertElapseTime = (insertEndTime - insertStartTime) / 1000000000.0f;
@@ -761,11 +760,11 @@ public class App {
                             "POINT_STEP = ,{}, \n" +
                             "LOOP = ,{}, \n" +
                             "MUL_DEV_BATCH = ,{} \n",
-                    config.GROUP_NUMBER, config.DEVICE_NUMBER, config.SENSOR_NUMBER, config.BATCH_SIZE,
+                    config.DEVICE_GROUPS_NUMBER, config.DEVICES_NUMBER, config.SENSORS_NUMBER, config.BATCH_SIZE,
                     config.POINT_STEP, config.LOOP, config.MUL_DEV_BATCH);
 
             LOGGER.info("Loaded ,{}, points in ,{},s with ,{}, workers (mean rate ,{}, points/s)", totalPoints,
-                    totalTime / 1000000000.0f, config.CLIENT_NUMBER,
+                    totalTime / 1000000000.0f, config.CLIENTS_NUMBER,
                     1000000000.0f * (totalPoints - totalErrorPoint) / (float) totalTime);
             LOGGER.info("Total Operations {}; Latency(ms): Avg {}, MiddleAvg {}, Min {}, Max {}, p1 {}, p5 {}, p50 {}, p90 {}, p95 {}, p99 {}, p99.9 {}, p99.99 {}",
                     totalOps, avgLatency, midAvgLatency, min, max, p1, p5, p50, p90, p95, p99, p999, p9999);
@@ -839,17 +838,17 @@ public class App {
         // 同一个device中不同sensor的点数是相同的，因此不对sensor遍历
         long insertedPointNum = 0;
         int groupIndex = 0;
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
-        for (int i = 0; i < config.DEVICE_NUMBER; i++) {
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
+        for (int i = 0; i < config.DEVICES_NUMBER; i++) {
             groupIndex = i / groupSize;
-            insertedPointNum += database.count("group_" + groupIndex, "d_" + i, "s_0") * config.SENSOR_NUMBER;
+            insertedPointNum += database.count("group_" + groupIndex, "d_" + i, "s_0") * config.SENSORS_NUMBER;
         }
         try {
             database.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return config.SENSOR_NUMBER * config.DEVICE_NUMBER * config.LOOP * config.BATCH_SIZE - insertedPointNum;
+        return config.SENSORS_NUMBER * config.DEVICES_NUMBER * config.LOOP * config.BATCH_SIZE - insertedPointNum;
     }
 
     private static long getErrorNumIoT(ArrayList<Long> totalInsertErrorNums) {
@@ -871,12 +870,12 @@ public class App {
         mySql.saveTestModel("Double", config.ENCODING);
         mySql.saveTestConfig();
 
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENT_NUMBER);
+        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
         ArrayList<Long> totalTimes = new ArrayList<>();
         ArrayList<Long> totalPoints = new ArrayList<>();
         ArrayList<Long> totalQueryErrorNums = new ArrayList<>();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENT_NUMBER);
-        for (int i = 0; i < config.CLIENT_NUMBER; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
+        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
             executorService.submit(new QueryClientThread(idbFactory.buildDB(mySql.getLabID()), i, downLatch, totalTimes,
                     totalPoints, totalQueryErrorNums, latenciesOfClients));
         }
@@ -923,15 +922,15 @@ public class App {
         float midAvgLatency = (float) (midSum / (int) (totalOps * 0.9) / unitTransfer);
 
         LOGGER.info("{}: execute ,{}, query in ,{}, seconds, get ,{}, result points with ,{}, workers (mean rate ,{}, points/s)",
-                getQueryName(config), config.CLIENT_NUMBER * config.LOOP, (totalTime / 1000.0f) / 1000000.0, totalResultPoint,
-                config.CLIENT_NUMBER, (1000.0f * totalResultPoint) / ((float) totalTime / 1000000.0f));
+                getQueryName(config), config.CLIENTS_NUMBER * config.LOOP, (totalTime / 1000.0f) / 1000000.0, totalResultPoint,
+                config.CLIENTS_NUMBER, (1000.0f * totalResultPoint) / ((float) totalTime / 1000000.0f));
         LOGGER.info("Total Operations {}; Latency(ms): Avg {}, MiddleAvg {}, Min {}, Max {}, p1 {}, p5 {}, p50 {}, p90 {}, p95 {}, p99 {}, p99.9 {}, p99.99 {}",
                 totalOps, avgLatency, midAvgLatency, min, max, p1, p5, p50, p90, p95, p99, p999, p9999);
 
         long totalErrorPoint = getSumOfList(totalQueryErrorNums);
         LOGGER.info("total error num is {}", totalErrorPoint);
 
-        mySql.saveResult("queryNumber", "" + config.CLIENT_NUMBER * config.LOOP);
+        mySql.saveResult("queryNumber", "" + config.CLIENTS_NUMBER * config.LOOP);
         mySql.saveResult("totalPoint", "" + totalResultPoint);
         mySql.saveResult("totalTime(s)", "" + (totalTime / 1000.0f) / 1000000.0);
         mySql.saveResult("resultPointPerSecond(points/s)", "" + (1000.0f * (totalResultPoint)) / (totalTime / 1000000.0));

@@ -1,8 +1,11 @@
 package cn.edu.tsinghua.iotdb.benchmark.monitor;
 
+import cn.edu.tsinghua.iotdb.benchmark.App;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
@@ -14,8 +17,9 @@ import java.util.concurrent.Executors;
 public enum ClientMonitoring {
     INSTANCE;
 
-    private Config config = ConfigDescriptor.getInstance().getConfig();
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
+    private Config config = ConfigDescriptor.getInstance().getConfig();
     private Socket clientSocket;
     private PrintWriter out;
     private ObjectInputStream in;
@@ -29,7 +33,7 @@ public enum ClientMonitoring {
     ClientMonitoring() {
         mySqlLog.initMysql(false);
         kpis = new ArrayList<>();
-        countDown = config.CLIENT_NUMBER;
+        countDown = config.CLIENTS_NUMBER;
     }
 
     public void connect() {
@@ -76,10 +80,9 @@ public enum ClientMonitoring {
 
         if (state == State.RUNNING) {
             countDown--;
-            System.out.println(String.format("%s is ready, remaining threads to wait: %d",
-                    Thread.currentThread().getName(), countDown));
+            LOGGER.info("{} is ready, remaining threads to wait: {}", Thread.currentThread().getName(), countDown);
             if (countDown == 0) {
-                countDown = config.CLIENT_NUMBER;
+                countDown = config.CLIENTS_NUMBER;
                 sendStop();
             }
         }

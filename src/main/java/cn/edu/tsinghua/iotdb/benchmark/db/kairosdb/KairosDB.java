@@ -75,8 +75,8 @@ public class KairosDB extends TSDB implements IDatebase {
         }
         // wait for deletion complete
         try {
-            LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
-            Thread.sleep(config.INIT_WAIT_TIME);
+            LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+            Thread.sleep(config.ERASE_WAIT_TIME);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -105,7 +105,7 @@ public class KairosDB extends TSDB implements IDatebase {
 
     private String getGroup(String device) {
         int deviceNum = getDeviceNum(device);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         return "group_" + groupNum;
     }

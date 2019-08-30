@@ -60,7 +60,7 @@ public class InfluxDBV2 implements IDatebase {
 	@Override
 	public void init() throws SQLException {
 		//delete old data
-		if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {
+		if (config.WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {
 			if (!influxDB.databaseExists(InfluxDBName)) {
 				throw new SQLException("要查询的数据库" + InfluxDBName + "不存在！");
 			}
@@ -72,8 +72,8 @@ public class InfluxDBV2 implements IDatebase {
 		}
 		// wait for deletion complete
 		try {
-			LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
-			Thread.sleep(config.INIT_WAIT_TIME);
+			LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+			Thread.sleep(config.ERASE_WAIT_TIME);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -119,17 +119,17 @@ public class InfluxDBV2 implements IDatebase {
 					batchIndex,
 					latency / 1000000000.0,
 					((totalTime.get() + latency) / 1000000000.0),
-					(batchPoints.getPoints().size() * config.SENSOR_NUMBER / (double) latency) * 1000000000.0);
+					(batchPoints.getPoints().size() * config.SENSORS_NUMBER / (double) latency) * 1000000000.0);
 			totalTime.set(totalTime.get() + latency);
 			latencies.add(latency);
 			mySql.saveInsertProcess(batchIndex, latency / 1000000000.0, totalTime.get() / 1000000000.0, 0,
 					config.REMARK);
 		} catch (Exception e) {
-			errorCount.set(errorCount.get() + batchPoints.getPoints().size() * config.SENSOR_NUMBER);
-			LOGGER.error("Batch insert failed, the failed num is {}! Error：{}", batchPoints.getPoints().size() * config.SENSOR_NUMBER,
+			errorCount.set(errorCount.get() + batchPoints.getPoints().size() * config.SENSORS_NUMBER);
+			LOGGER.error("Batch insert failed, the failed num is {}! Error：{}", batchPoints.getPoints().size() * config.SENSORS_NUMBER,
 					e.getMessage());
 			mySql.saveInsertProcess(batchIndex, latency / 1000000000.0, totalTime.get() / 1000000000.0,
-					batchPoints.getPoints().size() * config.SENSOR_NUMBER, "error message: " + e.getMessage());
+					batchPoints.getPoints().size() * config.SENSORS_NUMBER, "error message: " + e.getMessage());
 			throw new SQLException(e.getMessage());
 		}
 	}
@@ -211,7 +211,7 @@ public class InfluxDBV2 implements IDatebase {
 	private InfluxDataModel createDataModel(int batchIndex, int dataIndex, String device) {
 		InfluxDataModel model = new InfluxDataModel();
 		int deviceNum = getDeviceNum(device);
-		int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+		int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
 		int groupNum = deviceNum / groupSize;
 		model.measurement = "group_" + groupNum;
 		model.tagSet.put("device", device);
@@ -232,7 +232,7 @@ public class InfluxDBV2 implements IDatebase {
 	private InfluxDataModel createDataModel(int timestampIndex, String device) {
 		InfluxDataModel model = new InfluxDataModel();
 		int deviceNum = getDeviceNum(device);
-		int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+		int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
 		int groupNum = deviceNum / groupSize;
 		model.measurement = "group_" + groupNum;
 		model.tagSet.put("device", device);
@@ -495,8 +495,8 @@ public class InfluxDBV2 implements IDatebase {
 			throws SQLException {
 		StringBuilder builder = new StringBuilder();
 		builder.append("SELECT ");
-		if (num > config.SENSOR_NUMBER) {
-			throw new SQLException("config.SENSOR_NUMBER is " + config.SENSOR_NUMBER
+		if (num > config.SENSORS_NUMBER) {
+			throw new SQLException("config.SENSOR_NUMBER is " + config.SENSORS_NUMBER
 					+ " shouldn't less than the number of fields in querySql");
 		}
 		List<String> list = new ArrayList<String>();
@@ -526,7 +526,7 @@ public class InfluxDBV2 implements IDatebase {
 		StringBuilder builder = new StringBuilder();
 		Set<Integer> groups = new HashSet<>();
 		for (int d : devices) {
-			groups.add(d / (config.DEVICE_NUMBER/config.GROUP_NUMBER));
+			groups.add(d / (config.DEVICES_NUMBER /config.DEVICE_GROUPS_NUMBER));
 		}
 		builder.append(" FROM ");
 		for (int g : groups) {
@@ -716,7 +716,7 @@ public class InfluxDBV2 implements IDatebase {
 					loopIndex,
 					latency / 1000000000.0,
 					((totalTime.get() + latency) / 1000000000.0),
-					config.SENSOR_NUMBER * (batchPoints.getPoints().size() / (double) latency) * 1000000000.0);
+					config.SENSORS_NUMBER * (batchPoints.getPoints().size() / (double) latency) * 1000000000.0);
 			totalTime.set(totalTime.get() + latency);
 			latencies.add(latency);
 			mySql.saveInsertProcess(loopIndex, latency / 1000000000.0, totalTime.get() / 1000000000.0, 0,
@@ -751,8 +751,8 @@ public class InfluxDBV2 implements IDatebase {
 		sensorList = new ArrayList<>();
 		devices.add(0);
 		devices.add(210);
-		config.DEVICE_NUMBER = 5000;
-		config.GROUP_NUMBER = 50;
+		config.DEVICES_NUMBER = 5000;
+		config.DEVICE_GROUPS_NUMBER = 50;
 		long startTime = 15000;
 //		sql = influxDB.createQuerySQLStatment(devices, 3, "max", 0,
 //				100000000 + 25000, sensorList);

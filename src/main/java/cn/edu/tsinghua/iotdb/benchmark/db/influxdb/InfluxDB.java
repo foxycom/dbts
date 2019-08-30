@@ -153,7 +153,7 @@ public class InfluxDB implements IDatebase {
     private InfluxDataModel createDataModel(int batchIndex, int dataIndex, String device) {
         InfluxDataModel model = new InfluxDataModel();
         int deviceNum = getDeviceNum(device);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         model.measurement = "group_" + groupNum;
         model.tagSet.put("device", device);

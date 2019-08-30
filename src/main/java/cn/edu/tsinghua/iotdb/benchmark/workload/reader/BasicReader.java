@@ -128,7 +128,7 @@ public abstract class BasicReader {
 
     // remove duplicated devices
     Set<String> devices = new HashSet<>();
-    int groupNum = config.GROUP_NUMBER;
+    int groupNum = config.DEVICE_GROUPS_NUMBER;
     switch (config.DATA_SET) {
       case REDD:
       case TDRIVE:

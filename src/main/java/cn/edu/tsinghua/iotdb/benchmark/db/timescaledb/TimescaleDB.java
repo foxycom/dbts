@@ -69,8 +69,8 @@ public class TimescaleDB implements IDatebase {
             statement.execute(String.format(dropTable, table));
             // wait for deletion complete
             try {
-                LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
-                Thread.sleep(config.INIT_WAIT_TIME);
+                LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+                Thread.sleep(config.ERASE_WAIT_TIME);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -175,7 +175,7 @@ public class TimescaleDB implements IDatebase {
     private String getGroup(String device) {
         String[] spl = device.split("_");
         int deviceIndex = Integer.parseInt(spl[1]);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupIndex = deviceIndex / groupSize;
         return "group_" + groupIndex;
     }
@@ -222,7 +222,7 @@ public class TimescaleDB implements IDatebase {
         long errorNum = 0;
         try {
             statement = connection.createStatement();
-            if (!config.IS_OVERFLOW) {
+            if (!config.USE_OVERFLOW) {
                 for (int i = 0; i < config.BATCH_SIZE; i++) {
                     String sql = createSQLStatment(loopIndex, i, device);
                     statement.addBatch(sql);
@@ -242,7 +242,7 @@ public class TimescaleDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);
@@ -284,8 +284,8 @@ public class TimescaleDB implements IDatebase {
     private String createQuerySQLStatment(List<Integer> devices, int num) throws SQLException {
         StringBuilder builder = new StringBuilder();
         builder.append("SELECT ");
-        if (num > config.SENSOR_NUMBER) {
-            throw new SQLException("config.SENSOR_NUMBER is " + config.SENSOR_NUMBER
+        if (num > config.SENSORS_NUMBER) {
+            throw new SQLException("config.SENSOR_NUMBER is " + config.SENSORS_NUMBER
                     + " shouldn't less than the number of fields in querySql");
         }
         List<String> list = new ArrayList<>(config.SENSOR_CODES);
@@ -636,7 +636,7 @@ public class TimescaleDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);
@@ -657,7 +657,7 @@ public class TimescaleDB implements IDatebase {
             statement.executeBatch();
         } catch (BatchUpdateException e) {
             LOGGER.error("Batch insert failed because: {}", e.getMessage());
-            errorNum = config.BATCH_SIZE * config.SENSOR_NUMBER;
+            errorNum = config.BATCH_SIZE * config.SENSORS_NUMBER;
             e.printStackTrace();
         }
         return errorNum;

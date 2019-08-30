@@ -41,8 +41,8 @@ public class MySqlLog {
     }
 
     public void initMysql(boolean initTables) {
-        projectID = config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH.name() + "_" + config.REMARK + labID;
-        if (config.IS_USE_MYSQL) {
+        projectID = config.WORK_MODE + "_" + config.DB_SWITCH.name() + "_" + config.REMARK + labID;
+        if (config.USE_MYSQL) {
             Date date = new Date(labID);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
             day = sdf.format(date);
@@ -70,7 +70,7 @@ public class MySqlLog {
         Statement stat = null;
         try {
             stat = mysqlConnection.createStatement();
-            Mode mode = Mode.valueOf(config.BENCHMARK_WORK_MODE.trim().toUpperCase());
+            Mode mode = config.WORK_MODE;
             if (/*mode == Mode.SERVER_MODE || */mode == Mode.CLIENT_SYSTEM_INFO) {
                 if (!hasTable("SERVER_MODE_" + localName + "_" + day)) {
                     stat.executeUpdate("create table SERVER_MODE_"
@@ -204,7 +204,7 @@ public class MySqlLog {
      */
     public void saveInsertProcess(int index, double costTimeAvg,
                                   double totalTime, /*long pointNum, */long errorPoint, String remark) {
-        if (config.IS_USE_MYSQL) {
+        if (config.USE_MYSQL) {
             // TODO different rates for different sensor frequencies
             //double rate = (config.BATCH_SIZE * config.SENSOR_NUMBER / costTime);
 
@@ -216,7 +216,7 @@ public class MySqlLog {
             if(Double.isInfinite(rate)) {
                 rate = 0;
             }
-            String mysqlSql = String.format(Locale.US, "insert into " + config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%f,%f,%f,%d,%s)",
+            String mysqlSql = String.format(Locale.US, "insert into " + config.WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%f,%f,%f,%d,%s)",
                     System.currentTimeMillis(), "'" + Thread.currentThread().getName() + "'", index,
                     costTimeAvg, totalTime, rate, errorPoint, "'" + remark + "'");
             Statement stat;
@@ -237,7 +237,7 @@ public class MySqlLog {
 
     public void saveCompleteMeasurement(String operation, double costTimeAvg, double costTimeP99, double costTimeMedian,
                                        double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
-        String logSql = String.format(Locale.US, "INSERT INTO " + config.BENCHMARK_WORK_MODE + "_"
+        String logSql = String.format(Locale.US, "INSERT INTO " + config.WORK_MODE + "_"
                 + config.DB_SWITCH + "_" + config.REMARK + labID + " values (%d, %s, %f, %f, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + operation + "'", costTimeAvg, costTimeP99, costTimeMedian,
                 totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
@@ -254,7 +254,7 @@ public class MySqlLog {
 
     public void saveClientInsertProcess(String clientName, String operation, String status, int loopIndex, double costTime,
                                          double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
-        String logSql = String.format(Locale.US, "INSERT INTO " + config.BENCHMARK_WORK_MODE + "_" +
+        String logSql = String.format(Locale.US, "INSERT INTO " + config.WORK_MODE + "_" +
                 config.DB_SWITCH + "_" + config.REMARK + labID + "Clients values (%d, %s, %s, %s, %d, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + clientName + "'", "'" + operation + "'", "'" + status + "'",
                 loopIndex, costTime, totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
@@ -272,11 +272,11 @@ public class MySqlLog {
 
     // 将写入测试的以loop为单位的中间结果存入数据库
     public void saveInsertProcessOfLoop(int index, double loopRate) {
-        if (config.IS_USE_MYSQL) {
+        if (config.USE_MYSQL) {
             if(Double.isInfinite(loopRate)) {
                 loopRate = 0;
             }
-            String mysqlSql = String.format("insert into " + config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + "Loop" + " values(%d,%s,%d,%f)",
+            String mysqlSql = String.format("insert into " + config.WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + "Loop" + " values(%d,%s,%d,%f)",
                     System.currentTimeMillis(),
                     "'" + Thread.currentThread().getName() + "'",
                     index,
@@ -300,7 +300,7 @@ public class MySqlLog {
     public void saveQueryProcess(int index, int point, double time,
                                  String remark) {
         double rate;
-        if (config.IS_USE_MYSQL) {
+        if (config.USE_MYSQL) {
             if (time == 0) {
                 remark = "rate is insignificance because time = 0";
                 rate = -1;
@@ -308,7 +308,7 @@ public class MySqlLog {
                 rate = point / time;
             }
             String mysqlSql = String.format(
-                    "insert into " + config.BENCHMARK_WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%d,%f,%f,%s)",
+                    "insert into " + config.WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%d,%f,%f,%s)",
                     System.currentTimeMillis(),
                     "'" + Thread.currentThread().getName() + "'",
                     index, point, time, rate, "'" + remark + "'");
@@ -364,7 +364,7 @@ public class MySqlLog {
                                   double dataSize, double infoSize, double metadataSize, double overflowSize, double deltaSize,double walSize,
                                   float tps, float io_read, float io_wrtn,
                                   List<Integer> openFileList, String remark) {
-        if (config.IS_USE_MYSQL) {
+        if (config.USE_MYSQL) {
             Statement stat = null;
             String sql = "";
             try {
@@ -418,7 +418,7 @@ public class MySqlLog {
     // 存储IOTDB实验模型
     public void saveIoTDBDataModel(String sensor, String path, String type,
                                    String encoding) {
-        if (!config.IS_USE_MYSQL) {
+        if (!config.USE_MYSQL) {
             return;
         }
         Statement stat = null;
@@ -447,7 +447,7 @@ public class MySqlLog {
     // 存储InfluxDB实验模型
     public void saveInfluxDBDataModel(String measurement, String tag,
                                       String field, String type) {
-        if (!config.IS_USE_MYSQL) {
+        if (!config.USE_MYSQL) {
             return;
         }
         Statement stat = null;
@@ -477,7 +477,7 @@ public class MySqlLog {
 
     // 存储实验结果
     public void saveResult(String k, String v) {
-        if (!config.IS_USE_MYSQL) {
+        if (!config.USE_MYSQL) {
             return;
         }
         Statement stat = null;
@@ -506,7 +506,7 @@ public class MySqlLog {
 
     // 存储实验配置信息
     public void saveConfig(String k, String v) {
-        if (!config.IS_USE_MYSQL) {
+        if (!config.USE_MYSQL) {
             return;
         }
         Statement stat = null;
@@ -534,13 +534,13 @@ public class MySqlLog {
     }
 
     public void saveTestModel(String type, String encoding) throws SQLException {
-        if (!config.IS_USE_MYSQL) {
+        if (!config.USE_MYSQL) {
             return;
         }
         if (!config.IS_SAVE_DATAMODEL) {
             return;
         }
-        if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
+        if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
             switch (config.DB_SWITCH) {
                 case IOTDB:
                     this.saveIoTDBDataModel(config.TIMESERIES_NAME, config.STORAGE_GROUP_NAME + "." + config.TIMESERIES_NAME, type, encoding);
@@ -568,7 +568,7 @@ public class MySqlLog {
                         this.saveInfluxDBDataModel("group_" + groupId, "device=" + d, s, type);
                     }
                     i++;
-                    if (i % config.GROUP_NUMBER == 0) {
+                    if (i % config.DEVICE_GROUPS_NUMBER == 0) {
                         groupId++;
                     }
                 }
@@ -582,25 +582,25 @@ public class MySqlLog {
     private String getFullGroupDevicePathByName(String d) {
         String[] spl = d.split("_");
         int id = Integer.parseInt(spl[1]);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupIndex = id / groupSize;
         return Constants.ROOT_SERIES_NAME + ".group_" + groupIndex + "."
                 + config.DEVICE_CODES.get(id);
     }
 
     public void saveTestConfig() {
-        if (!config.IS_USE_MYSQL) {
+        if (!config.USE_MYSQL) {
             return;
         }
         Statement stat = null;
         String sql = "";
         try {
             stat = mysqlConnection.createStatement();
-            if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
+            if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                         "'MODE'", "'GEN_DATA_MODE'");
                 stat.addBatch(sql);
-            } else if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {
+            } else if (config.WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                         "'MODE'", "'QUERY_TEST_MODE'");
                 stat.addBatch(sql);
@@ -638,12 +638,12 @@ public class MySqlLog {
                     "'VERSION'", "'" + config.VERSION + "'");
             stat.addBatch(sql);
             sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                    "'CLIENT_NUMBER'", "'" + config.CLIENT_NUMBER + "'");
+                    "'CLIENT_NUMBER'", "'" + config.CLIENTS_NUMBER + "'");
             stat.addBatch(sql);
             sql = String.format(SAVE_CONFIG, "'" + projectID + "'", "'LOOP'",
                     "'" + config.LOOP + "'");
             stat.addBatch(sql);
-            if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
+            if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                         "'STORAGE_GROUP_NAME'", "'" + config.STORAGE_GROUP_NAME + "'");
                 stat.addBatch(sql);
@@ -662,17 +662,17 @@ public class MySqlLog {
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                         "'POINT_STEP'", "'" + config.POINT_STEP + "'");
                 stat.addBatch(sql);
-            } else if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {// 查询测试
+            } else if (config.WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {// 查询测试
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                         "'查询数据集存储组数'",
-                        "'" + config.GROUP_NUMBER + "'");
+                        "'" + config.DEVICE_GROUPS_NUMBER + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'查询数据集设备数'", "'" + config.DEVICE_NUMBER
+                        "'查询数据集设备数'", "'" + config.DEVICES_NUMBER
                                 + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'查询数据集传感器数'", "'" + config.SENSOR_NUMBER
+                        "'查询数据集传感器数'", "'" + config.SENSORS_NUMBER
                                 + "'");
                 stat.addBatch(sql);
                 if (config.DB_SWITCH.equals(Constants.DB_IOT)) {
@@ -740,9 +740,9 @@ public class MySqlLog {
                 }
             } else {// 写入测试
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'IS_OVERFLOW'", "'" + config.IS_OVERFLOW + "'");
+                        "'IS_OVERFLOW'", "'" + config.USE_OVERFLOW + "'");
                 stat.addBatch(sql);
-                if (config.IS_OVERFLOW) {
+                if (config.USE_OVERFLOW) {
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'OVERFLOW_RATIO'", "'" + config.OVERFLOW_RATIO + "'");
                     stat.addBatch(sql);
@@ -751,16 +751,16 @@ public class MySqlLog {
                         "'MUL_DEV_BATCH'", "'" + config.MUL_DEV_BATCH + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'DEVICE_NUMBER'", "'" + config.DEVICE_NUMBER + "'");
+                        "'DEVICE_NUMBER'", "'" + config.DEVICES_NUMBER + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'GROUP_NUMBER'", "'" + config.GROUP_NUMBER + "'");
+                        "'GROUP_NUMBER'", "'" + config.DEVICE_GROUPS_NUMBER + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'DEVICE_NUMBER'", "'" + config.DEVICE_NUMBER + "'");
+                        "'DEVICE_NUMBER'", "'" + config.DEVICES_NUMBER + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                        "'SENSOR_NUMBER'", "'" + config.SENSOR_NUMBER + "'");
+                        "'SENSOR_NUMBER'", "'" + config.SENSORS_NUMBER + "'");
                 stat.addBatch(sql);
                 sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                         "'BATCH_SIZE'", "'" + config.BATCH_SIZE + "'");
@@ -790,7 +790,7 @@ public class MySqlLog {
     }
 
     public void closeMysql() {
-        if (config.IS_USE_MYSQL) {
+        if (config.USE_MYSQL) {
             if (mysqlConnection != null) {
                 try {
                     mysqlConnection.close();

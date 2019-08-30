@@ -46,7 +46,7 @@ public class DeviceSchema {
 
 
   private void createEvenlyAllocDeviceSchema() throws WorkloadException {
-    int thisDeviceGroupIndex = calGroupId(deviceId, config.DEVICE_NUMBER, config.GROUP_NUMBER);
+    int thisDeviceGroupIndex = calGroupId(deviceId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
     //System.out.println("device " + deviceId +" sg " + thisDeviceGroupIndex);
     group = GROUP_NAME_PREFIX + thisDeviceGroupIndex;
     sensors.addAll(config.SENSORS);

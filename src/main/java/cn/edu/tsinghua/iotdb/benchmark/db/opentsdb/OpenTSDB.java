@@ -62,7 +62,7 @@ public class OpenTSDB extends TSDB implements IDatebase {
     public void init() {
         //example URL:
         //http://host:4242/api/query?start=2016/02/16-00:00:00&end=2016/02/17-23:59:59&m=avg:1ms-avg:metricname
-        for(int i = 0;i < config.GROUP_NUMBER;i++){
+        for(int i = 0; i < config.DEVICE_GROUPS_NUMBER; i++){
             String metricName = metric + "group_" + i;
             String deleteMetricURL = String.format(DELETE_METRIC_URL, queryUrl, Constants.START_TIMESTAMP, metricName);
             String response;
@@ -77,8 +77,8 @@ public class OpenTSDB extends TSDB implements IDatebase {
         }
         // wait for deletion complete
         try {
-            LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
-            Thread.sleep(config.INIT_WAIT_TIME);
+            LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+            Thread.sleep(config.ERASE_WAIT_TIME);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -137,7 +137,7 @@ public class OpenTSDB extends TSDB implements IDatebase {
     private LinkedList<TSDBDataModel> createDataModel(int batchIndex, int dataIndex, String device) {
         LinkedList<TSDBDataModel> models = new LinkedList<TSDBDataModel>();
         int deviceNum = getDeviceNum(device);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         String groupId = "group_" + groupNum;
         String metricName = metric + groupId;
@@ -165,7 +165,7 @@ public class OpenTSDB extends TSDB implements IDatebase {
     private LinkedList<TSDBDataModel> createDataModel(int timestampIndex, String device) {
         LinkedList<TSDBDataModel> models = new LinkedList<TSDBDataModel>();
         int deviceNum = getDeviceNum(device);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         String groupId = "group_" + groupNum;
         String metricName = metric + groupId;
@@ -370,7 +370,7 @@ public class OpenTSDB extends TSDB implements IDatebase {
     }
 
     private String getMetricName(Integer deviceNum) {
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         String groupId = "group_" + groupNum;
         return metric + groupId;

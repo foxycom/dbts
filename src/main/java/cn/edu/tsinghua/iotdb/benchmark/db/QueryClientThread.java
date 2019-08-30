@@ -76,7 +76,7 @@ public class QueryClientThread implements Runnable {
 //			clientDevicesIndex.add(index + m * config.CLIENT_NUMBER);
 //		}
 		
-		for (int m = 0; m < config.DEVICE_NUMBER; m++){
+		for (int m = 0; m < config.DEVICES_NUMBER; m++){
 			clientDevicesIndex.add( m );
 		}
 		while (i < config.LOOP) {

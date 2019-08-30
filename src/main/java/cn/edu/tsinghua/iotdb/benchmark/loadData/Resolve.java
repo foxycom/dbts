@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
@@ -24,7 +23,7 @@ public class Resolve implements Runnable{
 	public Resolve(String fileName,Storage storage){
 		this.storage = storage;
 		config = ConfigDescriptor.getInstance().getConfig();
-		READ_LINES = config.BATCH_OP_NUM*config.DEVICE_NUMBER*2;
+		READ_LINES = config.BATCH_OP_NUM*config.DEVICES_NUMBER *2;
         try {
         	file = new File(fileName);
             reader = null;

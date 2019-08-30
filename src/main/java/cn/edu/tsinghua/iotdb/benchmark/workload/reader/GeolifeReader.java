@@ -49,7 +49,7 @@ public class GeolifeReader extends BasicReader {
     for (int i = 0; i < 6; i++) {
       reader.readLine();
     }
-    deviceSchema = new DeviceSchema(calGroupIdStr(currentDeviceId, config.GROUP_NUMBER),
+    deviceSchema = new DeviceSchema(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
         currentDeviceId, config.FIELDS);
   }
 

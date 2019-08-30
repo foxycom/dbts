@@ -96,8 +96,8 @@ public class TimescaleDB implements IDatabase {
         connection.commit();
 
         // wait for deletion complete
-        LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
-        Thread.sleep(config.INIT_WAIT_TIME);
+        LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+        Thread.sleep(config.ERASE_WAIT_TIME);
 
         initialDbSize = getInitialSize();
       }

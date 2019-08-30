@@ -116,7 +116,7 @@ public class OpenTSDBV2 extends TSDB implements IDatebase {
 
     private String getGroup(String device) {
         int deviceNum = getDeviceNum(device);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupNum = deviceNum / groupSize;
         return "group_" + groupNum;
     }

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<config xmlns="https://uni-passau.de"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://uni-passau.de  config.xsd">
+    <version>0.4.0</version>
+    <db>
+        <type>TimescaleDB</type>
+        <name>test</name>
+        <host>127.0.0.1</host>
+        <port>5432</port>
+        <erase wait="5000">true</erase>
+        <createSchema>true</createSchema>
+    </db>
+    <mode>server_mode</mode>
+    <mysqlLog active="true">
+        jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
+    </mysqlLog>
+    <clients bindToDevices="true">4</clients>
+    <deviceGroups>3</deviceGroups>
+    <devices prefix="d_">4</devices>
+
+    <sensorGroups>
+        <sensorGroup>Hello</sensorGroup>
+        <sensorGroup>sdfdsf</sensorGroup>
+    </sensorGroups>
+
+    <sensors prefix="s_">
+        <sensor frequency="23" dataType="double" type="basic" sensorGroup=""/>
+        <sensor frequency="500" dataType="double" type="basic" sensorGroup=""/>
+    </sensors>
+
+    <batch size="10000"/>
+    <loops>1</loops>
+    <pointStep>1</pointStep>
+    <encoding>gorilla</encoding>
+
+    <serverMonitor active="true">
+        <drive>sdb</drive>
+        <iface>enp3s0</iface>
+        <port>56565</port>
+    </serverMonitor>
+
+    <mulDevBatch>false</mulDevBatch>
+    <overflow active="false">
+        <ratio>0.5</ratio>
+        <lamda>2200.0</lamda>
+        <maxK>170000</maxK>
+    </overflow>
+
+    <timestamp>
+        <startIndex>20</startIndex>
+        <seed>666</seed>
+    </timestamp>
+
+    <functions>
+        <line ratio="1"/>
+        <sin ratio="1"/>
+        <square ratio="1"/>
+        <random ratio="1"/>
+        <constant ratio="1"/>
+    </functions>
+
+    <query>
+        <type>7</type>
+        <sensorNum>1</sensorNum>
+        <deviceNum>1</deviceNum>
+        <seed>151658</seed>
+        <step>1</step>
+        <aggregateFunction>count</aggregateFunction>
+        <interval>25000</interval>
+        <lowerLimit>-5</lowerLimit>
+        <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
+        <groupBy>20000</groupBy>
+        <limitClause>0</limitClause>
+        <limitN>5</limitN>
+        <limitOffset>5</limitOffset>
+        <sLimitN>5</sLimitN>
+        <sLimitOffset>5</sLimitOffset>
+    </query>
+
+</config>

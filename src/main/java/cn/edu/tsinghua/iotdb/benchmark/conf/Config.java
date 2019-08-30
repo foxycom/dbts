@@ -29,20 +29,24 @@ public class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
 	private String deviceCode;
 
-	public Config(){
+	public Config() {
+
 	}
 
 	public String HOST ="127.0.0.1";
 	public String PORT ="6667";
 
-	/** 设备数量 */
-	public int DEVICE_NUMBER = 2;
+	/** The number of working devices. */
+	public int DEVICES_NUMBER = 2;
+
+	public List<String> SENSOR_GROUPS = new ArrayList<>();
+
 	/** 设备和客户端是否绑定 */
-	public boolean IS_CLIENT_BIND = true;
+	public boolean BIND_CLIENTS_TO_DEVICES = true;
 	/** 测试客户端线程数量 */
-	public int CLIENT_NUMBER = 2;
+	public int CLIENTS_NUMBER = 2;
 	/** 每个设备的传感器数量 */
-	public int SENSOR_NUMBER = 5;
+	public int SENSORS_NUMBER = 5;
 
 	public List<Integer> SENSOR_FREQ = new ArrayList<>();
 	public List<String> SENSOR_DATA_TYPES = new ArrayList<>();
@@ -53,7 +57,7 @@ public class Config {
 	/** 数据发送缓存条数 */
 	public int BATCH_SIZE = 10;
 	/** 存储组数量 */
-	public int GROUP_NUMBER = 1;
+	public int DEVICE_GROUPS_NUMBER = 1;
 	/** 数据类型 */
 	public String DATA_TYPE = "FLOAT";
 	/** 数据编码方式 */
@@ -65,9 +69,9 @@ public class Config {
 	/**是否为多设备批插入模式*/
 	public boolean MUL_DEV_BATCH = false;
 	/**数据库初始化等待时间ms*/
-	public long INIT_WAIT_TIME=5000;
+	public long ERASE_WAIT_TIME =5000;
 	/**是否为批插入乱序模式*/
-	public boolean IS_OVERFLOW = false;
+	public boolean USE_OVERFLOW = false;
 	/**乱序模式*/
 	public int OVERFLOW_MODE = 0;
 	/**批插入乱序比例*/
@@ -101,13 +105,13 @@ public class Config {
  	public String SERVER_MODE_INFO_FILE = "";
  	public int SERVER_MONITOR_PORT = 56565;
 	/**一个样例数据的存储组名称*/
- 	public String STORAGE_GROUP_NAME ;
+ 	public String STORAGE_GROUP_NAME;
 	/**一个样例数据的时序名称*/
- 	public String TIMESERIES_NAME ;
+ 	public String TIMESERIES_NAME;
 	/**一个时序的数据类型*/
- 	public String TIMESERIES_TYPE ;
+ 	public String TIMESERIES_TYPE;
 	/**时序数据取值范围*/
-	public String TIMESERIES_VALUE_SCOPE ;
+	public String TIMESERIES_VALUE_SCOPE;
 	/**样例数据生成路径及文件名*/
 	public String GEN_DATA_FILE_PATH = "/home/liurui/sampleData";
 	/**上一次结果的日志路径*/
@@ -201,7 +205,7 @@ public class Config {
 	public Long PERFORM_BATCH_ID;
 
 	/** Delete data after benchmark test */
-	public boolean IS_DELETE_DATA = false;
+	public boolean ERASE_DATA = false;
 
 	public boolean MONITOR_SERVER = false;
 
@@ -222,7 +226,7 @@ public class Config {
 	public int QUERY_DEVICE_NUM = 1;
 	public int QUERY_CHOICE = 1;
 	public String QUERY_AGGREGATE_FUN = "";
-	public long QUERY_INTERVAL = DEVICE_NUMBER * POINT_STEP;
+	public long QUERY_INTERVAL = DEVICES_NUMBER * POINT_STEP;
 	public double QUERY_LOWER_LIMIT = 0;
 	public boolean IS_EMPTY_PRECISE_POINT_QUERY = false;
 	public long TIME_UNIT = QUERY_INTERVAL / 2;
@@ -240,7 +244,7 @@ public class Config {
 			+ "user=root&password=Ise_Nel_2017&useUnicode=true&characterEncoding=UTF8&useSSL=false";
 
 	/** Log data in MySQL */
-	public boolean IS_USE_MYSQL = false;
+	public boolean USE_MYSQL = false;
 
 	public long MYSQL_INIT_TIMESTAMP = System.currentTimeMillis();
 
@@ -256,7 +260,7 @@ public class Config {
 	/** Name of database to benchmark */
 	public DB DB_SWITCH = DB.TIMESCALEDB;
 
-	public String BENCHMARK_WORK_MODE="";
+	public Mode WORK_MODE = Mode.TEST_WITH_DEFAULT_PATH;
 
 	/** File path to import data from */
 	public String IMPORT_DATA_FILE_PATH = "";
@@ -339,7 +343,7 @@ public class Config {
 			double sinArea = randomArea + SIN_RATIO / sumRatio;
 			double squareArea = sinArea + SQUARE_RATIO / sumRatio;
 			Random r = new Random(DATA_SEED);
-			for (int i = 0; i < SENSOR_NUMBER; i++) {
+			for (int i = 0; i < SENSORS_NUMBER; i++) {
 				double property = r.nextDouble();
 				FunctionParam param = null;
 				Random fr = new Random(DATA_SEED + 1 + i);
@@ -380,7 +384,7 @@ public class Config {
 	 * Initializes the sensor names for each sensor out of <code>SENSOR_NUMBER</code>.
 	 */
 	public List<String> initSensorCodes() {
-		for (int i = 0; i < SENSOR_NUMBER; i++) {
+		for (int i = 0; i < SENSORS_NUMBER; i++) {
 			String sensorCode = "s_" + i;
 			SENSOR_CODES.add(sensorCode);
 		}
@@ -388,30 +392,10 @@ public class Config {
 	}
 
 	/**
-	 * Initializes the specified number of sensors including one GPS sensor.
-	 *
-	 * @return The list of sensor objects.
-	 */
-	public List<Sensor> initSensors() {
-		for (int i = 0; i < SENSOR_NUMBER - 1; i++) {
-			String name = "s_" + i;
-			Sensor sensor = new BasicSensor(name, SENSOR_FUNCTION.get(i), SENSOR_FREQ.get(i));
-			sensor.setDataType(SENSOR_DATA_TYPES.get(i));
-			SENSORS.add(sensor);
-		}
-		String name = "gps";
-		// FIXME insert random geo functions
-		Sensor gpsSensor = new GpsSensor(name, GEO_LIST.get(0), SENSOR_FREQ.get(SENSOR_FREQ.size() - 1));
-		gpsSensor.setDataType(GEO_DATA_TYPE);
-		SENSORS.add(gpsSensor);
-		return SENSORS;
-	}
-
-	/**
  	 * Initializes the devices names for each device out of <code>DEVICE_NUMBER</code>.
 	 */
 	public List<String> initDeviceCodes() {
-		for (int i = 0; i < DEVICE_NUMBER; i++) {
+		for (int i = 0; i < DEVICES_NUMBER; i++) {
 			String deviceCode = "d_" + i;
 			DEVICE_CODES.add(deviceCode);
 		}

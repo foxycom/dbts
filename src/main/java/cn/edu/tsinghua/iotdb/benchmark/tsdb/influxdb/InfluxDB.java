@@ -20,6 +20,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.influxdb.dto.BatchPoints;
@@ -41,7 +42,8 @@ public class InfluxDB implements IDatabase {
   private final String dataType;
 
   private org.influxdb.InfluxDB influxDbInstance;
-  private static final int MILLIS_TO_NANO = 1000000;
+
+  public static final int MILLIS_TO_NANO = 1000000;
 
   /**
    * constructor.
@@ -67,12 +69,12 @@ public class InfluxDB implements IDatabase {
   public void cleanup() throws TsdbException {
     try {
       if (influxDbInstance.databaseExists(influxDbName)) {
-        influxDbInstance.deleteDatabase(influxDbName);
+        influxDbInstance.query(new Query("DROP DATABASE " + influxDbName));
       }
 
       // wait for deletion complete
-      LOGGER.info("Waiting {}ms for old data deletion.", config.INIT_WAIT_TIME);
-      Thread.sleep(config.INIT_WAIT_TIME);
+      LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+      Thread.sleep(config.ERASE_WAIT_TIME);
     } catch (Exception e) {
       LOGGER.error("Cleanup InfluxDB failed because ", e);
       throw new TsdbException(e);
@@ -89,9 +91,11 @@ public class InfluxDB implements IDatabase {
   @Override
   public void registerSchema(List<DeviceSchema> schemaList) throws TsdbException {
     try {
-      influxDbInstance.createDatabase(influxDbName);
+      influxDbInstance.query(new Query("CREATE DATABASE " + influxDbName));
+      influxDbInstance.setDatabase(influxDbName).setRetentionPolicy(defaultRp)
+              .setConsistency(org.influxdb.InfluxDB.ConsistencyLevel.ALL);
     } catch (Exception e) {
-      LOGGER.error("RegisterSchema InfluxDB failed because ", e);
+      LOGGER.error("RegisterSchema InfluxDB failed because: ", e);
       throw new TsdbException(e);
     }
   }
@@ -103,10 +107,10 @@ public class InfluxDB implements IDatabase {
 
   @Override
   public Status insertOneBatch(Batch batch) {
-    BatchPoints batchPoints = BatchPoints.database(influxDbName)
-        .retentionPolicy(defaultRp)
-        .consistency(org.influxdb.InfluxDB.ConsistencyLevel.ALL).build();
-
+    influxDbInstance.enableBatch();
+    BatchPoints.Builder builder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
+    BatchPoints batchPoints = builder.build();
+    // FIXME build batch
     try {
       InfluxDataModel model;
       for (Record record : batch.getRecords()) {

@@ -26,13 +26,13 @@ public class ConfigDescriptor {
 	}
 
 	private ConfigDescriptor() {
+
 		config = new Config();
 		loadProps();
 		config.initInnerFunction();
 		config.initDeviceCodes();
 		config.initSensorCodes();
 		config.initSensorFunction();
-		config.initSensors();
 		config.initRealDataSetSchema();
 	}
 
@@ -59,18 +59,18 @@ public class ConfigDescriptor {
 				properties.load(inputStream);
 				config.HOST = properties.getProperty("HOST", "no HOST");
 				config.PORT = properties.getProperty("PORT", "no PORT");
-				config.DEVICE_NUMBER = Integer.parseInt(properties.getProperty("DEVICE_NUMBER", config.DEVICE_NUMBER+""));
-				config.SENSOR_NUMBER = Integer.parseInt(properties.getProperty("SENSOR_NUMBER", config.SENSOR_NUMBER+""));
+				config.DEVICES_NUMBER = Integer.parseInt(properties.getProperty("DEVICE_NUMBER", config.DEVICES_NUMBER +""));
+				config.SENSORS_NUMBER = Integer.parseInt(properties.getProperty("SENSOR_NUMBER", config.SENSORS_NUMBER +""));
 
 				/* List of frequencies for every sensor. */
 				String sensorFreq = properties.getProperty("SENSOR_FREQ", "1000");
 				List<String> frequencies = Arrays.asList(sensorFreq.split(","));
 				if (frequencies.size() == 1) {
-					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
+					for (int i = 0; i < config.SENSORS_NUMBER; i++) {
 						config.SENSOR_FREQ.add(Integer.parseInt(frequencies.get(0)));
 					}
 				} else if (frequencies.size() > 1) {
-					for (int i = 0; i < config.SENSOR_NUMBER; i++) {
+					for (int i = 0; i < config.SENSORS_NUMBER; i++) {
 						config.SENSOR_FREQ.add(Integer.parseInt(frequencies.get(i)));
 					}
 				} else {
@@ -87,11 +87,11 @@ public class ConfigDescriptor {
 							"of sensors.");
 				} else {
 					if (dataTypes.size() == 1) {
-						for (int i = 0; i < config.SENSOR_NUMBER - 1; i++) {
+						for (int i = 0; i < config.SENSORS_NUMBER - 1; i++) {
 							config.SENSOR_DATA_TYPES.add(dataTypes.get(0));
 						}
 					} else {
-						for (int i = 0; i < config.SENSOR_NUMBER - 1; i++) {
+						for (int i = 0; i < config.SENSORS_NUMBER - 1; i++) {
 							config.SENSOR_DATA_TYPES.add(dataTypes.get(i));
 						}
 					}
@@ -123,8 +123,8 @@ public class ConfigDescriptor {
 				config.TAG_PATH = Boolean.parseBoolean(properties.getProperty("TAG_PATH", config.TAG_PATH+""));
 				config.STORE_MODE = Integer.parseInt(properties.getProperty("STORE_MODE", config.STORE_MODE+""));
 				config.INTERVAL = Integer.parseInt(properties.getProperty("INTERVAL", config.INTERVAL+""));
-				config.CLIENT_NUMBER = Integer.parseInt(properties.getProperty("CLIENT_NUMBER", config.CLIENT_NUMBER+""));
-				config.GROUP_NUMBER = Integer.parseInt(properties.getProperty("GROUP_NUMBER", config.GROUP_NUMBER+""));
+				config.CLIENTS_NUMBER = Integer.parseInt(properties.getProperty("CLIENT_NUMBER", config.CLIENTS_NUMBER +""));
+				config.DEVICE_GROUPS_NUMBER = Integer.parseInt(properties.getProperty("GROUP_NUMBER", config.DEVICE_GROUPS_NUMBER +""));
 
 				config.DB_URL = properties.getProperty("DB_URL", "localhost");
 				config.DB_NAME = properties.getProperty("DB_NAME", "test");
@@ -142,7 +142,7 @@ public class ConfigDescriptor {
 
 				config.MYSQL_URL = properties.getProperty("MYSQL_URL", "jdbc:mysql://166.111.141.168:3306/benchmark?"
 						+ "user=root&password=Ise_Nel_2017&useUnicode=true&characterEncoding=UTF8&useSSL=false");
-				config.IS_USE_MYSQL = Boolean.parseBoolean(properties.getProperty("IS_USE_MYSQL", config.IS_USE_MYSQL+""));
+				config.USE_MYSQL = Boolean.parseBoolean(properties.getProperty("IS_USE_MYSQL", config.USE_MYSQL +""));
 				config.IS_SAVE_DATAMODEL = Boolean.parseBoolean(properties.getProperty("IS_SAVE_DATAMODEL", config.IS_SAVE_DATAMODEL+""));
 				config.TIME_UNIT = Long.parseLong(properties.getProperty("TIME_UNIT", config.TIME_UNIT+""));
 				config.VERSION = properties.getProperty("VERSION", "");
@@ -160,12 +160,12 @@ public class ConfigDescriptor {
 				config.TIMESERIES_TYPE = properties.getProperty("TIMESERIES_TYPE", config.TIMESERIES_TYPE);
 				config.TIMESERIES_VALUE_SCOPE = properties.getProperty("TIMESERIES_VALUE_SCOPE", config.TIMESERIES_VALUE_SCOPE);
 				config.GEN_DATA_FILE_PATH = properties.getProperty("GEN_DATA_FILE_PATH", config.GEN_DATA_FILE_PATH);
-				config.IS_OVERFLOW = Boolean.parseBoolean(properties.getProperty("IS_OVERFLOW", config.IS_OVERFLOW+""));
+				config.USE_OVERFLOW = Boolean.parseBoolean(properties.getProperty("IS_OVERFLOW", config.USE_OVERFLOW +""));
 				config.OVERFLOW_RATIO = Double.parseDouble(properties.getProperty("OVERFLOW_RATIO", config.OVERFLOW_RATIO+""));
 				config.LAST_RESULT_PATH = properties.getProperty("LAST_RESULT_PATH", config.LAST_RESULT_PATH);
 				config.SQL_FILE = properties.getProperty("SQL_FILE", config.SQL_FILE);
 
-				config.BENCHMARK_WORK_MODE = properties.getProperty("BENCHMARK_WORK_MODE", "");
+				config.WORK_MODE = Mode.valueOf(properties.getProperty("BENCHMARK_WORK_MODE", Mode.TEST_WITH_DEFAULT_PATH.name()));
 				config.IMPORT_DATA_FILE_PATH = properties.getProperty("IMPORT_DATA_FILE_PATH", "");
 				config.METADATA_FILE_PATH= properties.getProperty("METADATA_FILE_PATH", "");
 				config.BATCH_EXECUTE_COUNT = Integer.parseInt(properties.getProperty("BATCH_EXECUTE_COUNT", config.BATCH_EXECUTE_COUNT+""));
@@ -186,12 +186,12 @@ public class ConfigDescriptor {
 				config.DATA_TYPE = properties.getProperty("DATA_TYPE", "FLOAT");
 				config.COMPRESSOR = properties.getProperty("COMPRESSOR", "UNCOMPRESSOR");
 				config.OPERATION_PROPORTION = properties.getProperty("OPERATION_PROPORTION", config.OPERATION_PROPORTION);
-				config.INIT_WAIT_TIME = Long.parseLong(properties.getProperty("INIT_WAIT_TIME", config.INIT_WAIT_TIME+""));
+				config.ERASE_WAIT_TIME = Long.parseLong(properties.getProperty("INIT_WAIT_TIME", config.ERASE_WAIT_TIME +""));
 				config.DATA_SEED = Long.parseLong(properties.getProperty("DATA_SEED", config.DATA_SEED+""));
 				config.LIMIT_CLAUSE_MODE = Integer.parseInt(properties.getProperty("LIMIT_CLAUSE_MODE", config.LIMIT_CLAUSE_MODE + ""));
 				config.STEP_SIZE = Integer.parseInt(properties.getProperty("STEP_SIZE", config.STEP_SIZE+""));
-				config.IS_CLIENT_BIND = Boolean.parseBoolean(properties.getProperty("IS_CLIENT_BIND", config.IS_CLIENT_BIND+""));
-				config.IS_DELETE_DATA = Boolean.parseBoolean(properties.getProperty("IS_DELETE_DATA", config.IS_DELETE_DATA+""));
+				config.BIND_CLIENTS_TO_DEVICES = Boolean.parseBoolean(properties.getProperty("IS_CLIENT_BIND", config.BIND_CLIENTS_TO_DEVICES +""));
+				config.ERASE_DATA = Boolean.parseBoolean(properties.getProperty("IS_DELETE_DATA", config.ERASE_DATA +""));
 				config.MONITOR_SERVER = Boolean.parseBoolean(properties.getProperty("MONITOR_SERVER", config.MONITOR_SERVER+""));
 				config.REAL_QUERY_START_TIME = Long.parseLong(properties.getProperty("REAL_QUERY_START_TIME", config.REAL_QUERY_START_TIME+""));
         config.REAL_QUERY_STOP_TIME = Long.parseLong(properties.getProperty("REAL_QUERY_STOP_TIME", config.REAL_QUERY_STOP_TIME+""));

@@ -30,7 +30,7 @@ public class SingletonWorkload {
   private SingletonWorkload() {
     insertLoop = new AtomicLong(0);
     deviceMaxTimeIndexMap = new ConcurrentHashMap<>();
-    for (int i = 0; i < config.DEVICE_NUMBER; i++) {
+    for (int i = 0; i < config.DEVICES_NUMBER; i++) {
       deviceMaxTimeIndexMap.put(i, new AtomicLong(0));
     }
     probTool = new ProbTool();
@@ -39,10 +39,10 @@ public class SingletonWorkload {
 
   private Batch getOrderedBatch() {
     long curLoop = insertLoop.getAndIncrement();
-    DeviceSchema deviceSchema = new DeviceSchema((int) (curLoop % config.DEVICE_NUMBER));
+    DeviceSchema deviceSchema = new DeviceSchema((int) (curLoop % config.DEVICES_NUMBER));
     Batch batch = new Batch();
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
-      long stepOffset = (curLoop / config.DEVICE_NUMBER) * config.BATCH_SIZE + batchOffset;
+      long stepOffset = (curLoop / config.DEVICES_NUMBER) * config.BATCH_SIZE + batchOffset;
       SyntheticWorkload.addOneRowIntoBatch(deviceSchema, batch, stepOffset);
     }
     batch.setDeviceSchema(deviceSchema);
@@ -51,7 +51,7 @@ public class SingletonWorkload {
 
   private Batch getDistOutOfOrderBatch() {
     long curLoop = insertLoop.getAndIncrement();
-    int deviceIndex = (int) (curLoop % config.DEVICE_NUMBER);
+    int deviceIndex = (int) (curLoop % config.DEVICES_NUMBER);
     DeviceSchema deviceSchema = new DeviceSchema(deviceIndex);
     Batch batch = new Batch();
     PossionDistribution possionDistribution = new PossionDistribution(poissonRandom);
@@ -81,7 +81,7 @@ public class SingletonWorkload {
   }
 
   public Batch getOneBatch() throws WorkloadException {
-    if (!config.IS_OVERFLOW) {
+    if (!config.USE_OVERFLOW) {
       return getOrderedBatch();
     } else {
       switch (config.OVERFLOW_MODE) {

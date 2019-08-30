@@ -28,7 +28,7 @@ public class Storage {
     	list = new LinkedList<String>();
         config = ConfigDescriptor.getInstance().getConfig();
     	storagedProductNum = 0;
-        MAX_SIZE = config.BATCH_OP_NUM*config.DEVICE_NUMBER*4;
+        MAX_SIZE = config.BATCH_OP_NUM*config.DEVICES_NUMBER *4;
     	isEnd = false;
     }
 

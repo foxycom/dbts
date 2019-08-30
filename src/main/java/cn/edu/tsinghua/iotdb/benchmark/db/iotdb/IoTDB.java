@@ -92,9 +92,9 @@ public class IoTDB implements IDatebase {
                 }
             }
         } else {
-            int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+            int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
             ArrayList<String> group = new ArrayList<>();
-            for (int i = 0; i < config.GROUP_NUMBER; i++) {
+            for (int i = 0; i < config.DEVICE_GROUPS_NUMBER; i++) {
                 group.add("group_" + i);
             }
             for (String g : group) {
@@ -104,7 +104,7 @@ public class IoTDB implements IDatebase {
             int groupIndex = 0;
             int timeseriesCount = 0;
             Statement statement = connection.createStatement();
-            int timeseriesTotal = config.DEVICE_NUMBER * config.SENSOR_NUMBER;
+            int timeseriesTotal = config.DEVICES_NUMBER * config.SENSORS_NUMBER;
             String path;
             for (String device : config.DEVICE_CODES) {
                 if (count == groupSize) {
@@ -201,7 +201,7 @@ public class IoTDB implements IDatebase {
         try {
             statement = connection.createStatement();
             int timeStep = config.BATCH_SIZE / deviceCodes.size();
-            if (!config.IS_OVERFLOW) {
+            if (!config.USE_OVERFLOW) {
                 for (int i = 0; i < timeStep; i++) {
                     for (String device : deviceCodes) {
                         String sql = createSQLStatmentOfMulDevice(loopIndex, i, device);
@@ -292,7 +292,7 @@ public class IoTDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);
@@ -310,7 +310,7 @@ public class IoTDB implements IDatebase {
         long errorNum = 0;
         try {
             statement = connection.createStatement();
-            if (!config.IS_OVERFLOW) {
+            if (!config.USE_OVERFLOW) {
                 for (int i = 0; i < config.BATCH_SIZE; i++) {
                     String sql = createSQLStatment(loopIndex, i, device);
                     statement.addBatch(sql);
@@ -383,7 +383,7 @@ public class IoTDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);
@@ -466,7 +466,7 @@ public class IoTDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);
@@ -522,7 +522,7 @@ public class IoTDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);
@@ -738,7 +738,7 @@ public class IoTDB implements IDatebase {
                 String type = getTypeByField(sensor);
                 statement.execute(String.format(createSeriesSQLWithCompressor,
                         path + "." + sensor, type, mp.get(type), "SNAPPY"));
-            } else if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
+            } else if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
                 statement.execute(String.format(createSeriesSQLWithCompressor,
                         path + "." + sensor, config.TIMESERIES_TYPE, config.ENCODING, config.COMPRESSOR));
                 writeSQLIntoFile(String.format(createSeriesSQLWithCompressor,
@@ -810,7 +810,7 @@ public class IoTDB implements IDatebase {
             statement = connection.createStatement();
             if (config.READ_FROM_FILE) {
                 statement.execute(String.format(setStorageLevelSQL, group));
-            } else if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
+            } else if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
                 statement.execute(String.format(setStorageLevelSQL, config.STORAGE_GROUP_NAME));
                 writeSQLIntoFile(String.format(setStorageLevelSQL, config.STORAGE_GROUP_NAME), config.GEN_DATA_FILE_PATH);
             } else {
@@ -978,7 +978,7 @@ public class IoTDB implements IDatebase {
         }
         builder.append(") values(");
         long currentTime = Constants.START_TIMESTAMP + config.POINT_STEP * (loopIndex * config.BATCH_SIZE
-            / (config.DEVICE_NUMBER / config.CLIENT_NUMBER) + i);
+            / (config.DEVICES_NUMBER / config.CLIENTS_NUMBER) + i);
         builder.append(currentTime);
         for (String sensor : config.SENSOR_CODES) {
             FunctionParam param = config.SENSOR_FUNCTION.get(sensor);
@@ -1011,8 +1011,8 @@ public class IoTDB implements IDatebase {
     public String createQuerySQLStatment(List<Integer> devices, int num, List<String> sensorList) throws SQLException {
         StringBuilder builder = new StringBuilder();
         builder.append("SELECT ");
-        if (num > config.SENSOR_NUMBER) {
-            throw new SQLException("config.SENSOR_NUMBER is " + config.SENSOR_NUMBER
+        if (num > config.SENSORS_NUMBER) {
+            throw new SQLException("config.SENSOR_NUMBER is " + config.SENSORS_NUMBER
                     + " shouldn't less than the number of fields in querySql");
         }
         List<String> list = new ArrayList<String>();
@@ -1231,13 +1231,13 @@ public class IoTDB implements IDatebase {
     private String getGroupDevicePath(String device) {
         String[] spl = device.split("_");
         int deviceIndex = Integer.parseInt(spl[1]);
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupIndex = deviceIndex / groupSize;
         return "group_" + groupIndex + "." + device;
     }
 
     private String getFullGroupDevicePathByID(int id) {
-        int groupSize = config.DEVICE_NUMBER / config.GROUP_NUMBER;
+        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
         int groupIndex = id / groupSize;
         return Constants.ROOT_SERIES_NAME + ".group_" + groupIndex + "." + config.DEVICE_CODES.get(id);
     }
@@ -1296,7 +1296,7 @@ public class IoTDB implements IDatebase {
                 LOGGER.info("{} execute {} loop, it costs {}s, totalTime {}s, throughput {} points/s",
                         Thread.currentThread().getName(), loopIndex, costTime / unitTransfer,
                         (totalTime.get() + costTime) / unitTransfer,
-                        (config.BATCH_SIZE * config.SENSOR_NUMBER / (double) costTime) * unitTransfer);
+                        (config.BATCH_SIZE * config.SENSORS_NUMBER / (double) costTime) * unitTransfer);
                 totalTime.set(totalTime.get() + costTime);
             }
             errorCount.set(errorCount.get() + errorNum);

@@ -94,17 +94,17 @@ public class ClientThread implements Runnable{
 			}
 		}
 		else{
-			int clientDevicesNum = config.DEVICE_NUMBER/config.CLIENT_NUMBER;
+			int clientDevicesNum = config.DEVICES_NUMBER /config.CLIENTS_NUMBER;
 			LinkedList<String> deviceCodes = new LinkedList<>();
 			//may not correct in multiple device per batch mode
-			long pointsOneLoop = config.DEVICE_NUMBER / config.CLIENT_NUMBER * config.SENSOR_NUMBER * config.BATCH_SIZE;
+			long pointsOneLoop = config.DEVICES_NUMBER / config.CLIENTS_NUMBER * config.SENSORS_NUMBER * config.BATCH_SIZE;
 			double actualLoopSecond = (double) pointsOneLoop / config.CLIENT_MAX_WRT_RATE;
 			//overflow mode 2 related variables initial
 			Random random = new Random(config.QUERY_SEED);
 			ArrayList<Integer> before = new ArrayList<>();
 			int maxIndex = (int) (config.BATCH_SIZE * config.LOOP * config.OVERFLOW_RATIO);
 			int currMaxIndexOfDist = config.START_TIMESTAMP_INDEX;
-			if(config.IS_OVERFLOW && config.OVERFLOW_MODE==1) {
+			if(config.USE_OVERFLOW && config.OVERFLOW_MODE==1) {
 				for (int beforeIndex = 0; beforeIndex < maxIndex; beforeIndex++) {
 					before.add(beforeIndex);
 				}
@@ -114,19 +114,19 @@ public class ClientThread implements Runnable{
 			}
 			while(i < config.LOOP) {
 				long oldTotalTime = totalTime.get();
-				if (config.BENCHMARK_WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
+				if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
 					try {
 						database.insertGenDataOneBatch(config.STORAGE_GROUP_NAME + "." + config.TIMESERIES_NAME, i, totalTime, errorCount, latencies);
 					} catch (SQLException e) {
 						LOGGER.error("{} Fail to insert one batch into database becasue {}", Thread.currentThread().getName(), e.getMessage());
 					}
-				} else if (config.MUL_DEV_BATCH && !config.IS_OVERFLOW) {
+				} else if (config.MUL_DEV_BATCH && !config.USE_OVERFLOW) {
 					try {
 						database.insertOneBatchMulDevice(deviceCodes, i, totalTime, errorCount, latencies);
 					} catch (SQLException e) {
 						LOGGER.error("{} Fail to insert one batch into database becasue {}", Thread.currentThread().getName(), e.getMessage());
 					}
-				} else if (!config.IS_OVERFLOW) {
+				} else if (!config.USE_OVERFLOW) {
 					try {
 						for (int m = 0; m < clientDevicesNum; m++) {
 							database.insertOneBatch(config.DEVICE_CODES.get(index * clientDevicesNum + m), i, totalTime, errorCount, latencies);

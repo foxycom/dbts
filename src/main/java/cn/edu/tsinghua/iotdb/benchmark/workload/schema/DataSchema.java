@@ -33,16 +33,16 @@ public class DataSchema {
 
   private void createClientBindSchema() {
     int eachClientDeviceNum = 0;
-    if (config.CLIENT_NUMBER != 0) {
-      eachClientDeviceNum = config.DEVICE_NUMBER / config.CLIENT_NUMBER;
+    if (config.CLIENTS_NUMBER != 0) {
+      eachClientDeviceNum = config.DEVICES_NUMBER / config.CLIENTS_NUMBER;
     } else {
       LOGGER.error("CLIENT_NUMBER can not be zero.");
       return;
     }
 
     int deviceId = 0;
-    int mod = config.DEVICE_NUMBER % config.CLIENT_NUMBER;
-    for (int clientId = 0; clientId < config.CLIENT_NUMBER; clientId++) {
+    int mod = config.DEVICES_NUMBER % config.CLIENTS_NUMBER;
+    for (int clientId = 0; clientId < config.CLIENTS_NUMBER; clientId++) {
       List<DeviceSchema> deviceSchemaList = new ArrayList<>();
       for (int j = 0; j < eachClientDeviceNum; j++) {
         deviceSchemaList.add(new DeviceSchema(deviceId++));

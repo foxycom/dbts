@@ -1,7 +1,5 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
-import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 
@@ -19,12 +17,11 @@ public class BasicSensor implements Sensor {
     protected FunctionParam functionParam;
 
     private String name;
+    private String sensorGroup;
     private long interval;
     private String dataType;
 
-
-    public BasicSensor(String name, FunctionParam functionParam) {
-        this(name, functionParam, 1);
+    public BasicSensor(String name, FunctionParam param) {
     }
 
     /**
@@ -34,15 +31,17 @@ public class BasicSensor implements Sensor {
      * @param functionParam The parameters of data function.
      * @param freq The frequency the sensor samples its data (in Hz).
      */
-    public BasicSensor(String name, FunctionParam functionParam, int freq) {
+    public BasicSensor(String name, String sensorGroup, FunctionParam functionParam, int freq, String dataType) {
         nf.setRoundingMode(RoundingMode.HALF_UP);
         nf.setMaximumFractionDigits(2);
         nf.setMinimumFractionDigits(2);
         nf.setGroupingUsed(false);
 
         this.name = name;
+        this.sensorGroup = sensorGroup;
         this.functionParam = functionParam;
         this.interval = 1000 / freq;    // in ms
+        this.dataType = dataType;
 
     }
 

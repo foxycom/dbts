@@ -6,7 +6,6 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigDescriptor;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
-import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
@@ -26,7 +25,7 @@ import java.util.*;
 
 public class SyntheticWorkload implements IWorkload {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(Measurement.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SyntheticWorkload.class);
   private static Config config = ConfigDescriptor.getInstance().getConfig();
   private static Random timestampRandom = new Random(config.DATA_SEED);
   private ProbTool probTool;
@@ -50,7 +49,7 @@ public class SyntheticWorkload implements IWorkload {
 
   private static long getCurrentTimestamp(long stepOffset) {
     long timeStampOffset = config.POINT_STEP * stepOffset;
-    if (config.IS_OVERFLOW) {
+    if (config.USE_OVERFLOW) {
       timeStampOffset += random.nextDouble() * config.POINT_STEP;
     }
     long currentTimestamp = Constants.START_TIMESTAMP + timeStampOffset;
@@ -144,7 +143,7 @@ public class SyntheticWorkload implements IWorkload {
   }
 
   public Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException {
-    if (!config.IS_OVERFLOW) {
+    if (!config.USE_OVERFLOW) {
       long st = System.nanoTime();
       Batch batch = getOrderedBatch(deviceSchema, loopIndex);
       long en = System.nanoTime();
@@ -175,7 +174,7 @@ public class SyntheticWorkload implements IWorkload {
     checkQuerySchemaParams();
     List<DeviceSchema> queryDevices = new ArrayList<>();
 
-    int deviceId = queryDeviceRandom.nextInt(config.DEVICE_NUMBER);
+    int deviceId = queryDeviceRandom.nextInt(config.DEVICES_NUMBER);
     DeviceSchema deviceSchema = new DeviceSchema(deviceId);
     List<Sensor> sensors = deviceSchema.getSensors();
     List<Sensor> gpsSensor = new ArrayList<>(1);
@@ -192,7 +191,7 @@ public class SyntheticWorkload implements IWorkload {
     checkQuerySchemaParams();
     List<DeviceSchema> queryDevices = new ArrayList<>();
     List<Integer> clientDevicesIndex = new ArrayList<>();
-    for (int m = 0; m < config.DEVICE_NUMBER; m++) {
+    for (int m = 0; m < config.DEVICES_NUMBER; m++) {
       clientDevicesIndex.add(m);
     }
     Collections.shuffle(clientDevicesIndex, queryDeviceRandom);
@@ -211,10 +210,10 @@ public class SyntheticWorkload implements IWorkload {
   }
 
   private void checkQuerySchemaParams() throws WorkloadException {
-    if (!(config.QUERY_DEVICE_NUM > 0 && config.QUERY_DEVICE_NUM <= config.DEVICE_NUMBER)) {
+    if (!(config.QUERY_DEVICE_NUM > 0 && config.QUERY_DEVICE_NUM <= config.DEVICES_NUMBER)) {
       throw new WorkloadException("QUERY_DEVICE_NUM is not correct, please check.");
     }
-    if (!(config.QUERY_SENSOR_NUM > 0 && config.QUERY_SENSOR_NUM <= config.SENSOR_NUMBER)) {
+    if (!(config.QUERY_SENSOR_NUM > 0 && config.QUERY_SENSOR_NUM <= config.SENSORS_NUMBER)) {
       throw new WorkloadException("QUERY_SENSOR_NUM is not correct, please check.");
     }
   }

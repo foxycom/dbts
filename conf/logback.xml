@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<configuration>
+<configuration debug="false">
 	<appender name="FILEERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${BENCHMARK_HOME}/logs/log_error.log</file>
    		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -92,6 +92,9 @@
 			<level>DEBUG</level>
 		</filter>
 	</appender>
+
+	<logger name="org.apache.commons.beanutils" level="ERROR"/>
+
 
 
 	<root level="INFO">

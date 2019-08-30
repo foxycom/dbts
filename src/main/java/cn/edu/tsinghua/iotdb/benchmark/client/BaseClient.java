@@ -45,7 +45,7 @@ public abstract class BaseClient extends Client implements Runnable {
       Operation operation = operationController.getNextOperationType();
       switch (operation) {
         case INGESTION:
-          if (config.IS_CLIENT_BIND) {
+          if (config.BIND_CLIENTS_TO_DEVICES) {
             try {
               List<DeviceSchema> schema = dataSchema.getClientBindSchema().get(clientThreadId);
               for (DeviceSchema deviceSchema : schema) {
