@@ -110,9 +110,9 @@
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="true">
+    <serverMonitor active="false">
         <drive>sdb</drive>
-        <iface>enp3s0</iface>
+        <iface>enp0s25</iface>
         <port>56565</port>
     </serverMonitor>
 
@@ -129,11 +129,11 @@
     </timestamp>
 
     <functions>
-        <line ratio="0.054"/>
-        <sin ratio="0.036"/>
-        <square ratio="0.054"/>
-        <random ratio="0.512"/>
-        <constant ratio="0.352"/>
+        <line ratio="0.0"/>
+        <sin ratio="0.0"/>
+        <square ratio="0.0"/>
+        <random ratio="0.0"/>
+        <constant ratio="1.0"/>
     </functions>
 
     <query>
