@@ -48,12 +48,16 @@ public abstract class BaseClient extends Client implements Runnable {
           if (config.BIND_CLIENTS_TO_DEVICES) {
             try {
               List<DeviceSchema> schema = dataSchema.getClientBindSchema().get(clientThreadId);
+              int i = 1;
               for (DeviceSchema deviceSchema : schema) {
                 barrier.await();
                 Batch batch = syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex);
                 clientMonitoring.start();
                 dbWrapper.insertOneBatch(batch);
                 clientMonitoring.stop();
+                double progress = (double) (i * 100) / schema.size();
+                LOGGER.info("Progress within loop: {}%", progress);
+                i++;
               }
             } catch (Exception e) {
               LOGGER.error("Failed to insert one batch data because ", e);

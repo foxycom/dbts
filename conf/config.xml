@@ -17,7 +17,7 @@
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">4</devices>
+    <devices prefix="d_">500</devices>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -51,7 +51,7 @@
             <sensor frequency="10" type="basic"/>
             <sensor frequency="10" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="current" dataType="double">
+        <sensorGroup name="current" dataType="double precision">
             <sensor frequency="10" type="basic"/>
         </sensorGroup>
         <sensorGroup name="temperature" dataType="smallint">
@@ -105,8 +105,8 @@
     </sensorGroups>
 
 
-    <batch size="50000"/>
-    <loops>3</loops>
+    <batch size="100000"/>
+    <loops>8</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
