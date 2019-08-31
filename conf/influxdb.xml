@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<config xmlns="https://uni-passau.de"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://uni-passau.de  config.xsd">
+    <version>0.4.0</version>
+    <db>
+        <type>InfluxDB</type>
+        <name>test</name>
+        <host>127.0.0.1</host>
+        <port>8086</port>
+        <erase wait="5000">true</erase>
+        <createSchema>true</createSchema>
+    </db>
+    <mode>test_with_default_path</mode>
+    <mysqlLog active="true">
+        jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
+    </mysqlLog>
+    <clients bindToDevices="true">4</clients>
+    <deviceGroups>3</deviceGroups>
+    <devices prefix="d_">4</devices>
+
+    <sensorGroups prefix="s_">
+        <sensorGroup name="accelerometer" dataType="double precision">
+            <sensor frequency="100" type="basic"/>
+            <sensor frequency="100" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="gyroscope" dataType="double precision">
+            <sensor frequency="100" type="basic"/>
+            <sensor frequency="100" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="magneticField" dataType="double precision">
+            <sensor frequency="100" type="basic"/>
+            <sensor frequency="100" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="incline" dataType="double precision">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="force" dataType="real">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="gps" dataType="double">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="rotaryEncoder" dataType="smallint">
+            <sensor frequency="10" type="basic"/>
+            <sensor frequency="10" type="basic"/>
+            <sensor frequency="10" type="basic"/>
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="current" dataType="double precision">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="temperature" dataType="smallint">
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="distance" dataType="smallint">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="oximeter" dataType="smallint">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="pulse" dataType="smallint">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="skinConductance" dataType="smallint">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="humidity" dataType="smallint">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="pressure" dataType="real">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="sound" dataType="smallint">
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="light" dataType="smallint">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="particles" dataType="double precision">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="airQuality" dataType="smallint">
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="emg" dataType="smallint">
+            <sensor frequency="500" type="basic"/>
+            <sensor frequency="500" type="basic"/>
+        </sensorGroup>
+    </sensorGroups>
+
+
+    <batch size="3000"/>
+    <loops>1000</loops>
+    <pointStep>1</pointStep>
+    <encoding>gorilla</encoding>
+
+    <serverMonitor active="false">
+        <drive>sdb</drive>
+        <iface>enp0s25</iface>
+        <port>56565</port>
+    </serverMonitor>
+
+    <mulDevBatch>false</mulDevBatch>
+    <overflow active="false">
+        <ratio>0.5</ratio>
+        <lamda>2200.0</lamda>
+        <maxK>170000</maxK>
+    </overflow>
+
+    <timestamp>
+        <startIndex>20</startIndex>
+        <seed>666</seed>
+    </timestamp>
+
+    <functions>
+        <line ratio="0.0"/>
+        <sin ratio="0.0"/>
+        <square ratio="0.0"/>
+        <random ratio="0.0"/>
+        <constant ratio="1.0"/>
+    </functions>
+
+    <query>
+        <type>7</type>
+        <sensorNum>1</sensorNum>
+        <deviceNum>1</deviceNum>
+        <seed>151658</seed>
+        <step>1</step>
+        <aggregateFunction>count</aggregateFunction>
+        <interval>25000</interval>
+        <lowerLimit>-5</lowerLimit>
+        <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
+        <groupBy>20000</groupBy>
+        <limitClause>0</limitClause>
+        <limitN>5</limitN>
+        <limitOffset>5</limitOffset>
+        <sLimitN>5</sLimitN>
+        <sLimitOffset>5</sLimitOffset>
+    </query>
+
+</config>

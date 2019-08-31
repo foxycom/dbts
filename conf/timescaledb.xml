@@ -11,13 +11,13 @@
         <erase wait="5000">true</erase>
         <createSchema>true</createSchema>
     </db>
-    <mode>server_mode</mode>
-    <mysqlLog active="false">
+    <mode>test_with_default_path</mode>
+    <mysqlLog active="true">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">500</devices>
+    <devices prefix="d_">4</devices>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
