@@ -237,6 +237,9 @@ public class MySqlLog {
 
     public void saveCompleteMeasurement(String operation, double costTimeAvg, double costTimeP99, double costTimeMedian,
                                        double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
+        if (!config.USE_MYSQL) {
+            return;
+        }
         String logSql = String.format(Locale.US, "INSERT INTO " + config.WORK_MODE + "_"
                 + config.DB_SWITCH + "_" + config.REMARK + labID + " values (%d, %s, %f, %f, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + operation + "'", costTimeAvg, costTimeP99, costTimeMedian,
@@ -254,6 +257,9 @@ public class MySqlLog {
 
     public void saveClientInsertProcess(String clientName, String operation, String status, int loopIndex, double costTime,
                                          double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
+        if (!config.USE_MYSQL) {
+            return;
+        }
         String logSql = String.format(Locale.US, "INSERT INTO " + config.WORK_MODE + "_" +
                 config.DB_SWITCH + "_" + config.REMARK + labID + "Clients values (%d, %s, %s, %s, %d, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + clientName + "'", "'" + operation + "'", "'" + status + "'",
@@ -267,32 +273,6 @@ public class MySqlLog {
             LOGGER.error("{} saving client insertProcess failed. Error: {}", Thread.currentThread().getName(),
                     e.getMessage());
             LOGGER.error(logSql);
-        }
-    }
-
-    // 将写入测试的以loop为单位的中间结果存入数据库
-    public void saveInsertProcessOfLoop(int index, double loopRate) {
-        if (config.USE_MYSQL) {
-            if(Double.isInfinite(loopRate)) {
-                loopRate = 0;
-            }
-            String mysqlSql = String.format("insert into " + config.WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + "Loop" + " values(%d,%s,%d,%f)",
-                    System.currentTimeMillis(),
-                    "'" + Thread.currentThread().getName() + "'",
-                    index,
-                    loopRate);
-            Statement stat;
-            try {
-                stat = mysqlConnection.createStatement();
-                stat.executeUpdate(mysqlSql);
-                stat.close();
-            } catch (Exception e) {
-                LOGGER.error(
-                        "{} save saveInsertProcessLoop info into mysql failed! Error：{}",
-                        Thread.currentThread().getName(), e.getMessage());
-                LOGGER.error("{}", mysqlSql);
-                e.printStackTrace();
-            }
         }
     }
 
@@ -328,6 +308,9 @@ public class MySqlLog {
     }
 
     public void insertServerMetrics(List<KPI> kpis) {
+        if (!config.USE_MYSQL) {
+            return;
+        }
         if (kpis.size() == 0) {
             return;
         }

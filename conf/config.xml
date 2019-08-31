@@ -11,8 +11,8 @@
         <erase wait="5000">true</erase>
         <createSchema>true</createSchema>
     </db>
-    <mode>test_with_default_path</mode>
-    <mysqlLog active="true">
+    <mode>server_mode</mode>
+    <mysqlLog active="false">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>

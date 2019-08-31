@@ -109,8 +109,10 @@ public class InfluxDB implements IDatabase {
   public Status insertOneBatch(Batch batch) {
     influxDbInstance.enableBatch();
     BatchPoints.Builder builder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
-    BatchPoints batchPoints = builder.build();
     // FIXME build batch
+
+    BatchPoints batchPoints = builder.build();
+
     try {
       InfluxDataModel model;
       for (Record record : batch.getRecords()) {
