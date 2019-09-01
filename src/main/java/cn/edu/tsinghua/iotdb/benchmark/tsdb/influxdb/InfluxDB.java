@@ -8,7 +8,6 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
-import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggValueQuery;
@@ -174,6 +173,11 @@ public class InfluxDB implements IDatabase {
     return null;
   }
 
+  @Override
+  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+    return null;
+  }
+
   /**
    * eg. SELECT s_3 FROM group_0  WHERE ( device = 'd_3' ) AND time >= 1535558420000000000 AND time
    * <= 153555800000 AND s_3 > -5.0.
@@ -194,7 +198,7 @@ public class InfluxDB implements IDatabase {
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
     String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
-        aggRangeQuery.getAggFun());
+        aggRangeQuery.getAggrFunc());
     String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeQuery);
     return executeQueryAndGetStatus(sql);
   }
@@ -205,7 +209,7 @@ public class InfluxDB implements IDatabase {
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
     String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
-        aggValueQuery.getAggFun());
+        aggValueQuery.getAggrFunc());
     String sql = addWhereValueClause(aggValueQuery.getDeviceSchema(), aggQuerySqlHead,
         aggValueQuery.getValueThreshold());
     return executeQueryAndGetStatus(sql);
@@ -218,7 +222,7 @@ public class InfluxDB implements IDatabase {
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
     String rangeQueryHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
-        aggRangeValueQuery.getAggFun());
+        aggRangeValueQuery.getAggrFunc());
     String sqlWithTimeFilter = addWhereTimeClause(rangeQueryHead, aggRangeValueQuery);
     String sqlWithValueFilter = addWhereValueClause(aggRangeValueQuery.getDeviceSchema(),
         sqlWithTimeFilter, aggRangeValueQuery.getValueThreshold());

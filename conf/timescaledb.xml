@@ -12,27 +12,29 @@
         <createSchema>true</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="false">
+    <mysqlLog active="true">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">4</devices>
+    <devices prefix="d_">500</devices>
+
+    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
-        <sensorGroup name="accelerometer" dataType="double precision">
+        <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gyroscope" dataType="double precision">
+        <sensorGroup name="gyroscope" fields="x, y, z" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="magneticField" dataType="double precision">
+        <sensorGroup name="magneticField" fields="x, y, z" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="incline" dataType="double precision">
+        <sensorGroup name="incline" fields="x, y, z" dataType="smallint">
             <sensor frequency="10" type="basic"/>
         </sensorGroup>
         <sensorGroup name="force" dataType="real">
@@ -105,12 +107,12 @@
     </sensorGroups>
 
 
-    <batch size="90000"/>
+    <batch size="80000"/>
     <loops>10</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="false">
+    <serverMonitor active="true">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>
@@ -129,21 +131,22 @@
     </timestamp>
 
     <functions>
-        <line ratio="0.0"/>
+        <line ratio="1.0"/>
         <sin ratio="0.0"/>
         <square ratio="0.0"/>
         <random ratio="0.0"/>
-        <constant ratio="1.0"/>
+        <constant ratio="0.0"/>
     </functions>
 
     <query>
         <type>7</type>
         <sensorNum>1</sensorNum>
+        <sensorGroup></sensorGroup>
         <deviceNum>1</deviceNum>
         <seed>151658</seed>
         <step>1</step>
         <aggregateFunction>count</aggregateFunction>
-        <interval>25000</interval>
+        <interval>600000</interval>
         <lowerLimit>-5</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
         <groupBy>20000</groupBy>

@@ -119,6 +119,20 @@ public class DBWrapper implements IDatabase {
     return status;
   }
 
+  @Override
+  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+    Status status = null;
+    Operation operation = Operation.GPS_TRIP_RANGE_QUERY;
+    try {
+      status = db.gpsTripIdentificationRangeQuery(rangeQuery);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
 
   @Override
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
@@ -263,7 +277,7 @@ public class DBWrapper implements IDatabase {
       String formatTimeInMillis = String.format("%.2f", timeInMillis);
       String currentThread = Thread.currentThread().getName();
       LOGGER
-          .info("{} complete {} with latency ,{}, ms ,{}, result points", currentThread, operation,
+          .info("{} complete {} with latency: {} ms, {} result points", currentThread, operation,
               formatTimeInMillis, status.getQueryResultPointNum());
     } else {
       LOGGER.error("Execution fail: {}", status.getErrorMessage(), status.getException());

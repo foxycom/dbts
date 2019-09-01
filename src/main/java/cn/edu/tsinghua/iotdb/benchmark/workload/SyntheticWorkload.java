@@ -18,6 +18,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ public class SyntheticWorkload implements IWorkload {
   private long maxTimestampIndex;
   private Random poissonRandom;
   private Random queryDeviceRandom;
+  private Random querySensorGroupRandom;
   private Map<Operation, Long> operationLoops;
   private static Random random = new Random();
 
@@ -41,6 +43,7 @@ public class SyntheticWorkload implements IWorkload {
 
     poissonRandom = new Random(config.DATA_SEED);
     queryDeviceRandom = new Random(config.QUERY_SEED + clientId);
+    querySensorGroupRandom = new Random(config.QUERY_SEED);
     operationLoops = new EnumMap<>(Operation.class);
     for (Operation operation : Operation.values()) {
       operationLoops.put(operation, 0L);
@@ -120,16 +123,21 @@ public class SyntheticWorkload implements IWorkload {
     long valuesNum = batch.getTimeRange() / sensor.getInterval();
     Integer valNum = Math.toIntExact(valuesNum);
     Point[] values = new Point[valNum];
-    long st = System.nanoTime();
     for (int i = 0; i < valuesNum; i++) {
       long stepOffset = loopIndex * valuesNum + i;    // point step
       long timestamp = sensor.getTimestamp(stepOffset);
-      String value = sensor.getValue(timestamp);
-      values[i] = new Point(timestamp, value);
+      if (sensor.getFields().size() == 1) {
+        String value = sensor.getValue(timestamp);
+        values[i] = new Point(timestamp, value);
+      } else {
+        // TODO get value based on field
+        String[] sensorValues = new String[sensor.getFields().size()];
+        for (int v = 0; v < sensor.getFields().size(); v++) {
+          sensorValues[v] = sensor.getValue(timestamp);
+        }
+        values[i] = new Point(timestamp, sensorValues);
+      }
     }
-    long en = System.nanoTime();
-    //LOGGER.info("One sensor data of {} point took {} ms with function: {}", valNum, (en - st) / 1000000.0d,
-    //        sensor.getFunctionParam().getFunctionType());
 
     batch.add(sensor, values);
   }
@@ -176,15 +184,33 @@ public class SyntheticWorkload implements IWorkload {
 
     int deviceId = queryDeviceRandom.nextInt(config.DEVICES_NUMBER);
     DeviceSchema deviceSchema = new DeviceSchema(deviceId);
-    List<Sensor> sensors = deviceSchema.getSensors();
     List<Sensor> gpsSensor = new ArrayList<>(1);
 
     // Add only GPS sensor
-    gpsSensor.add(sensors.get(sensors.size() - 1));
+    for (Sensor sensor : config.SENSORS) {
+      if (sensor.getSensorGroup().getName().contains("gps")) {
+        gpsSensor.add(sensor);
+        break;
+      }
+    }
 
     deviceSchema.setSensors(gpsSensor);
     queryDevices.add(deviceSchema);
     return queryDevices;
+  }
+
+  // TODO better handling for non-gps sensors
+  private SensorGroup getSensorGroup() throws WorkloadException {
+    checkQuerySchemaParams();
+    int r = querySensorGroupRandom.nextInt(config.SENSOR_GROUPS.size());
+    SensorGroup sensorGroup = null;
+    for (int i = 0; i < 10; i++) {
+      sensorGroup = config.SENSOR_GROUPS.get(r);
+      if (!sensorGroup.getName().contains("gps")) {
+        break;
+      }
+    }
+    return sensorGroup;
   }
 
   private List<DeviceSchema> getQueryDeviceSchemaList() throws WorkloadException {
@@ -238,14 +264,33 @@ public class SyntheticWorkload implements IWorkload {
     return new RangeQuery(queryDevices, startTimestamp, endTimestamp);
   }
 
+  private SensorGroup getGpsSensorGroup() {
+    SensorGroup gpsSensorGroup = null;
+    for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+      if (sensorGroup.getName().contains("gps")) {
+        gpsSensorGroup = sensorGroup;
+        break;
+      }
+    }
+    return gpsSensorGroup;
+  }
+
   @Override
   public RangeQuery getGpsRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getGpsSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new RangeQuery(queryDevices, startTimestamp, endTimestamp);
+    return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
   }
 
+  public ValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
+    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getGpsSensorGroup();
+    long startTimestamp = getQueryStartTimestamp();
+    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
+    return new ValueRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp, config.QUERY_LOWER_LIMIT);
+  }
 
   public ValueRangeQuery getValueRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
@@ -257,9 +302,10 @@ public class SyntheticWorkload implements IWorkload {
 
   public AggRangeQuery getAggRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new AggRangeQuery(queryDevices, startTimestamp, endTimestamp,
+    return new AggRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
         config.QUERY_AGGREGATE_FUN);
   }
 

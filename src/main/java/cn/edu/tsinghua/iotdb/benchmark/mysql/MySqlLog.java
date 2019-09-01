@@ -240,15 +240,11 @@ public class MySqlLog {
         if (!config.USE_MYSQL) {
             return;
         }
-        String logSql = String.format(Locale.US, "INSERT INTO " + config.WORK_MODE + "_"
-                + config.DB_SWITCH + "_" + config.REMARK + labID + " values (%d, %s, %f, %f, %f, %f, %f, %d, %d, %s)",
+        String logSql = String.format(Locale.US, "INSERT INTO " + projectID + " values (%d, %s, %f, %f, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + operation + "'", costTimeAvg, costTimeP99, costTimeMedian,
                 totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
-        Statement statement;
-        try {
-            statement = mysqlConnection.createStatement();
+        try (Statement statement = mysqlConnection.createStatement()) {
             statement.executeUpdate(logSql);
-            statement.close();
         } catch (SQLException e) {
             LOGGER.error("Saving the whole measurement failed. Error: {}", e.getMessage());
             LOGGER.error(logSql);

@@ -186,13 +186,18 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
+  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+    return null;
+  }
+
+  @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
     long startTime = aggRangeQuery.getStartTimestamp();
     long endTime = aggRangeQuery.getEndTimestamp();
     QueryBuilder builder = constructBuilder(startTime, endTime, aggRangeQuery.getDeviceSchema());
     // convert to second
     int timeInterval = (int) (endTime - startTime) + 1;
-    Aggregator aggregator = new SamplingAggregator(aggRangeQuery.getAggFun(), timeInterval,
+    Aggregator aggregator = new SamplingAggregator(aggRangeQuery.getAggrFunc(), timeInterval,
         TimeUnit.MILLISECONDS);
     addAggreForQuery(builder, aggregator);
     return executeOneQuery(builder);
@@ -203,7 +208,7 @@ public class KairosDB implements IDatabase {
     long startTime = aggValueQuery.getStartTimestamp();
     long endTime = aggValueQuery.getEndTimestamp();
     QueryBuilder builder = constructBuilder(startTime, endTime, aggValueQuery.getDeviceSchema());
-    Aggregator funAggre = new SamplingAggregator(aggValueQuery.getAggFun(), 5000, TimeUnit.YEARS);
+    Aggregator funAggre = new SamplingAggregator(aggValueQuery.getAggrFunc(), 5000, TimeUnit.YEARS);
     Aggregator filterAggre = AggregatorFactory
         .createFilterAggregator(FilterOperation.LTE, aggValueQuery.getValueThreshold());
     addAggreForQuery(builder, filterAggre, funAggre);
@@ -217,7 +222,7 @@ public class KairosDB implements IDatabase {
     QueryBuilder builder = constructBuilder(startTime, endTime,
         aggRangeValueQuery.getDeviceSchema());
     int timeInterval = (int) (endTime - startTime) + 1;
-    Aggregator funAggre = new SamplingAggregator(aggRangeValueQuery.getAggFun(), timeInterval,
+    Aggregator funAggre = new SamplingAggregator(aggRangeValueQuery.getAggrFunc(), timeInterval,
         TimeUnit.SECONDS);
     Aggregator filterAggre = AggregatorFactory
         .createFilterAggregator(FilterOperation.LTE, aggRangeValueQuery.getValueThreshold());

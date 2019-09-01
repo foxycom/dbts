@@ -149,6 +149,7 @@ public class Measurement {
   }
 
   public void save() {
+
     for (Operation operation : Operation.values()) {
       if (okOperationNumMap.get(operation) == 0 && failOperationNumMap.get(operation) == 0) {
         continue;

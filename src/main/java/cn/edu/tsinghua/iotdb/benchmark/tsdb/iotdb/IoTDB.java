@@ -170,6 +170,11 @@ public class IoTDB implements IDatabase {
     return null;
   }
 
+  @Override
+  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+    return null;
+  }
+
   /**
    * SELECT s_39 FROM root.group_2.d_29
    * WHERE time >= 2010-01-01 12:00:00
@@ -190,7 +195,7 @@ public class IoTDB implements IDatabase {
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
     String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
-        aggRangeQuery.getAggFun());
+        aggRangeQuery.getAggrFunc());
     String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeQuery.getStartTimestamp(),
         aggRangeQuery.getEndTimestamp());
     return executeQueryAndGetStatus(sql);
@@ -203,7 +208,7 @@ public class IoTDB implements IDatabase {
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
     String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
-        aggValueQuery.getAggFun());
+        aggValueQuery.getAggrFunc());
     String sql = aggQuerySqlHead + " WHERE " + getValueFilterClause(aggValueQuery.getDeviceSchema(),
         aggValueQuery.getValueThreshold()).substring(4);
     return executeQueryAndGetStatus(sql);
@@ -216,7 +221,7 @@ public class IoTDB implements IDatabase {
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
     String aggQuerySqlHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
-        aggRangeValueQuery.getAggFun());
+        aggRangeValueQuery.getAggrFunc());
     String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeValueQuery.getStartTimestamp(),
         aggRangeValueQuery.getEndTimestamp());
     sql += getValueFilterClause(aggRangeValueQuery.getDeviceSchema(),

@@ -222,6 +222,9 @@ public class Config {
 
 	/** Number of devices to perform query on. */
 	public int QUERY_DEVICE_NUM = 1;
+
+	/** Which sensor group to perform queries on. */
+	public String QUERY_SENSOR_GROUP = "";
 	public int QUERY_CHOICE = 1;
 	public String QUERY_AGGREGATE_FUN = "";
 	public long QUERY_INTERVAL = DEVICES_NUMBER * POINT_STEP;
@@ -246,8 +249,6 @@ public class Config {
 
 	public long MYSQL_INIT_TIMESTAMP = System.currentTimeMillis();
 
-	public boolean IS_SAVE_DATAMODEL = false;
-
 	public String REMARK = "";
 	public String VERSION = "";
 
@@ -260,75 +261,8 @@ public class Config {
 
 	public Mode WORK_MODE = Mode.TEST_WITH_DEFAULT_PATH;
 
-	/** File path to import data from */
-	public String IMPORT_DATA_FILE_PATH = "";
-
-	/** CSV file batch size */
-	public int BATCH_EXECUTE_COUNT = 5000;
-
-	//mataData文件路径
-	public String METADATA_FILE_PATH = "";
-
-	public void updateLoadTypeRatio(double wr, double rir, double mqr, double sqr, double ur) {
-		WRITE_RATIO = wr;
-		RANDOM_INSERT_RATIO = rir;
-		MAX_QUERY_RATIO = mqr;
-		SIMPLE_QUERY_RATIO = sqr;
-		UPDATE_RATIO = ur;
-		if (WRITE_RATIO < 0 || RANDOM_INSERT_RATIO < 0 || MAX_QUERY_RATIO < 0 || SIMPLE_QUERY_RATIO < 0
-				|| UPDATE_RATIO < 0) {
-			LOGGER.error("some of load rate cannot less than 0");
-			System.exit(0);
-		}
-		if (WRITE_RATIO == 0 && RANDOM_INSERT_RATIO == 0 && MAX_QUERY_RATIO == 0 && SIMPLE_QUERY_RATIO == 0
-				&& UPDATE_RATIO == 0) {
-			WRITE_RATIO = 0.2;
-			SIMPLE_QUERY_RATIO = 0.2;
-			MAX_QUERY_RATIO = 0.2;
-			MIN_QUERY_RATIO = 0.2;
-			AVG_QUERY_RATIO = 0.2;
-			COUNT_QUERY_RATIO = 0.2;
-			SUM_QUERY_RATIO = 0.2;
-			RANDOM_INSERT_RATIO = 0.2;
-			UPDATE_RATIO = 0.2;
-		}
-	}
-
-
-
-
-
-	public void initRealDataSetSchema() {
-		switch (DATA_SET) {
-			case TDRIVE:
-				FIELDS = Arrays.asList(new BasicSensor("longitude", null),
-						new BasicSensor("latitude", null));
-				PRECISION = new int[]{5, 5};
-				break;
-			case REDD:
-				FIELDS = Arrays.asList(new BasicSensor("v", null));
-				PRECISION = new int[]{2};
-				break;
-			case GEOLIFE:
-				FIELDS = Arrays.asList(new BasicSensor("Latitude", null),
-						new BasicSensor("Longitude", null),
-						new BasicSensor("Zero", null),
-						new BasicSensor("Altitude", null));
-				PRECISION = new int[]{6, 6, 0, 12};
-				break;
-			default:
-				throw new RuntimeException(DATA_SET + " is not supported.");
-		}
-	}
-
-	public static void main(String[] args) {
-		// Config config = Config.newInstance();
-
-	}
-
 	public long loopTimeRange() {
-		long timeRange = BATCH_SIZE * minSensorTimeStep();
-		return timeRange;
+		return BATCH_SIZE * minSensorTimeStep();
 	}
 
 	private long minSensorTimeStep() {

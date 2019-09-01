@@ -135,6 +135,13 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to do a time range query with GPS data.");
           }
           break;
+        case GPS_TRIP_RANGE_QUERY:
+          try {
+            dbWrapper.gpsTripIdentificationRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
+          } catch (WorkloadException e) {
+            LOGGER.error("Failed to do a time range query on trip identification.");
+          }
+          break;
         default:
           LOGGER.error("Unsupported operation type {}", operation);
       }

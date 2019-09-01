@@ -109,6 +109,11 @@ public class RealDatasetWorkLoad implements IWorkload {
   }
 
   @Override
+  public ValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
+    return null;
+  }
+
+  @Override
   public ValueRangeQuery getValueRangeQuery() {
     return new ValueRangeQuery(deviceSchemaList, startTime, endTime, config.QUERY_LOWER_LIMIT);
   }

@@ -14,6 +14,7 @@ import org.apache.commons.configuration2.tree.ImmutableNode;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -63,6 +64,8 @@ public enum ConfigParser {
         config.DEVICE_GROUPS_NUMBER = xml.getInt("deviceGroups", config.DEVICE_GROUPS_NUMBER);
         config.DEVICES_NUMBER = xml.getInt("devices", config.DEVICES_NUMBER);
 
+        config.OPERATION_PROPORTION = xml.getString("operationsProportion", config.OPERATION_PROPORTION);
+
         config.BATCH_SIZE = xml.getInt("batch[@size]", config.BATCH_SIZE);
         config.LOOP = xml.getLong("loops", config.LOOP);
         config.POINT_STEP = xml.getLong("pointStep", config.POINT_STEP);
@@ -91,6 +94,7 @@ public enum ConfigParser {
         // TODO reimplement
         config.QUERY_CHOICE = xml.getInt("query.type", config.QUERY_CHOICE);
         config.QUERY_SENSOR_NUM = xml.getInt("query.sensorNum", config.QUERY_SENSOR_NUM);
+        config.QUERY_SENSOR_GROUP = xml.getString("query.sensorGroup");
         config.QUERY_DEVICE_NUM = xml.getInt("query.deviceNum", config.QUERY_DEVICE_NUM);
         config.QUERY_SEED = xml.getLong("query.seed", config.QUERY_SEED);
         config.STEP_SIZE = xml.getInt("query.step", config.STEP_SIZE);
@@ -119,6 +123,7 @@ public enum ConfigParser {
         for (int i = 0; i < sensorGroups.size(); i++) {
             String sensorGroupName = sensorGroups.get(i).getString("[@name]");
             String sensorGroupDataType = sensorGroups.get(i).getString("[@dataType]");
+            String sensorGroupFields = sensorGroups.get(i).getString("[@fields]", "");
             SensorGroup sensorGroup = new SensorGroup(sensorGroupName);
             config.SENSOR_GROUPS.add(sensorGroup);
             List<HierarchicalConfiguration<ImmutableNode>> sensors = sensorGroups.get(i).configurationsAt("sensor");
@@ -132,7 +137,14 @@ public enum ConfigParser {
                 Sensor sensor;
                 switch (type) {
                     case BASIC:
-                        sensor = new BasicSensor(name, sensorGroup, getFunction(sensorIndex), freq, sensorGroupDataType);
+                        if (sensorGroupFields.equals("")) {
+                            sensor = new BasicSensor(name, sensorGroup, getFunction(sensorIndex), freq,
+                                    sensorGroupDataType);
+                        } else {
+                            List<String> fields = Arrays.asList(sensorGroupFields.split(", "));
+                            sensor = new BasicSensor(name, sensorGroup, getFunction(sensorIndex), freq,
+                                    sensorGroupDataType, fields);
+                        }
                         config.SENSORS.add(sensor);
                         break;
                     case GPS:

@@ -62,6 +62,7 @@
       <xs:element type="uni:sensorType" name="sensor" maxOccurs="unbounded" minOccurs="1" xmlns:uni="https://uni-passau.de"/>
     </xs:sequence>
     <xs:attribute type="xs:string" name="name" use="required"/>
+    <xs:attribute type="xs:string" name="fields" />
     <xs:attribute type="xs:string" name="dataType" use="required"/>
   </xs:complexType>
   <xs:complexType name="sensorGroupsType">
@@ -139,6 +140,7 @@
       <xs:restriction base="xs:string">
         <xs:enumeration value="server_mode"/>
         <xs:enumeration value="test_with_default_path"/>
+        <xs:enumeration value="query_test_with_default_path"/>
       </xs:restriction>
     </xs:simpleContent>
   </xs:complexType>
@@ -162,6 +164,7 @@
     <xs:sequence>
       <xs:element type="xs:string" name="type"/>
       <xs:element type="xs:integer" name="sensorNum"/>
+      <xs:element type="xs:string" name="sensorGroup"/>
       <xs:element type="xs:integer" name="deviceNum"/>
       <xs:element type="xs:integer" name="seed"/>
       <xs:element type="xs:integer" name="step"/>
@@ -186,6 +189,7 @@
       <xs:element type="uni:clientsType" name="clients" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="xs:integer" name="deviceGroups" minOccurs="0"/>
       <xs:element type="uni:devicesType" name="devices" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
+      <xs:element type="xs:string" name="operationsProportion" minOccurs="0"/>
       <xs:element type="uni:sensorGroupsType" name="sensorGroups" xmlns:uni="https://uni-passau.de" minOccurs="0" />
       <xs:element type="uni:batchType" name="batch" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="xs:integer" name="loops" minOccurs="0"/>

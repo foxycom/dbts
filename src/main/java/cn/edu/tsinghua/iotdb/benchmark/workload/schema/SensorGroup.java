@@ -7,6 +7,10 @@ public class SensorGroup {
     private String name;
     private List<Sensor> sensors = new ArrayList<>();
 
+    public SensorGroup(List<Sensor> sensors) {
+        this.sensors = sensors;
+    }
+
     public SensorGroup(String name) {
         this.name = name;
     }
@@ -25,5 +29,13 @@ public class SensorGroup {
 
     public String getTableName() {
         return name + "_benchmark";
+    }
+
+    public List<String> getFields() {
+        return sensors.get(0).getFields();
+    }
+
+    public List<Sensor> getSensors() {
+        return sensors;
     }
 }

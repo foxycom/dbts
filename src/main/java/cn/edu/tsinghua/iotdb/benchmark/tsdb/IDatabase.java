@@ -12,6 +12,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import org.w3c.dom.ranges.Range;
+
 import java.util.List;
 
 public interface IDatabase {
@@ -74,10 +76,11 @@ public interface IDatabase {
 
   /**
    * TODO comment
-   * @param RangeQuery
    * @return
    */
   Status gpsPathRangeQuery(RangeQuery rangeQuery);
+
+  Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.

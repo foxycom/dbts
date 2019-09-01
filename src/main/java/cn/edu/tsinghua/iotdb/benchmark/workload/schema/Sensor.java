@@ -2,6 +2,8 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 
+import java.util.List;
+
 public interface Sensor {
     String getName();
 
@@ -24,5 +26,7 @@ public interface Sensor {
     FunctionParam getFunctionParam();
 
     SensorGroup getSensorGroup();
+
+    List<String> getFields();
 
 }

@@ -21,6 +21,8 @@ public interface IWorkload {
 
   RangeQuery getGpsRangeQuery() throws WorkloadException;
 
+  ValueRangeQuery getGpsValueRangeQuery() throws WorkloadException;
+
   ValueRangeQuery getValueRangeQuery() throws WorkloadException;
 
   AggRangeQuery getAggRangeQuery() throws WorkloadException;

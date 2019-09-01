@@ -67,6 +67,7 @@ public class App {
             case INSERT_TEST_WITH_USERDEFINED_PATH:
                 break;
             case QUERY_TEST_WITH_DEFAULT_PATH:
+
                 break;
             case IMPORT_DATA_FROM_CSV:
                 break;
@@ -129,7 +130,14 @@ public class App {
         List<Measurement> threadsMeasurements = new ArrayList<>();
         List<Client> clients = new ArrayList<>();
         CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER);
+        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER, () -> {
+            Measurement loopMeasurement = new Measurement();
+            for (Client client : clients) {
+                loopMeasurement.mergeMeasurement(client.getMeasurement());
+            }
+            loopMeasurement.calculateMetrics();
+            loopMeasurement.save();
+        });
         long st;
         st = System.nanoTime();
         ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
@@ -256,6 +264,10 @@ public class App {
         measurement.showMeasurements();
         measurement.showMetrics();
         measurement.save();
+    }
+
+    private static void queryGpsWithTimeRange(Config config) {
+
     }
 
     /**

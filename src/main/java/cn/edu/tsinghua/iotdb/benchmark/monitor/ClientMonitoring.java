@@ -20,7 +20,6 @@ public enum ClientMonitoring {
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
     private Config config = ConfigParser.INSTANCE.config();
-    private Socket clientSocket;
     private PrintWriter out;
     private ObjectInputStream in;
     private Client client;
@@ -42,7 +41,7 @@ public enum ClientMonitoring {
         }
 
         try {
-            clientSocket = new Socket(config.HOST, config.SERVER_MONITOR_PORT);
+            Socket clientSocket = new Socket(config.HOST, config.SERVER_MONITOR_PORT);
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new ObjectInputStream(clientSocket.getInputStream());
             state = State.STOPPED;
@@ -123,6 +122,10 @@ public enum ClientMonitoring {
             try {
                 while (proceed && (kpi = (KPI) in.readObject()) != null) {
                     kpis.add(kpi);
+                    if (kpis.size() > 20) {
+                        mySqlLog.insertServerMetrics(kpis);
+                        kpis.clear();
+                    }
                 }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
