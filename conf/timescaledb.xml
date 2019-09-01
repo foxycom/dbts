@@ -12,7 +12,7 @@
         <createSchema>true</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="true">
+    <mysqlLog active="false">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
@@ -110,7 +110,7 @@
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="true">
+    <serverMonitor active="false">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>

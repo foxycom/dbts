@@ -20,6 +20,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,8 +41,15 @@ public class TimescaleDB implements IDatabase {
       "SELECT create_hypertable('%s', 'time', chunk_time_interval => interval '1 day');";
   private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
   private long initialDbSize;
+  private DataModel dataModel;
+
+  public enum DataModel {
+    NARROW_TABLE,
+    WIDE_TABLE
+  }
 
   public TimescaleDB() {
+    dataModel = DataModel.NARROW_TABLE;
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
   }
@@ -86,22 +94,29 @@ public class TimescaleDB implements IDatabase {
       String deleteBikesSql = String.format(DROP_TABLE, "bikes");
       statement.addBatch(deleteBikesSql);
 
-      String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
-              "tablename LIKE '%benchmark'";
-      try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
+      if (dataModel == DataModel.NARROW_TABLE) {
+        String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
+                "tablename LIKE '%benchmark'";
+        try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
 
-        while (rs.next()) {
-          statement.addBatch(String.format(DROP_TABLE, rs.getString("tablename")));
+          while (rs.next()) {
+            statement.addBatch(String.format(DROP_TABLE, rs.getString("tablename")));
+          }
+          statement.executeBatch();
+          connection.commit();
         }
+      } else if (dataModel == DataModel.WIDE_TABLE) {
+        String dropTableSql = String.format(DROP_TABLE, tableName);
+        statement.addBatch(dropTableSql);
         statement.executeBatch();
         connection.commit();
-
-        // wait for deletion complete
-        LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
-        Thread.sleep(config.ERASE_WAIT_TIME);
-
-        initialDbSize = getInitialSize();
       }
+
+      initialDbSize = getInitialSize();
+
+      // wait for deletion complete
+      LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+      Thread.sleep(config.ERASE_WAIT_TIME);
     } catch (SQLException e) {
       LOGGER.warn("delete old data table {} failed, because: {}", tableName, e.getMessage());
       LOGGER.warn(e.getNextException().getMessage());
@@ -157,19 +172,28 @@ public class TimescaleDB implements IDatabase {
       String insertBikesSql = getInsertBikesSql(schemaList);
       statement.addBatch(insertBikesSql);
 
-      for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
-        String createTableSql = getCreateTableSql(sensorGroup);
+      if (dataModel == DataModel.NARROW_TABLE) {
+        for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+          String createTableSql = getCreateTableSql(sensorGroup);
+          statement.addBatch(createTableSql);
+        }
+      } else if (dataModel == DataModel.WIDE_TABLE) {
+        String createTableSql = getCreateTableSql();
         statement.addBatch(createTableSql);
       }
 
       statement.executeBatch();
       connection.commit();
 
-      for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
-        String convertToHyperTableSql = getConvertToHypertableSql(sensorGroup);
+      if (dataModel == DataModel.NARROW_TABLE) {
+        for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+          String convertToHyperTableSql = String.format(CONVERT_TO_HYPERTABLE, sensorGroup.getTableName());
+          statement.execute(convertToHyperTableSql);
+        }
+      } else if (dataModel == DataModel.WIDE_TABLE) {
+        String convertToHyperTableSql = String.format(CONVERT_TO_HYPERTABLE, tableName);
         statement.execute(convertToHyperTableSql);
       }
-
 
       createIndexes();
     } catch (SQLException e) {
@@ -206,27 +230,23 @@ public class TimescaleDB implements IDatabase {
   private void createIndexes() {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
-      for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
-        String createIndexOnBikeSql = createIndexOnBike(sensorGroup.getTableName());
-        String createIndexOnBikeAndSensorSql = createIndexOnBikeAndSensor(sensorGroup.getTableName());
+      if (dataModel == DataModel.NARROW_TABLE) {
+        for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
+          String createIndexOnBikeSql = "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, time DESC);";
+          String createIndexOnBikeAndSensorSql = "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, sensor_id, time DESC)";
+          statement.addBatch(createIndexOnBikeSql);
+          statement.addBatch(createIndexOnBikeAndSensorSql);
+        }
+      } else if (dataModel == DataModel.WIDE_TABLE) {
+        String createIndexOnBikeSql = "CREATE INDEX ON " + tableName + " (bike_id, time DESC);";
         statement.addBatch(createIndexOnBikeSql);
-        statement.addBatch(createIndexOnBikeAndSensorSql);
       }
+
       statement.executeBatch();
       connection.commit();
     } catch (SQLException e) {
       LOGGER.error("Could not create PG indexes because: {}", e.getMessage());
     }
-  }
-
-  private String createIndexOnBike(String tableName) {
-    String createIndexSql = "CREATE INDEX ON " + tableName + " (bike_id, time DESC);";
-    return createIndexSql;
-  }
-
-  private String createIndexOnBikeAndSensor(String tableName) {
-    String createIndexSql = "CREATE INDEX ON " + tableName + " (bike_id, sensor_id, time DESC)";
-    return createIndexSql;
   }
 
   @Override
@@ -237,7 +257,6 @@ public class TimescaleDB implements IDatabase {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
       sqlQueries = getInsertOneBatchSql(batch);
-      batch = null;
       for (String query : sqlQueries) {
         statement.addBatch(query);
       }
@@ -549,6 +568,22 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
+  private String getCreateTableSql() {
+    StringBuilder sqlBuilder = new StringBuilder();
+    sqlBuilder.append("CREATE TABLE ").append(tableName).append(" (time TIMESTAMPTZ NOT NULL, bike_id VARCHAR(20) REFERENCES bikes (bike_id), sensor_id VARCHAR(20) NOT NULL");
+    boolean firstIteration = true;
+    for (Sensor sensor : config.SENSORS) {
+      if (firstIteration) {
+        firstIteration = false;
+      } else {
+        sqlBuilder.append(", ");
+      }
+      sqlBuilder.append(sensor.getName()).append(" ").append(sensor.getDataType());
+    }
+    sqlBuilder.append(");");
+    return sqlBuilder.toString();
+  }
+
   private String getCreateBikesTableSql() {
     StringBuilder sqlBuilder = new StringBuilder();
     sqlBuilder.append("CREATE TABLE bikes (bike_id VARCHAR PRIMARY KEY, name VARCHAR NOT NULL, date_manufactured TIMESTAMPTZ);");
@@ -575,48 +610,68 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
-  private String getConvertToHypertableSql(SensorGroup sensorGroup) {
-    return String.format(CONVERT_TO_HYPERTABLE, sensorGroup.getTableName());
-  }
-
-  private List<String> getInsertOneBatchSingleTableSql(Batch batch) {
-    //Map<Sensor, List<Point>> entries = batch.getEntries();
-    // TODO fix
-    return null;
-  }
-
   private List<String> getInsertOneBatchSql(Batch batch) {
     Map<Sensor, Point[]> entries = batch.getEntries();
     DeviceSchema deviceSchema = batch.getDeviceSchema();
-    List<String> sensorQueries = new ArrayList<>(deviceSchema.getSensors().size());
     StringBuilder sb = new StringBuilder();
-    // FIXME different table names for different sensors
-    for (Sensor sensor : deviceSchema.getSensors()) {
-      if (entries.get(sensor).length == 0) {
-        continue;
+
+    if (dataModel == DataModel.WIDE_TABLE) {
+
+      // Transforms data to a list of timestamps and associated points
+      Map<Long, List<Point>> sequence = new HashMap<>();
+      for (Sensor sensor : deviceSchema.getSensors()) {
+        if (entries.get(sensor).length == 0) {
+          continue;
+        }
+
+        for (Point point : batch.getEntries().get(sensor)) {
+          if (sequence.get(point.getTimestamp()) == null) {
+            sequence.put(point.getTimestamp(), new ArrayList<>());
+          }
+          List<Point> pointsAtTimestamp = sequence.get(point.getTimestamp());
+          pointsAtTimestamp.add(point);
+          sequence.put(point.getTimestamp(), pointsAtTimestamp);
+        }
       }
 
-
-      sb.append("insert into ").append(sensor.getSensorGroup().getTableName()).append(" (time, bike_id, sensor_id, value)")
-              .append(" values ");
-
+      sb.append("INSERT INTO ").append(tableName).append(" VALUES ");
       boolean firstIteration = true;
-      for (Point point : entries.get(sensor)) {
+      for (long timestamp : sequence.keySet()) {
         if (firstIteration) {
           firstIteration = false;
-        }
-        else {
+        } else {
           sb.append(", ");
         }
-        Timestamp timestamp = new Timestamp(point.getTimestamp());
-        sb.append("('").append(timestamp).append("', ")
-                .append("'").append(deviceSchema.getDevice()).append("', ")
-                .append("'").append(sensor.getName()).append("', ")
-                .append(point.getValue()).append(")");
+        // FIXME order of sensors not given
+        sb.append("(").append(timestamp).append(", ");
       }
-      sb.append(";");
-      sensorQueries.add(sb.toString());
-      sb.setLength(0);
+    } else if (dataModel == DataModel.NARROW_TABLE) {
+      List<String> sensorQueries = new ArrayList<>(deviceSchema.getSensors().size());
+      for (Sensor sensor : deviceSchema.getSensors()) {
+        if (entries.get(sensor).length == 0) {
+          continue;
+        }
+
+        sb.append("insert into ").append(sensor.getSensorGroup().getTableName())
+                .append(" (time, bike_id, sensor_id, value)").append(" values ");
+
+        boolean firstIteration = true;
+        for (Point point : entries.get(sensor)) {
+          if (firstIteration) {
+            firstIteration = false;
+          } else {
+            sb.append(", ");
+          }
+          Timestamp timestamp = new Timestamp(point.getTimestamp());
+          sb.append("('").append(timestamp).append("', ")
+                  .append("'").append(deviceSchema.getDevice()).append("', ")
+                  .append("'").append(sensor.getName()).append("', ")
+                  .append(point.getValue()).append(")");
+        }
+        sb.append(";");
+        sensorQueries.add(sb.toString());
+        sb.setLength(0);
+      }
     }
 
     return sensorQueries;

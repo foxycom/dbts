@@ -7,6 +7,7 @@ import cn.edu.tsinghua.iotdb.benchmark.model.InfluxDataModel;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
+import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
@@ -19,10 +20,12 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import org.influxdb.BatchOptions;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
@@ -40,6 +43,7 @@ public class InfluxDB implements IDatabase {
   private final String influxDbName;
   private final String defaultRp = "autogen";
   private final String dataType;
+  private final String measurementName = "test";
 
   private org.influxdb.InfluxDB influxDbInstance;
 
@@ -49,7 +53,7 @@ public class InfluxDB implements IDatabase {
    * constructor.
    */
   public InfluxDB() {
-    influxUrl = config.DB_URL;
+    influxUrl = String.format("http://%s:%s", config.HOST, config.PORT);
     influxDbName = config.DB_NAME;
     dataType = config.DATA_TYPE.toLowerCase();
   }
@@ -57,7 +61,11 @@ public class InfluxDB implements IDatabase {
   @Override
   public void init() throws TsdbException {
     try {
-      influxDbInstance = org.influxdb.InfluxDBFactory.connect(influxUrl);
+      influxDbInstance = org.influxdb.InfluxDBFactory.connect(influxUrl)
+              .setDatabase(influxDbName)
+              .setRetentionPolicy(defaultRp)
+              .setConsistency(org.influxdb.InfluxDB.ConsistencyLevel.ALL)
+              .enableBatch(BatchOptions.DEFAULTS.jitterDuration(500));
     } catch (Exception e) {
       LOGGER.error("Initialize InfluxDB failed because ", e);
       throw new TsdbException(e);
@@ -92,8 +100,6 @@ public class InfluxDB implements IDatabase {
   public void registerSchema(List<DeviceSchema> schemaList) throws TsdbException {
     try {
       influxDbInstance.query(new Query("CREATE DATABASE " + influxDbName));
-      influxDbInstance.setDatabase(influxDbName).setRetentionPolicy(defaultRp)
-              .setConsistency(org.influxdb.InfluxDB.ConsistencyLevel.ALL);
     } catch (Exception e) {
       LOGGER.error("RegisterSchema InfluxDB failed because: ", e);
       throw new TsdbException(e);
@@ -107,26 +113,38 @@ public class InfluxDB implements IDatabase {
 
   @Override
   public Status insertOneBatch(Batch batch) {
-    influxDbInstance.enableBatch();
-    BatchPoints.Builder builder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
-    // FIXME build batch
+    BatchPoints.Builder batchBuilder = BatchPoints.builder();
+    Map<Sensor, Point[]> entries = batch.getEntries();
+    DeviceSchema deviceSchema = batch.getDeviceSchema();
+    for (Sensor sensor : deviceSchema.getSensors()) {
+      if (entries.get(sensor).length == 0) {
+        continue;
+      }
 
-    BatchPoints batchPoints = builder.build();
+      for (Point syntheticPoint : entries.get(sensor)) {
+        org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
+                .tag("device_name", deviceSchema.getDevice())
+                .tag("sensor_group_name", sensor.getSensorGroup().getName())
+                .tag("sensor_name", sensor.getName());
+
+        double value = Double.parseDouble(syntheticPoint.getValue());
+        org.influxdb.dto.Point influxPoint = pointBuilder.addField("value", value)
+                .time(syntheticPoint.getTimestamp(), TimeUnit.MILLISECONDS).build();
+
+        batchBuilder.point(influxPoint);
+      }
+    }
+
+    BatchPoints batchPoints = batchBuilder.build();
 
     try {
-      InfluxDataModel model;
-      for (Record record : batch.getRecords()) {
-        model = createDataModel(batch.getDeviceSchema(), record.getTimestamp(),
-            record.getRecordDataValue());
-        batchPoints.point(model.toInfluxPoint());
-      }
       long startTime = System.nanoTime();
       influxDbInstance.write(batchPoints);
       long endTime = System.nanoTime();
       long latency = endTime - startTime;
       return new Status(true, latency);
     } catch (Exception e) {
-      LOGGER.warn(e.getMessage());
+      LOGGER.error("Could not insert batch because: {}", e.getMessage());
       return new Status(false, 0, e, e.toString());
     }
   }
