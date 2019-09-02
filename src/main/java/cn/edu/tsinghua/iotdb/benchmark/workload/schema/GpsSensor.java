@@ -14,6 +14,6 @@ public class GpsSensor extends BasicSensor {
         // FIXME cycle is static
         GeoPoint geoPoint = Function.getGeoLinePoint(functionParam.getMax(), functionParam.getMin(),
                 functionParam.getCycle(), currentTimestamp);
-        return "'" + geoPoint.toString() + "'";
+        return geoPoint.toString();
     }
 }

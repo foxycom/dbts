@@ -26,10 +26,8 @@ public class Function {
 //		}
 //		return value;
 //	}
-	  private static Config config = ConfigParser.INSTANCE.config();
+  	private static Config config = ConfigParser.INSTANCE.config();
 	private static Random r = new Random(config.DATA_SEED);
-
-
 
 	/**
 	 * 获取单调函数浮点值
@@ -58,19 +56,6 @@ public class Function {
 		double k = (max - min) / (cycle);
 		return min + k * (currentTime % cycle);
 	}
-
-//	/**
-//	 * 
-//	 * @param max 最大值
-//	 * @param min 最小值
-//	 * @param cycle 周期，单位为s
-//	 * @param currentTime 当前时间 单位为ms
-//	 * @return
-//	 */
-//	private static long getMonoValue(long max, long min, double cycle, long currentTime) {
-//		double k = (max - min) / (cycle * 1000);
-//		return (long) (k * (currentTime % (cycle * 1000)));
-//	}
 
 	/**
 	 * 获取正弦函数浮点值
@@ -118,12 +103,25 @@ public class Function {
 	}
 
 	public static GeoPoint getGeoLinePoint(double max, double min, double cycle, long currentTime) {
-		long timeDelta = (currentTime - Constants.START_TIMESTAMP) / 1000;
-		double y = max * Math.sin(min * timeDelta);
-		double x = timeDelta;
-		return new GeoPoint(x, y);
+		double randomLongitude = r.nextDouble();
+		double randomLatitude = r.nextDouble();
+		double deltaLatitude;
+		if (currentTime % 3 == 0) {
+			deltaLatitude = -0.01 * randomLatitude + randomLatitude * (currentTime - Constants.START_TIMESTAMP) / 10000000 - 0.0001 * (currentTime % 5);
+		} else {
+			deltaLatitude = 0.01 * randomLatitude + randomLongitude * (currentTime - Constants.START_TIMESTAMP) / 10000000 + 0.0001 * (currentTime % 13);
+		}
+
+		double deltaLongitude;
+		if (currentTime % 7 == 0) {
+			deltaLongitude = -0.001 * randomLongitude - randomLatitude * (currentTime - Constants.START_TIMESTAMP) / 10000000 + 0.0001 * (currentTime % 2);
+		} else {
+			deltaLongitude = 0.001 * randomLongitude + randomLongitude * (currentTime - Constants.START_TIMESTAMP) / 10000000 - 0.0001 * (currentTime % 11);
+		}
+		double latitude = Constants.SPAWN_POINT.getLatitude() + deltaLatitude;
+		double longitude = Constants.SPAWN_POINT.getLongitude() + deltaLongitude;
+		return new GeoPoint(longitude, latitude);
 	}
-	
 
 	public static void main(String[] args) {
 

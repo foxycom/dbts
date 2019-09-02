@@ -1,32 +1,32 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 public class GeoPoint {
-    private double x;
-    private double y;
+    private double longitude;
+    private double latitude;
 
-    public GeoPoint(double x, double y) {
-        this.x = x;
-        this.y = y;
+    public GeoPoint(double longitude, double latitude) {
+        this.longitude = longitude;
+        this.latitude = latitude;
     }
 
-    public double getX() {
-        return x;
+    public double getLongitude() {
+        return longitude;
     }
 
-    public void setX(double x) {
-        this.x = x;
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
-    public double getY() {
-        return y;
+    public double getLatitude() {
+        return latitude;
     }
 
-    public void setY(double y) {
-        this.y = y;
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 
     @Override
     public String toString() {
-        return String.format("POINT(%s %s)", x, y);
+        return String.format("ST_SetSRID(ST_MakePoint(%s, %s),4326)", longitude, latitude);
     }
 }

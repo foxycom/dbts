@@ -1,6 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.conf;
 
 import cn.edu.tsinghua.iotdb.benchmark.utils.TimeUtils;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 
 /**
  * 系统运行常量值
@@ -64,7 +65,7 @@ public class Constants {
     public static final String MODE_EXECUTE_SQL_FROM_FILE = "executeSQLFromFile";
 
     public static final String EXE_SQL_FROM_FILE_MODE = "1";
-    public static final String GEO_DATA_TYPE = "GEOMETRY";
-
+    public static final String GEO_DATA_TYPE = "GEOGRAPHY";
+    public static final GeoPoint SPAWN_POINT = new GeoPoint(13.4319466, 48.5667364);
 
 }
