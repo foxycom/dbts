@@ -20,10 +20,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
@@ -246,19 +243,23 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT time, device, s_2 FROM tutorial WHERE (device='d_8') and time=1535558400000.
    *
    * @param preciseQuery universal precise query condition parameters
    */
   @Override
   public Status preciseQuery(PreciseQuery preciseQuery) {
-    int sensorNum = preciseQuery.getDeviceSchema().get(0).getSensors().size();
-    StringBuilder builder = getSampleQuerySqlHead(preciseQuery.getDeviceSchema());
-    builder.append(" AND time = ").append(preciseQuery.getTimestamp());
-    return executeQueryAndGetStatus(builder.toString());
+    SensorGroup sensorGroup = preciseQuery.getSensorGroup();
+    List<String> columns = new ArrayList<>(sensorGroup.getFields());
+    columns.addAll(Arrays.asList("time", "bike_id"));
+    sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName())
+            .where().bikes(preciseQuery.getDeviceSchema()).and().time(preciseQuery);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT time, device_id, value FROM temperature_benchmark WHERE (device_id = 'd_8') AND (time >= 1535558400000 AND
    * time <= 1535558650000).
    *
@@ -269,31 +270,33 @@ public class TimescaleDB implements IDatabase {
     List<String> columns = new ArrayList<>();
     columns.add("value");
 
-    // TODO variable table name
-    sqlBuilder.reset();
-    sqlBuilder = sqlBuilder.select(columns).from(rangeQuery.getSensorGroup().getTableName())
+    sqlBuilder = sqlBuilder.reset().select(columns).from(rangeQuery.getSensorGroup().getTableName())
             .where().bikes(rangeQuery.getDeviceSchema()).and().time(rangeQuery);
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
+  /**
+   * TODO: READY TO USE
+   * @param rangeQuery
+   * @return
+   */
   @Override
-  public Status gpsPathRangeQuery(RangeQuery rangeQuery) {
-    List<String> columns = new ArrayList<>(1);
-    columns.add("value");
-
+  public Status gpsRangeQuery(RangeQuery rangeQuery) {
     SensorGroup sensorGroup = rangeQuery.getSensorGroup();
-    Sensor sensor = sensorGroup.getSensors().get(0);
+    List<String> columns = Collections.unmodifiableList(sensorGroup.getSensors().get(0).getFields());
 
     sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName())
             .where().bikes(rangeQuery.getDeviceSchema()).and().time(rangeQuery);
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
+  /**
+   * TODO: READY TO USE
+   * @param rangeQuery
+   * @return
+   */
   @Override
-  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
-    List<String> columns = new ArrayList<>(1);
-    columns.add("value");
-
+  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
     DeviceSchema deviceSchema = rangeQuery.getDeviceSchema().get(0);
     double threshold = rangeQuery.getValueThreshold();
 
@@ -306,19 +309,24 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT time, device, s_2 FROM tutorial WHERE (device='d_8') and (s_2 > 78).
    *
    * @param valueRangeQuery contains universal range query with value filter parameters
    */
   @Override
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
-    StringBuilder builder = getSampleQuerySqlHead(valueRangeQuery.getDeviceSchema());
-    addWhereValueClause(valueRangeQuery.getDeviceSchema(), builder,
-        valueRangeQuery.getValueThreshold());
-    return executeQueryAndGetStatus(builder.toString());
+    SensorGroup sensorGroup = valueRangeQuery.getSensorGroup();
+    List<String> columns = new ArrayList<>(sensorGroup.getFields());
+    columns.addAll(Arrays.asList("bike_id", "time"));
+    sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName()).where()
+            .value(SqlBuilder.Op.GREATER, valueRangeQuery.getValueThreshold()).and().bikes(valueRangeQuery.getDeviceSchema());
+    String debug = sqlBuilder.build();
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT device, count(s_2) FROM tutorial WHERE (device='d_2') AND (time >= 1535558400000 and
    * time <= 1535558650000) GROUP BY device.
    *
@@ -326,32 +334,35 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    SqlBuilder sqlBuilder = new SqlBuilder();
-    List<String> columns = aggRangeQuery.getSensorGroup().getSensors().get(0).getFields();
+    SensorGroup sensorGroup = aggRangeQuery.getSensorGroup();
+    List<String> aggregatedColumns = new ArrayList<>(sensorGroup.getFields());
+    List<String> plainColumns = new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
 
-    sqlBuilder = sqlBuilder.reset().select(columns, aggRangeQuery.getAggrFunc())
+    sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggRangeQuery.getAggrFunc())
             .from(aggRangeQuery.getSensorGroup().getTableName()).where().time(aggRangeQuery)
-            .and().bikes(aggRangeQuery.getDeviceSchema());
-    String debug = sqlBuilder.build();
+            .and().bikes(aggRangeQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT device, count(s_2) FROM tutorial WHERE (device='d_2') AND (s_2>10) GROUP BY device.
    *
    * @param aggValueQuery contains universal aggregation query with value filter parameters
    */
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    StringBuilder builder = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
-        aggValueQuery.getAggrFunc());
-    addWhereValueClause(aggValueQuery.getDeviceSchema(), builder,
-        aggValueQuery.getValueThreshold());
-    builder.append(" GROUP BY device");
-    return executeQueryAndGetStatus(builder.toString());
+    SensorGroup sensorGroup = aggValueQuery.getSensorGroup();
+    List<String> aggregatedColumns = new ArrayList<>(sensorGroup.getFields());
+    List<String> plainColumns = new ArrayList<>(Collections.singleton("bike_id"));
+    sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggValueQuery.getAggrFunc())
+            .from(sensorGroup.getTableName()).where().value(SqlBuilder.Op.GREATER, aggValueQuery.getValueThreshold())
+            .and().bikes(aggValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT device, count(s_2) FROM tutorial WHERE (device='d_2') AND (time >= 1535558400000 and
    * time <= 1535558650000) AND (s_2>10) GROUP BY device.
    *
@@ -360,16 +371,19 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    StringBuilder builder = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
-        aggRangeValueQuery.getAggrFunc());
-    addWhereTimeClause(builder, aggRangeValueQuery);
-    addWhereValueClause(aggRangeValueQuery.getDeviceSchema(), builder,
-        aggRangeValueQuery.getValueThreshold());
-    builder.append("GROUP BY device");
-    return executeQueryAndGetStatus(builder.toString());
+    SensorGroup sensorGroup = aggRangeValueQuery.getSensorGroup();
+    List<String> aggregatedColumns = new ArrayList<>(sensorGroup.getFields());
+    List<String> plainColumns = new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
+
+    sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggRangeValueQuery.getAggrFunc())
+            .from(sensorGroup.getTableName()).where().time(aggRangeValueQuery)
+            .and().value(SqlBuilder.Op.EQUALS_GREATER, aggRangeValueQuery.getValueThreshold())
+            .and().bikes(aggRangeValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
+   * TODO test
    * eg. SELECT time_bucket(5000, time) AS sampleTime, device, count(s_2) FROM tutorial WHERE
    * (device='d_2') AND (time >= 1535558400000 and time <= 1535558650000) GROUP BY time, device.
    *
@@ -377,14 +391,19 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public Status groupByQuery(GroupByQuery groupByQuery) {
-    StringBuilder builder = getGroupByQuerySqlHead(groupByQuery.getDeviceSchema(),
-        groupByQuery.getAggFun(), groupByQuery.getGranularity());
-    addWhereTimeClause(builder, groupByQuery);
-    builder.append(" GROUP BY time, device");
-    return executeQueryAndGetStatus(builder.toString());
+    SensorGroup sensorGroup = groupByQuery.getSensorGroup();
+    List<String> aggregatedColumns = new ArrayList<>(sensorGroup.getFields());
+    List<String> plainColumns = new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
+    sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, groupByQuery.getAggrFunc(), config.TIME_BUCKET)
+            .from(sensorGroup.getTableName()).where().time(groupByQuery)
+            .groupBy(Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
+
+    String debug = sqlBuilder.build();
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
+   * TODO: READY TO USE
    * eg. SELECT time, device, s_2 FROM tutorial WHERE (device='d_8') ORDER BY time DESC LIMIT 1. The
    * last and first commands do not use indexes, and instead perform a sequential scan through their
    * groups. They are primarily used for ordered selection within a GROUP BY aggregate, and not as
@@ -395,9 +414,14 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public Status latestPointQuery(LatestPointQuery latestPointQuery) {
-    StringBuilder builder = getSampleQuerySqlHead(latestPointQuery.getDeviceSchema());
-    builder.append("ORDER BY time DESC LIMIT 1");
-    return executeQueryAndGetStatus(builder.toString());
+    List<DeviceSchema> deviceSchemas = latestPointQuery.getDeviceSchema();
+    SensorGroup sensorGroup = latestPointQuery.getSensorGroup();
+    List<String> columns = new ArrayList<>(sensorGroup.getSensors().get(0).getFields());
+    columns.addAll(Arrays.asList("bike_id", "time", "sensor_id"));
+    sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName()).where().bikes(deviceSchemas)
+            .orderBy("time", SqlBuilder.Order.DESC).limit(1);
+    String debug = sqlBuilder.build();
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   private Status executeQueryAndGetStatus(String sql) {
@@ -419,71 +443,6 @@ public class TimescaleDB implements IDatabase {
     } catch (Exception e) {
       return new Status(false, 0, queryResultPointNum, e, sql);
     }
-  }
-
-  /**
-   * 创建查询语句--(带有聚合函数的查询) .
-   * SELECT device, avg(cpu) FROM metrics WHERE (device='d_1' OR device='d_2')
-   */
-  private StringBuilder getAggQuerySqlHead(List<DeviceSchema> devices, String aggFun) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SELECT device");
-    addFunSensor(aggFun, builder, devices.get(0).getSensors());
-
-    builder.append(" FROM ").append(tableName);
-    addDeviceCondition(builder, devices);
-    return builder;
-  }
-
-  /**
-   * 创建查询语句--(带有GroupBy函数的查询) .
-   * SELECT time_bucket(5, time) AS sampleTime, device, avg(cpu) FROM
-   * metrics WHERE (device='d_1' OR device='d_2').
-   */
-  private StringBuilder getGroupByQuerySqlHead(List<DeviceSchema> devices, String aggFun,
-      long timeUnit) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SELECT time_bucket(").append(timeUnit).append(", time) AS sampleTime, device");
-
-    addFunSensor(aggFun, builder, devices.get(0).getSensors());
-
-    builder.append(" FROM ").append(tableName);
-    addDeviceCondition(builder, devices);
-    return builder;
-  }
-
-  /**
-   * 创建查询语句--(不带有聚合函数的查询) .
-   * SELECT time, device, cpu FROM metrics WHERE (device='d_1' OR device='d_2').
-   */
-  private StringBuilder getSampleQuerySqlHead(List<DeviceSchema> devices) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SELECT time, device");
-    addFunSensor(null, builder, devices.get(0).getSensors());
-
-    builder.append(" FROM ").append(tableName);
-
-    addDeviceCondition(builder, devices);
-    return builder;
-  }
-
-  private void addFunSensor(String method, StringBuilder builder, List<Sensor> list) {
-    if (method != null) {
-      list.forEach(sensor ->
-          builder.append(", ").append(method).append("(").append(sensor.getName()).append(")")
-      );
-    } else {
-      list.forEach(sensor -> builder.append(", ").append(sensor.getName()));
-    }
-  }
-
-  private void addDeviceCondition(StringBuilder builder, List<DeviceSchema> devices) {
-    builder.append(" WHERE (");
-    for (DeviceSchema deviceSchema : devices) {
-      builder.append("device='").append(deviceSchema.getDevice()).append("'").append(" OR ");
-    }
-    builder.delete(builder.length() - 4, builder.length());
-    builder.append(")");
   }
 
   /**

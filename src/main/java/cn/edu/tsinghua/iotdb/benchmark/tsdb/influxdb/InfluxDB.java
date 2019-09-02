@@ -169,12 +169,12 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+  public Status gpsRangeQuery(RangeQuery RangeQuery) {
     return null;
   }
 
   @Override
-  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
     return null;
   }
 
@@ -197,10 +197,11 @@ public class InfluxDB implements IDatabase {
    */
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
+    /*String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
         aggRangeQuery.getAggrFunc());
     String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeQuery);
-    return executeQueryAndGetStatus(sql);
+    return executeQueryAndGetStatus(sql);*/
+    return null;
   }
 
   /**
@@ -208,11 +209,12 @@ public class InfluxDB implements IDatabase {
    */
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
+    /*String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
         aggValueQuery.getAggrFunc());
     String sql = addWhereValueClause(aggValueQuery.getDeviceSchema(), aggQuerySqlHead,
         aggValueQuery.getValueThreshold());
-    return executeQueryAndGetStatus(sql);
+    return executeQueryAndGetStatus(sql);*/
+    return null;
   }
 
   /**
@@ -221,12 +223,13 @@ public class InfluxDB implements IDatabase {
    */
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    String rangeQueryHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
+    /*String rangeQueryHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
         aggRangeValueQuery.getAggrFunc());
     String sqlWithTimeFilter = addWhereTimeClause(rangeQueryHead, aggRangeValueQuery);
     String sqlWithValueFilter = addWhereValueClause(aggRangeValueQuery.getDeviceSchema(),
         sqlWithTimeFilter, aggRangeValueQuery.getValueThreshold());
-    return executeQueryAndGetStatus(sqlWithValueFilter);
+    return executeQueryAndGetStatus(sqlWithValueFilter);*/
+    return null;
   }
 
   /**
@@ -235,10 +238,11 @@ public class InfluxDB implements IDatabase {
    */
   @Override
   public Status groupByQuery(GroupByQuery groupByQuery) {
-    String sqlHeader = getAggQuerySqlHead(groupByQuery.getDeviceSchema(), groupByQuery.getAggFun());
+   /* String sqlHeader = getAggQuerySqlHead(groupByQuery.getDeviceSchema(), groupByQuery.getAggrFunc());
     String sqlWithTimeFilter = addWhereTimeClause(sqlHeader, groupByQuery);
     String sqlWithGroupBy = addGroupByClause(sqlWithTimeFilter, groupByQuery.getGranularity());
-    return executeQueryAndGetStatus(sqlWithGroupBy);
+    return executeQueryAndGetStatus(sqlWithGroupBy);*/
+   return null;
   }
 
   /**

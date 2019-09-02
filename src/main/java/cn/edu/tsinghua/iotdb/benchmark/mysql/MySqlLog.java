@@ -667,7 +667,7 @@ public class MySqlLog {
                                         + "'");
                         stat.addBatch(sql);
                         sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
-                                "'TIME_UNIT'", "' " + config.TIME_UNIT + "'");
+                                "'TIME_UNIT'", "' " + config.TIME_BUCKET + "'");
                         stat.addBatch(sql);
                         break;
                 }

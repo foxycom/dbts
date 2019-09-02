@@ -1,5 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.conf;
 
+import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionXml;
@@ -59,6 +60,7 @@ public enum ConfigParser {
         config.WORK_MODE = Mode.valueOf(xml.getString("mode", config.WORK_MODE.name()).toUpperCase());
         config.MYSQL_URL = xml.getString("mysqlLog", config.MYSQL_URL);
         config.USE_MYSQL = xml.getBoolean("mysqlLog[@active]", config.USE_MYSQL);
+        config.REMARK = xml.getString("mysqlLog[@remark]");
         config.CLIENTS_NUMBER = xml.getInt("clients", config.CLIENTS_NUMBER);
         config.BIND_CLIENTS_TO_DEVICES = xml.getBoolean("clients[@bindToDevices]", config.BIND_CLIENTS_TO_DEVICES);
         config.DEVICE_GROUPS_NUMBER = xml.getInt("deviceGroups", config.DEVICE_GROUPS_NUMBER);
@@ -98,13 +100,13 @@ public enum ConfigParser {
         config.QUERY_DEVICE_NUM = xml.getInt("query.deviceNum", config.QUERY_DEVICE_NUM);
         config.QUERY_SEED = xml.getLong("query.seed", config.QUERY_SEED);
         config.STEP_SIZE = xml.getInt("query.step", config.STEP_SIZE);
-        config.QUERY_AGGREGATE_FUN = xml.getString("query.aggregateFunction", config.QUERY_AGGREGATE_FUN);
+        config.QUERY_AGGREGATE_FUN = Aggregation.valueOf(xml.getString("query.aggregateFunction").toUpperCase());
         config.QUERY_INTERVAL = xml.getLong("query.interval", config.INTERVAL);
         config.QUERY_LOWER_LIMIT = xml.getDouble("query.lowerLimit", config.QUERY_LOWER_LIMIT);
         config.IS_EMPTY_PRECISE_POINT_QUERY = xml.getBoolean("query.emptyPrecisePointQuery",
                 config.IS_EMPTY_PRECISE_POINT_QUERY);
         // TODO change name
-        config.TIME_UNIT = xml.getLong("query.groupBy", config.TIME_UNIT);
+        config.TIME_BUCKET = xml.getLong("query.timeBucket", config.TIME_BUCKET);
         config.LIMIT_CLAUSE_MODE = xml.getInt("query.limitClause", config.LIMIT_CLAUSE_MODE);
         config.QUERY_LIMIT_N = xml.getInt("query.limitN", config.QUERY_LIMIT_N);
         config.QUERY_LIMIT_OFFSET = xml.getInt("query.limitOffset", config.QUERY_LIMIT_OFFSET);

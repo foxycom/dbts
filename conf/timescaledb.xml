@@ -12,14 +12,15 @@
         <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="false" remark="widetable">
+    <mysqlLog active="false" remark="some remark">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">4</devices>
 
-    <operationsProportion>0:0:0:0:4:0:0:0:0:0:0</operationsProportion>
+    <!-- INGEST:PRECISE:RANGE:VALUE_RANGE:AGG_RANGE:AGG_VALUE:AGG_RANGE_VALUE:GROUP_BY:LATEST_POINT:GPS_RANGE:GPS_VALUE_RANGE -->
+    <operationsProportion>0:0:0:0:0:0:0:1:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
@@ -142,14 +143,14 @@
         <type>7</type>
         <sensorNum>1</sensorNum>
         <sensorGroup></sensorGroup>
-        <deviceNum>1</deviceNum>
+        <deviceNum>3</deviceNum>
         <seed>151658</seed>
         <step>1</step>
-        <aggregateFunction>count</aggregateFunction>
-        <interval>600000</interval>
+        <aggregateFunction>sum</aggregateFunction>
+        <interval>3600000</interval>
         <lowerLimit>-5</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
-        <groupBy>20000</groupBy>
+        <timeBucket>60000</timeBucket>
         <limitClause>0</limitClause>
         <limitN>5</limitN>
         <limitOffset>5</limitOffset>

@@ -78,9 +78,9 @@ public interface IDatabase {
    * TODO comment
    * @return
    */
-  Status gpsPathRangeQuery(RangeQuery rangeQuery);
+  Status gpsRangeQuery(RangeQuery rangeQuery);
 
-  Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery);
+  Status gpsValueRangeQuery(ValueRangeQuery rangeQuery);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.

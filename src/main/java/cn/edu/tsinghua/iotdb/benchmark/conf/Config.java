@@ -1,5 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.conf;
 
+import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.DataSet;
 import java.io.InputStream;
@@ -84,13 +85,9 @@ public class Config {
 
 	public int START_TIMESTAMP_INDEX = 20;
 
-	public boolean USE_OPS = false;
-
 	public String DRIVE_NAME = "sdb";
 
 	public String IFACE_NAME = "enp0s25";
-
-	public double CLIENT_MAX_WRT_RATE = 10000000.0;
 
 	public int LIMIT_CLAUSE_MODE = 0;
 
@@ -109,8 +106,7 @@ public class Config {
  	public String TIMESERIES_NAME;
 	/**一个时序的数据类型*/
  	public String TIMESERIES_TYPE;
-	/**时序数据取值范围*/
-	public String TIMESERIES_VALUE_SCOPE;
+
 	/**样例数据生成路径及文件名*/
 	public String GEN_DATA_FILE_PATH = "/home/liurui/sampleData";
 	/**上一次结果的日志路径*/
@@ -178,29 +174,10 @@ public class Config {
 	public List<FunctionParam> CONSTANT_LIST = new ArrayList<>();
 	public List<FunctionParam> GEO_LIST = new ArrayList<>();
 
-	/** Sensor names */
-	public List<String> SENSOR_CODES = new ArrayList<>();
-
 	/**
 	 * Sensors list
 	 */
 	public List<Sensor> SENSORS = new ArrayList<>();
-
-	/** 设备_传感器 时间偏移量 */
-	public Map<String, Long> SHIFT_TIME_MAP = new HashMap<>();
-
-	/** Data functions for every sensor */
-	public Map<Integer, FunctionParam> SENSOR_FUNCTION = new HashMap<>();
-
-	/** First timestamp of historical data */
-	public long HISTORY_START_TIME;
-
-	/** Last timestamp of historical data */
-	public long HISTORY_END_TIME;
-
-	// 负载生成器参数 start
-	/** LoadBatchId 批次id */
-	public Long PERFORM_BATCH_ID;
 
 	/** Delete data after benchmark test */
 	public boolean ERASE_DATA = false;
@@ -226,11 +203,11 @@ public class Config {
 	/** Which sensor group to perform queries on. */
 	public String QUERY_SENSOR_GROUP = "";
 	public int QUERY_CHOICE = 1;
-	public String QUERY_AGGREGATE_FUN = "";
+	public Aggregation QUERY_AGGREGATE_FUN;
 	public long QUERY_INTERVAL = DEVICES_NUMBER * POINT_STEP;
 	public double QUERY_LOWER_LIMIT = 0;
 	public boolean IS_EMPTY_PRECISE_POINT_QUERY = false;
-	public long TIME_UNIT = QUERY_INTERVAL / 2;
+	public long TIME_BUCKET = QUERY_INTERVAL / 2;
 	public long QUERY_SEED = 1516580959202L;
 	public int QUERY_LIMIT_N = 1;
 	public int QUERY_LIMIT_OFFSET = 0;

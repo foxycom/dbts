@@ -173,7 +173,7 @@
       <xs:element type="xs:long" name="interval"/>
       <xs:element type="xs:double" name="lowerLimit"/>
       <xs:element type="xs:string" name="emptyPrecisePointQuery"/>
-      <xs:element type="xs:integer" name="groupBy"/>
+      <xs:element type="xs:integer" name="timeBucket"/>
       <xs:element type="xs:integer" name="limitClause"/>
       <xs:element type="xs:integer" name="limitN"/>
       <xs:element type="xs:integer" name="limitOffset"/>

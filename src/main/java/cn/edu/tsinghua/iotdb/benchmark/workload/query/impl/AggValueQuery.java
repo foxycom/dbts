@@ -3,7 +3,10 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.query.impl;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
+import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
+
 import java.util.List;
 
 public class AggValueQuery extends AggRangeQuery {
@@ -12,18 +15,24 @@ public class AggValueQuery extends AggRangeQuery {
   // the whole time series, however some TSDBs require the time condition, in that case we use a
   // large time range to cover the whole time series. However this method still can not guarantee
   // that the series is fully covered.
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
   private static final long END_TIME =
-      Constants.START_TIMESTAMP + config.POINT_STEP * config.BATCH_SIZE * 1000000L;
+  Constants.START_TIMESTAMP + config.POINT_STEP * config.BATCH_SIZE * 1000000L;
 
-  public AggValueQuery(List<DeviceSchema> deviceSchema, String aggFun, double valueThreshold) {
-    super(deviceSchema, Constants.START_TIMESTAMP, END_TIME, aggFun);
+  public AggValueQuery(List<DeviceSchema> deviceSchema, SensorGroup sensorGroup, Aggregation aggrFunc,
+                       double valueThreshold) {
+    super(deviceSchema, sensorGroup, Constants.START_TIMESTAMP, END_TIME, aggrFunc);
     this.valueThreshold = valueThreshold;
   }
 
-  public AggValueQuery(long startTime, long endTime, List<DeviceSchema> deviceSchema, String aggFun,
+  public AggValueQuery(List<DeviceSchema> deviceSchema, Aggregation aggrFunc, double valueThreshold) {
+    super(deviceSchema, Constants.START_TIMESTAMP, END_TIME, aggrFunc);
+    this.valueThreshold = valueThreshold;
+  }
+
+  public AggValueQuery(long startTime, long endTime, List<DeviceSchema> deviceSchema, Aggregation aggrFunc,
       double valueThreshold) {
-    super(deviceSchema, startTime, endTime, aggFun);
+    super(deviceSchema, startTime, endTime, aggrFunc);
     this.valueThreshold = valueThreshold;
   }
 

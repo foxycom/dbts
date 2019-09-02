@@ -166,12 +166,12 @@ public class IoTDB implements IDatabase {
   }
 
   @Override
-  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+  public Status gpsRangeQuery(RangeQuery RangeQuery) {
     return null;
   }
 
   @Override
-  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
     return null;
   }
 
@@ -194,11 +194,12 @@ public class IoTDB implements IDatabase {
    */
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
+    /*String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
         aggRangeQuery.getAggrFunc());
     String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeQuery.getStartTimestamp(),
         aggRangeQuery.getEndTimestamp());
-    return executeQueryAndGetStatus(sql);
+    return executeQueryAndGetStatus(sql);*/
+    return null;
   }
 
   /**
@@ -207,11 +208,12 @@ public class IoTDB implements IDatabase {
    */
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
+    /*String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
         aggValueQuery.getAggrFunc());
     String sql = aggQuerySqlHead + " WHERE " + getValueFilterClause(aggValueQuery.getDeviceSchema(),
         aggValueQuery.getValueThreshold()).substring(4);
-    return executeQueryAndGetStatus(sql);
+    return executeQueryAndGetStatus(sql);*/
+    return null;
   }
 
   /**
@@ -220,13 +222,14 @@ public class IoTDB implements IDatabase {
    */
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
+    /*String aggQuerySqlHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
         aggRangeValueQuery.getAggrFunc());
     String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeValueQuery.getStartTimestamp(),
         aggRangeValueQuery.getEndTimestamp());
     sql += getValueFilterClause(aggRangeValueQuery.getDeviceSchema(),
         aggRangeValueQuery.getValueThreshold());
-    return executeQueryAndGetStatus(sql);
+    return executeQueryAndGetStatus(sql);*/
+    return null;
   }
 
   /**
@@ -237,11 +240,12 @@ public class IoTDB implements IDatabase {
    */
   @Override
   public Status groupByQuery(GroupByQuery groupByQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(groupByQuery.getDeviceSchema(),
-        groupByQuery.getAggFun());
+   /* String aggQuerySqlHead = getAggQuerySqlHead(groupByQuery.getDeviceSchema(),
+        groupByQuery.getAggrFunc());
     String sql = addGroupByClause(aggQuerySqlHead, groupByQuery.getStartTimestamp(),
         groupByQuery.getEndTimestamp(), groupByQuery.getGranularity());
-    return executeQueryAndGetStatus(sql);
+    return executeQueryAndGetStatus(sql);*/
+   return null;
   }
 
   /**

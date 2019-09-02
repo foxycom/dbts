@@ -3,7 +3,6 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
@@ -106,11 +105,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status gpsPathRangeQuery(RangeQuery rangeQuery) {
+  public Status gpsRangeQuery(RangeQuery rangeQuery) {
     Status status = null;
     Operation operation = Operation.GPS_TIME_RANGE_QUERY;
     try {
-      status = db.gpsPathRangeQuery(rangeQuery);
+      status = db.gpsRangeQuery(rangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);
@@ -120,11 +119,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
     Status status = null;
     Operation operation = Operation.GPS_TRIP_RANGE_QUERY;
     try {
-      status = db.gpsTripIdentificationRangeQuery(rangeQuery);
+      status = db.gpsValueRangeQuery(rangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);

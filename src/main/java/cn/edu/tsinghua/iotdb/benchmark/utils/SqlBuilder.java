@@ -1,10 +1,13 @@
 package cn.edu.tsinghua.iotdb.benchmark.utils;
 
+import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
+import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 
 import java.sql.Timestamp;
+import java.util.Collections;
 import java.util.List;
 
 public class SqlBuilder {
@@ -19,17 +22,47 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder select(List<String> columns, String aggregationFunc) {
+    public SqlBuilder select(List<String> aggregatedColumns, List<String> plainColumns, Aggregation aggregationFunc) {
+        // return select(aggregatedColumns, plainColumns, aggregationFunc);
+        if (aggregatedColumns.isEmpty()) {
+            throw new IllegalArgumentException("There should be at least one column to aggregate.");
+        }
+
         builder.append("SELECT ");
         boolean firstIteration = true;
-        for (String column : columns) {
+        for (String aggregatedColumn : aggregatedColumns) {
             if (firstIteration) {
                 firstIteration = false;
             } else {
                 builder.append(", ");
             }
-            builder.append(aggregationFunc).append("(").append(column).append(")");
+
+            builder.append(aggregationFunc.build(aggregatedColumn));
         }
+        plainColumns.forEach(plainColumn -> builder.append(", ").append(plainColumn));
+        return this;
+    }
+
+    /**
+     * Time bucket aggregation.
+     *
+     * @param aggregatedColumns
+     * @param plainColumns
+     * @param aggregationFunc
+     * @param timeBucket
+     * @return
+     */
+    public SqlBuilder select(List<String> aggregatedColumns, List<String> plainColumns, Aggregation aggregationFunc,
+                             long timeBucket) {
+        if (aggregatedColumns.isEmpty()) {
+            throw new IllegalArgumentException("There should be at least one column to aggregate.");
+        } else if (aggregationFunc == Aggregation.TIME_BUCKET) {
+            throw new IllegalArgumentException("Can't have a second time_bucket function in the same query.");
+        }
+
+        builder.append("SELECT ").append(Aggregation.TIME_BUCKET.build("time", timeBucket));
+        aggregatedColumns.forEach(aggregatedColumn -> builder.append(", ").append(aggregationFunc.build(aggregatedColumn)));
+        plainColumns.forEach(plainColumn -> builder.append(", ").append(plainColumn));
         return this;
     }
 
@@ -82,11 +115,17 @@ public class SqlBuilder {
         return this;
     }
 
+    public SqlBuilder time(PreciseQuery preciseQuery) {
+        Timestamp timestamp = new Timestamp(preciseQuery.getTimestamp());
+        builder.append(" (time = '").append(timestamp).append("')");
+        return this;
+    }
+
     public SqlBuilder time(RangeQuery rangeQuery) {
         Timestamp startTimestamp = new Timestamp(rangeQuery.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(rangeQuery.getEndTimestamp());
         builder.append(" (time >= '").append(startTimestamp);
-        builder.append("' AND time <= '").append(endTimestamp).append("') ");
+        builder.append("' AND time <= '").append(endTimestamp).append("')");
         return this;
     }
 
@@ -106,7 +145,7 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder value(Op op, String otherValue) {
+    public SqlBuilder value(Op op, double otherValue) {
         builder.append(" value ").append(op.sign()).append(" ").append(otherValue);
         return this;
     }
@@ -122,6 +161,29 @@ public class SqlBuilder {
             }
             builder.append(group);
         }
+        return this;
+    }
+
+    public SqlBuilder orderBy(String column, Order order) {
+        return orderBy(Collections.singletonList(column), order);
+    }
+
+    public SqlBuilder orderBy(List<String> columns, Order order) {
+        builder.append(" ORDER BY ");
+        boolean firstIteration = true;
+        for (String column : columns) {
+            if (firstIteration) {
+                firstIteration = false;
+            } else {
+                builder.append(", ");
+            }
+            builder.append(column).append(" ").append(order.name());
+        }
+        return this;
+    }
+
+    public SqlBuilder limit(int limit) {
+        builder.append(" LIMIT ").append(limit);
         return this;
     }
 
@@ -170,4 +232,10 @@ public class SqlBuilder {
             return this.name;
         }
     }
+
+    public enum Order {
+        ASC,
+        DESC
+    }
+
 }

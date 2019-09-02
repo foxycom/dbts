@@ -1,6 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
+import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
@@ -143,7 +144,7 @@ public class RealDatasetWorkLoad implements IWorkload {
 
   @Override
   public LatestPointQuery getLatestPointQuery() {
-    return new LatestPointQuery(deviceSchemaList, startTime, endTime, "last");
+    return new LatestPointQuery(deviceSchemaList, startTime, endTime, Aggregation.LAST);
   }
 
   static String calGroupIdStr(String deviceId, int groupNum) {

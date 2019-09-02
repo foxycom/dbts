@@ -22,13 +22,12 @@ public class Constants {
     //support DB names of DB_SWITCH
     public static final String DB_IOT = "IoTDB";
     public static final String DB_INFLUX = "InfluxDB";
-    public static final String DB_OPENTS = "OpenTSDB";
-    public static final String DB_CTS = "CTSDB";
     public static final String DB_KAIROS = "KairosDB";
     public static final String DB_TIMESCALE = "TimescaleDB";
-    public static final String DB_FAKE = "FakeDB";
     //special DB_SWITCH
     public static final String BENCHMARK_IOTDB = "App";
+
+    public static final String TIME_BUCKET_ALIAS = "time_bucket";
 
     public static final String MYSQL_DRIVENAME = "com.mysql.jdbc.Driver";
 
@@ -51,20 +50,9 @@ public class Constants {
             "Aggregation With Value Filter"
     };
 
-    public static final String SAMPLE_DATA_FILE_NAME = "sampleData.txt";
-    //different running mode
-    public static final String MODE_IMPORT_DATA_FROM_CSV = "importDataFromCSV";
-    public static final String MODE_WRITE_WITH_REAL_DATASET = "writeWithRealDataSet";
-    public static final String MODE_QUERY_WITH_REAL_DATASET = "queryWithRealDataSet";
     public static final String MODE_QUERY_TEST_WITH_DEFAULT_PATH = "queryTestWithDefaultPath";
-    public static final String MODE_INSERT_TEST_WITH_DEFAULT_PATH = "insertTestWithDefaultPath";
-    public static final String MODE_TEST_WITH_DEFAULT_PATH = "testWithDefaultPath";
-    public static final String MODE_SERVER_MODE = "serverMODE";
-    public static final String MODE_CLIENT_SYSTEM_INFO = "clientSystemInfo";
     public static final String MODE_INSERT_TEST_WITH_USERDEFINED_PATH = "insertTestWithUserDefinedPath";
-    public static final String MODE_EXECUTE_SQL_FROM_FILE = "executeSQLFromFile";
 
-    public static final String EXE_SQL_FROM_FILE_MODE = "1";
     public static final String GEO_DATA_TYPE = "GEOGRAPHY";
     public static final GeoPoint SPAWN_POINT = new GeoPoint(13.4319466, 48.5667364);
 

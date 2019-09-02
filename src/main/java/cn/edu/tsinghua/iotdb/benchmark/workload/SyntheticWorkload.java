@@ -6,6 +6,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
+import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
@@ -202,15 +203,8 @@ public class SyntheticWorkload implements IWorkload {
   // TODO better handling for non-gps sensors
   private SensorGroup getSensorGroup() throws WorkloadException {
     checkQuerySchemaParams();
-    int r = querySensorGroupRandom.nextInt(config.SENSOR_GROUPS.size());
-    SensorGroup sensorGroup = null;
-    for (int i = 0; i < 10; i++) {
-      sensorGroup = config.SENSOR_GROUPS.get(r);
-      if (!sensorGroup.getName().contains("gps")) {
-        break;
-      }
-    }
-    return sensorGroup;
+    Sensor sensor = Sensors.minInterval(config.SENSORS);
+    return sensor.getSensorGroup();
   }
 
   private List<DeviceSchema> getQueryDeviceSchemaList() throws WorkloadException {
@@ -253,15 +247,17 @@ public class SyntheticWorkload implements IWorkload {
 
   public PreciseQuery getPreciseQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long timestamp = getQueryStartTimestamp();
-    return new PreciseQuery(queryDevices, timestamp);
+    return new PreciseQuery(queryDevices, sensorGroup, timestamp);
   }
 
   public RangeQuery getRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new RangeQuery(queryDevices, startTimestamp, endTimestamp);
+    return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
   }
 
   private SensorGroup getGpsSensorGroup() {
@@ -294,9 +290,10 @@ public class SyntheticWorkload implements IWorkload {
 
   public ValueRangeQuery getValueRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new ValueRangeQuery(queryDevices, startTimestamp, endTimestamp,
+    return new ValueRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
         config.QUERY_LOWER_LIMIT);
   }
 
@@ -311,32 +308,38 @@ public class SyntheticWorkload implements IWorkload {
 
   public AggValueQuery getAggValueQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    return new AggValueQuery(queryDevices, config.QUERY_AGGREGATE_FUN, config.QUERY_LOWER_LIMIT);
+    SensorGroup sensorGroup = getSensorGroup();
+    return new AggValueQuery(queryDevices, sensorGroup, config.QUERY_AGGREGATE_FUN, config.QUERY_LOWER_LIMIT);
   }
 
   public AggRangeValueQuery getAggRangeValueQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new AggRangeValueQuery(queryDevices, startTimestamp, endTimestamp,
+    return new AggRangeValueQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
         config.QUERY_AGGREGATE_FUN, config.QUERY_LOWER_LIMIT);
   }
 
   public GroupByQuery getGroupByQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new GroupByQuery(queryDevices, startTimestamp, endTimestamp, config.QUERY_AGGREGATE_FUN,
-        config.TIME_UNIT);
+    return new GroupByQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp, config.QUERY_AGGREGATE_FUN,
+        config.TIME_BUCKET);
   }
 
   public LatestPointQuery getLatestPointQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new LatestPointQuery(queryDevices, startTimestamp, endTimestamp,
+    return new LatestPointQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
         config.QUERY_AGGREGATE_FUN);
   }
+
+
 
 
 }

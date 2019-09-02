@@ -181,18 +181,18 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status gpsPathRangeQuery(RangeQuery RangeQuery) {
+  public Status gpsRangeQuery(RangeQuery RangeQuery) {
     return null;
   }
 
   @Override
-  public Status gpsTripIdentificationRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
     return null;
   }
 
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    long startTime = aggRangeQuery.getStartTimestamp();
+    /*long startTime = aggRangeQuery.getStartTimestamp();
     long endTime = aggRangeQuery.getEndTimestamp();
     QueryBuilder builder = constructBuilder(startTime, endTime, aggRangeQuery.getDeviceSchema());
     // convert to second
@@ -200,24 +200,26 @@ public class KairosDB implements IDatabase {
     Aggregator aggregator = new SamplingAggregator(aggRangeQuery.getAggrFunc(), timeInterval,
         TimeUnit.MILLISECONDS);
     addAggreForQuery(builder, aggregator);
-    return executeOneQuery(builder);
+    return executeOneQuery(builder);*/
+    return null;
   }
 
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    long startTime = aggValueQuery.getStartTimestamp();
+    /*long startTime = aggValueQuery.getStartTimestamp();
     long endTime = aggValueQuery.getEndTimestamp();
     QueryBuilder builder = constructBuilder(startTime, endTime, aggValueQuery.getDeviceSchema());
     Aggregator funAggre = new SamplingAggregator(aggValueQuery.getAggrFunc(), 5000, TimeUnit.YEARS);
     Aggregator filterAggre = AggregatorFactory
         .createFilterAggregator(FilterOperation.LTE, aggValueQuery.getValueThreshold());
     addAggreForQuery(builder, filterAggre, funAggre);
-    return executeOneQuery(builder);
+    return executeOneQuery(builder);*/
+    return null;
   }
 
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    long startTime = aggRangeValueQuery.getStartTimestamp();
+    /*long startTime = aggRangeValueQuery.getStartTimestamp();
     long endTime = aggRangeValueQuery.getEndTimestamp();
     QueryBuilder builder = constructBuilder(startTime, endTime,
         aggRangeValueQuery.getDeviceSchema());
@@ -227,18 +229,20 @@ public class KairosDB implements IDatabase {
     Aggregator filterAggre = AggregatorFactory
         .createFilterAggregator(FilterOperation.LTE, aggRangeValueQuery.getValueThreshold());
     addAggreForQuery(builder, filterAggre, funAggre);
-    return executeOneQuery(builder);
+    return executeOneQuery(builder);*/
+    return null;
   }
 
   @Override
   public Status groupByQuery(GroupByQuery groupByQuery) {
-    long startTime = groupByQuery.getStartTimestamp();
+    /*long startTime = groupByQuery.getStartTimestamp();
     long endTime = groupByQuery.getEndTimestamp();
     QueryBuilder builder = constructBuilder(startTime, endTime, groupByQuery.getDeviceSchema());
-    Aggregator funAggre = new SamplingAggregator(groupByQuery.getAggFun(),
+    Aggregator funAggre = new SamplingAggregator(groupByQuery.getAggrFunc(),
         (int) groupByQuery.getGranularity(), TimeUnit.MILLISECONDS);
     addAggreForQuery(builder, funAggre);
-    return executeOneQuery(builder);
+    return executeOneQuery(builder);*/
+    return null;
   }
 
   @Override

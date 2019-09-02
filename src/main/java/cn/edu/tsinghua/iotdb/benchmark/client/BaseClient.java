@@ -79,6 +79,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case RANGE_QUERY:
+          clientMonitoring.start();
           try {
             dbWrapper.rangeQuery(syntheticWorkload.getRangeQuery());
           } catch (Exception e) {
@@ -93,6 +94,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case AGG_RANGE_QUERY:
+          clientMonitoring.start();
           try {
             dbWrapper.aggRangeQuery(syntheticWorkload.getAggRangeQuery());
           } catch (WorkloadException e) {
@@ -130,14 +132,14 @@ public abstract class BaseClient extends Client implements Runnable {
 
         case GPS_TIME_RANGE_QUERY:
           try {
-            dbWrapper.gpsPathRangeQuery(syntheticWorkload.getGpsRangeQuery());
+            dbWrapper.gpsRangeQuery(syntheticWorkload.getGpsRangeQuery());
           } catch (WorkloadException e) {
             LOGGER.error("Failed to do a time range query with GPS data.");
           }
           break;
         case GPS_TRIP_RANGE_QUERY:
           try {
-            dbWrapper.gpsTripIdentificationRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
+            dbWrapper.gpsValueRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
           } catch (WorkloadException e) {
             LOGGER.error("Failed to do a time range query on trip identification.");
           }
