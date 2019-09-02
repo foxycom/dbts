@@ -327,12 +327,11 @@ public class TimescaleDB implements IDatabase {
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
     SqlBuilder sqlBuilder = new SqlBuilder();
-    List<String> columns = new ArrayList<>();
-    columns.add("value");
+    List<String> columns = aggRangeQuery.getSensorGroup().getSensors().get(0).getFields();
 
     sqlBuilder = sqlBuilder.reset().select(columns, aggRangeQuery.getAggrFunc())
             .from(aggRangeQuery.getSensorGroup().getTableName()).where().time(aggRangeQuery)
-            .groupBy(SqlBuilder.Column.BIKE);
+            .and().bikes(aggRangeQuery.getDeviceSchema());
     String debug = sqlBuilder.build();
     return executeQueryAndGetStatus(sqlBuilder.build());
   }

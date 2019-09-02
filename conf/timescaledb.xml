@@ -8,18 +8,18 @@
         <name>test</name>
         <host>127.0.0.1</host>
         <port>5432</port>
-        <erase wait="5000">true</erase>
-        <createSchema>true</createSchema>
+        <erase wait="5000">false</erase>
+        <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="true">
+    <mysqlLog active="false" remark="widetable">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">500</devices>
+    <devices prefix="d_">4</devices>
 
-    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>0:0:0:0:4:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
@@ -44,7 +44,7 @@
             <sensor frequency="50" type="basic"/>
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gps" dataType="geometry">
+        <sensorGroup name="gps" dataType="geography">
             <sensor frequency="1" type="gps"/>
         </sensorGroup>
         <sensorGroup name="rotaryEncoder" dataType="smallint">
@@ -107,12 +107,12 @@
     </sensorGroups>
 
 
-    <batch size="80000"/>
-    <loops>10</loops>
+    <batch size="50000"/>
+    <loops>100</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="true">
+    <serverMonitor active="false">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>
