@@ -34,19 +34,26 @@ public class TimescaleDB implements IDatabase {
   private static String tableName;
   private static Config config;
   private static final Logger LOGGER = LoggerFactory.getLogger(TimescaleDB.class);
-  //chunk_time_interval=7d
   private static final String CONVERT_TO_HYPERTABLE =
-      "SELECT create_hypertable('%s', 'time', chunk_time_interval => interval '1 day');";
+      "SELECT create_hypertable('%s', 'time', chunk_time_interval => interval '1 h');";
   private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
   private long initialDbSize;
   private SqlBuilder sqlBuilder;
 
+  /**
+   * Initializes an instance of the database controller.
+   */
   public TimescaleDB() {
     sqlBuilder = new SqlBuilder();
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
   }
 
+  /**
+   * Initializes a connection to the database.
+   *
+   * @throws TsdbException If a connection could not be established.
+   */
   @Override
   public void init() throws TsdbException {
     try {
@@ -62,6 +69,9 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
+  /*
+   * Returns the size of a given database in bytes.
+   */
   private long getInitialSize() {
     String sql = "";
     long initialSize = 0;
@@ -78,6 +88,11 @@ public class TimescaleDB implements IDatabase {
     return initialSize;
   }
 
+  /**
+   * Erases the data from the database by dropping benchmark tables.
+   *
+   * @throws TsdbException If an error occurs while cleaning up.
+   */
   @Override
   public void cleanup() throws TsdbException {
     //delete old data
@@ -115,6 +130,11 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
+  /**
+   * Closes the connection to the database.
+   *
+   * @throws TsdbException If connection could not be closed.
+   */
   @Override
   public void close() throws TsdbException {
     if (connection == null) {
@@ -129,32 +149,32 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * Map the data schema concepts as follow:
+   * Maps the data schema concepts:
    * <ul>
-   * <li>DB_NAME -> table name</li>
-   * <li>storage group name -> a field in table</li>
-   * <li>device name -> a field in table</li>
-   * <li>sensors -> fields in table</li>
+   * <li>Sensor group name -> table name</li>
+   * <li>Bike name -> a field in table</li>
+   * <li>Sensor name -> a field in table</li>
+   * <li>Value(s) -> fields in table</li>
    * </ul>
    * <p> Reference link: https://docs.timescale.com/v1.0/getting-started/creating-hypertables</p>
-   * -- We start by creating a regular SQL table
+   * -- We start by creating a regular PG table:
    * <p><code>
-   * CREATE TABLE conditions ( time        TIMESTAMPTZ       NOT NULL, location    TEXT
-   * NOT NULL, temperature DOUBLE PRECISION  NULL, humidity    DOUBLE PRECISION  NULL );
+   * CREATE TABLE gps_benchmark (time TIMESTAMPTZ NOT NULL, bike_id VARCHAR(20) NOT NULL,
+   *    sensor_id VARCHAR(20) NOT NULL, value REAL NULL);
    * </code></p>
    * -- This creates a hypertable that is partitioned by time using the values in the `time` column.
-   * <p><code>SELECT create_hypertable('conditions', 'time');</code></p>
+   * <p><code>SELECT create_hypertable('gps_benchmark', 'time', chunk_time_interval => interval '1 h');</code></p>
    */
   @Override
   public void registerSchema(List<DeviceSchema> schemaList) throws TsdbException {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
 
-      // Creates bikes relational data table
+      // Creates bikes' relational data table.
       String createBikesTableSql = getCreateBikesTableSql();
       statement.addBatch(createBikesTableSql);
 
-      // Insert all bikes
+      // Inserts all bikes.
       String insertBikesSql = getInsertBikesSql(schemaList);
       statement.addBatch(insertBikesSql);
 
@@ -174,7 +194,6 @@ public class TimescaleDB implements IDatabase {
       createIndexes();
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
-      System.out.println(e.getNextException());
       throw new TsdbException(e);
     }
   }
@@ -183,7 +202,7 @@ public class TimescaleDB implements IDatabase {
    * Returns the size of the benchmarked database in GB.
    *
    * @return The size of the benchmarked database, i. e., 'test'.
-   * @throws TsdbException
+   * @throws TsdbException If an error occurs while executing a query.
    */
   @Override
   public float getSize() throws TsdbException {
@@ -203,6 +222,9 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
+  /*
+   * Creates and executes SQL queries to create index structures on tables of metrics.
+   */
   private void createIndexes() {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
@@ -220,6 +242,13 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
+  /**
+   * Writes the given batch of data points into the database and measures the time the database takes to store the
+   * points.
+   *
+   * @param batch The batch of data points.
+   * @return The status of the execution.
+   */
   @Override
   public Status insertOneBatch(Batch batch) {
     long st;
@@ -244,9 +273,14 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT time, device, s_2 FROM tutorial WHERE (device='d_8') and time=1535558400000.
    *
-   * @param preciseQuery universal precise query condition parameters
+   * Selects data points, which are stored with a given timestamp.
+   *
+   * SELECT value, time, bike_id FROM emg_benchmark
+   * WHERE (bike_id = 'bike_0' OR bike_id = 'bike_3' OR bike_id = 'bike_2') AND (time = '2018-08-29 18:00:00.0');
+   *
+   * @param preciseQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status preciseQuery(PreciseQuery preciseQuery) {
@@ -255,15 +289,20 @@ public class TimescaleDB implements IDatabase {
     columns.addAll(Arrays.asList("time", "bike_id"));
     sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName())
             .where().bikes(preciseQuery.getDeviceSchema()).and().time(preciseQuery);
+
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT time, device_id, value FROM temperature_benchmark WHERE (device_id = 'd_8') AND (time >= 1535558400000 AND
-   * time <= 1535558650000).
    *
-   * @param rangeQuery universal range query condition parameters
+   * Executes a scan of values over a given period of time on a given number of bikes.
+   *
+   * SELECT value FROM emg_benchmark WHERE (bike_id = 'bike_0' OR bike_id = 'bike_3' OR bike_id = 'bike_2')
+   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
+   *
+   * @param rangeQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status rangeQuery(RangeQuery rangeQuery) {
@@ -277,8 +316,14 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * TODO: READY TO USE
-   * @param rangeQuery
-   * @return
+   *
+   * Performs a scan of gps data points in a given time range for specified number of bikes.
+   *
+   * SELECT value FROM gps_benchmark WHERE (bike_id = 'bike_1')
+   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
+   *
+   * @param rangeQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status gpsRangeQuery(RangeQuery rangeQuery) {
@@ -292,27 +337,44 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * TODO: READY TO USE
-   * @param rangeQuery
-   * @return
+   *
+   * Identifies active trips, when current value is above a threshold.
+   *
+   * WITH trip (second, current_value) AS (SELECT time_bucket('1 second', time) AS second, AVG(value)
+   *    FROM current_benchmark WHERE bike_id = 'bike_1' and time > '2019-08-19 18:00:00.000'
+   *    and time < '2019-08-20 18:00:00.000' GROUP BY second HAVING AVG(value) > 0.1
+   * ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
+   * WHERE g.bike_id = 'bike_1';
+   *
+   * @param rangeQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
     DeviceSchema deviceSchema = rangeQuery.getDeviceSchema().get(0);
     double threshold = rangeQuery.getValueThreshold();
 
-    String sql = "WITH trip (second, current_value) AS (SELECT time_bucket('1 second', time) as second, avg(value)"
-            + " FROM current_benchmark WHERE bike_id = '" + deviceSchema.getDevice() + "' GROUP BY second HAVING AVG(value) > " + threshold + ")"
-            + " SELECT g.time, t.current_value, g.value FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second"
-            + " WHERE g.bike_id = '" + deviceSchema.getDevice() + "';";
-
+    Timestamp startTimestamp = new Timestamp(Constants.START_TIMESTAMP);
+    Timestamp endTimestamp = new Timestamp(Constants.START_TIMESTAMP + config.QUERY_INTERVAL);
+    String sql = "WITH trip (second, current_value) AS (SELECT time_bucket('1 second', time) AS second, AVG(value)"
+            + " FROM current_benchmark WHERE bike_id = '" + deviceSchema.getDevice() + "' and time > '" + startTimestamp
+            + "' and time < '" + endTimestamp + "' GROUP BY second HAVING AVG(value) > " + threshold + ")"
+            + " SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t "
+            + "ON g.time = t.second WHERE g.bike_id = '" + deviceSchema.getDevice() + "';";
     return executeQueryAndGetStatus(sql);
   }
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT time, device, s_2 FROM tutorial WHERE (device='d_8') and (s_2 > 78).
    *
-   * @param valueRangeQuery contains universal range query with value filter parameters
+   * Scans metrics of a sensor in a specific time interval and selects those which have a certain value.
+   *
+   * SELECT value, bike_id, time FROM emg_benchmark
+   * WHERE value > -5.0 AND (bike_id = 'bike_2' OR bike_id = 'bike_3' OR bike_id = 'bike_0')
+   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
+   *
+   * @param valueRangeQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
@@ -320,17 +382,22 @@ public class TimescaleDB implements IDatabase {
     List<String> columns = new ArrayList<>(sensorGroup.getFields());
     columns.addAll(Arrays.asList("bike_id", "time"));
     sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName()).where()
-            .value(SqlBuilder.Op.GREATER, valueRangeQuery.getValueThreshold()).and().bikes(valueRangeQuery.getDeviceSchema());
-    String debug = sqlBuilder.build();
+            .value(SqlBuilder.Op.GREATER, valueRangeQuery.getValueThreshold()).and()
+            .bikes(valueRangeQuery.getDeviceSchema()).and().time(valueRangeQuery);
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT device, count(s_2) FROM tutorial WHERE (device='d_2') AND (time >= 1535558400000 and
-   * time <= 1535558650000) GROUP BY device.
    *
-   * @param aggRangeQuery contains universal aggregation query with time filter parameters
+   * Aggregates metrics of a sensor over time and groups by bike.
+   *
+   * SELECT SUM(value), bike_id FROM emg_benchmark
+   * WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
+   * AND (bike_id = 'bike_2' OR bike_id = 'bike_0' OR bike_id = 'bike_3') GROUP BY bike_id;
+   *
+   * @param aggRangeQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
@@ -346,15 +413,20 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT device, count(s_2) FROM tutorial WHERE (device='d_2') AND (s_2>10) GROUP BY device.
    *
-   * @param aggValueQuery contains universal aggregation query with value filter parameters
+   * Selects metrics based on their value, groups by bike and aggregates the values.
+   *
+   * SELECT SUM(value), bike_id FROM emg_benchmark
+   * WHERE value > -5.0 AND (bike_id = 'bike_3' OR bike_id = 'bike_2' OR bike_id = 'bike_0') GROUP BY bike_id;
+   *
+   * @param aggValueQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
     SensorGroup sensorGroup = aggValueQuery.getSensorGroup();
     List<String> aggregatedColumns = new ArrayList<>(sensorGroup.getFields());
-    List<String> plainColumns = new ArrayList<>(Collections.singleton("bike_id"));
+    List<String> plainColumns = new ArrayList<>(Collections.singleton(SqlBuilder.Column.BIKE.getName()));
     sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggValueQuery.getAggrFunc())
             .from(sensorGroup.getTableName()).where().value(SqlBuilder.Op.GREATER, aggValueQuery.getValueThreshold())
             .and().bikes(aggValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
@@ -363,11 +435,15 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT device, count(s_2) FROM tutorial WHERE (device='d_2') AND (time >= 1535558400000 and
-   * time <= 1535558650000) AND (s_2>10) GROUP BY device.
    *
-   * @param aggRangeValueQuery contains universal aggregation query with time and value filters
-   * parameters
+   * Selects metrics based on their values in a time range, groups by bikes and aggregates the values.
+   *
+   * SELECT SUM(value), bike_id FROM emg_benchmark
+   * WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
+   * AND value >= -5.0 AND (bike_id = 'bike_2' OR bike_id = 'bike_0' OR bike_id = 'bike_3') GROUP BY bike_id;
+   *
+   * @param aggRangeValueQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
@@ -384,10 +460,14 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * TODO test
-   * eg. SELECT time_bucket(5000, time) AS sampleTime, device, count(s_2) FROM tutorial WHERE
-   * (device='d_2') AND (time >= 1535558400000 and time <= 1535558650000) GROUP BY time, device.
    *
-   * @param groupByQuery contains universal group by query condition parameters
+   * Groups entries within a time range in time buckets and by bikes and aggregates values in each time bucket.
+   *
+   * SELECT time_bucket(interval '60000 ms', time) as time_bucket, SUM(value), bike_id FROM emg_benchmark
+   * WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
+   *
+   * @param groupByQuery The query parameters object.
+   * @return The status of the execution.
    */
   @Override
   public Status groupByQuery(GroupByQuery groupByQuery) {
@@ -397,20 +477,19 @@ public class TimescaleDB implements IDatabase {
     sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, groupByQuery.getAggrFunc(), config.TIME_BUCKET)
             .from(sensorGroup.getTableName()).where().time(groupByQuery)
             .groupBy(Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
-
-    String debug = sqlBuilder.build();
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
    * TODO: READY TO USE
-   * eg. SELECT time, device, s_2 FROM tutorial WHERE (device='d_8') ORDER BY time DESC LIMIT 1. The
-   * last and first commands do not use indexes, and instead perform a sequential scan through their
-   * groups. They are primarily used for ordered selection within a GROUP BY aggregate, and not as
-   * an alternative to an ORDER BY time DESC LIMIT 1 clause to find the latest value (which will use
-   * indexes).
    *
-   * @param latestPointQuery contains universal latest point query condition parameters
+   * Selects the latest metric of a sensor.
+   *
+   * SELECT value, bike_id, time, sensor_id FROM emg_benchmark
+   * WHERE (bike_id = 'bike_0' OR bike_id = 'bike_3' OR bike_id = 'bike_2') ORDER BY time DESC LIMIT 1;
+   *
+   * @param latestPointQuery The query parameters query.
+   * @return The status of the execution.
    */
   @Override
   public Status latestPointQuery(LatestPointQuery latestPointQuery) {
@@ -424,6 +503,9 @@ public class TimescaleDB implements IDatabase {
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
+  /*
+   * Executes the SQL query and measures the execution time.
+   */
   private Status executeQueryAndGetStatus(String sql) {
     LOGGER.info("{} executes the SQL query: {}", Thread.currentThread().getName(), sql);
     long st;
@@ -446,40 +528,6 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * add time filter for query statements.
-   *
-   * @param builder sql header
-   * @param rangeQuery range query
-   */
-  private static void addWhereTimeClause(StringBuilder builder, RangeQuery rangeQuery) {
-    Timestamp startTimestamp = new Timestamp(rangeQuery.getStartTimestamp());
-    Timestamp endTimestamp = new Timestamp(rangeQuery.getEndTimestamp());
-    builder.append(" AND (time >= '").append(startTimestamp);
-    builder.append("' AND time <= '").append(endTimestamp).append("') ");
-  }
-
-  /**
-   * add value filter for query statements.
-   *
-   * @param devices query device schema
-   * @param builder sql header
-   * @param valueThreshold lower bound of query value filter
-   */
-  private static void addWhereValueClause(List<DeviceSchema> devices, StringBuilder builder,
-      double valueThreshold) {
-    boolean first = true;
-    for (Sensor sensor : devices.get(0).getSensors()) {
-      if (first) {
-        builder.append(" AND (").append(sensor.getName()).append(" > ").append(valueThreshold);
-        first = false;
-      } else {
-        builder.append(" and ").append(sensor.getName()).append(" > ").append(valueThreshold);
-      }
-    }
-    builder.append(")");
-  }
-
-  /**
    * -- Creating a regular SQL table example.
    * <p>
    * CREATE TABLE group_0 (time TIMESTAMPTZ NOT NULL, group_id TEXT NOT NULL, bike_id TEXT NOT NULL,
@@ -498,12 +546,18 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
+  /*
+   * Returns an SQL query for creating the bikes meta table.
+   */
   private String getCreateBikesTableSql() {
     StringBuilder sqlBuilder = new StringBuilder();
     sqlBuilder.append("CREATE TABLE bikes (bike_id VARCHAR PRIMARY KEY, name VARCHAR NOT NULL, date_manufactured TIMESTAMPTZ);");
     return sqlBuilder.toString();
   }
 
+  /*
+   * Returns an SQL batch insert query for insert bikes meta data.
+   */
   private String getInsertBikesSql(List<DeviceSchema> schemaList) {
     StringBuilder sqlBuilder = new StringBuilder();
     sqlBuilder.append("INSERT INTO bikes (bike_id, name, date_manufactured) VALUES ");
@@ -524,6 +578,9 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
+  /*
+   * Creates a list of SQL batch queries. Each string is writes points to a distinct sensor group (table).
+   */
   private List<String> getInsertOneBatchSql(Batch batch) {
     Map<Sensor, Point[]> entries = batch.getEntries();
     DeviceSchema deviceSchema = batch.getDeviceSchema();
