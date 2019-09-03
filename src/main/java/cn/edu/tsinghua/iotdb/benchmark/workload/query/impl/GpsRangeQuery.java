@@ -5,11 +5,11 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 
 import java.util.List;
 
-public class HeatmapRangeQuery extends RangeQuery {
+public class GpsRangeQuery extends RangeQuery {
     private SensorGroup gpsSensorGroup;
 
-    public HeatmapRangeQuery(List<DeviceSchema> deviceSchema, SensorGroup sensorGroup, SensorGroup gpsSensorGroup,
-                             long startTimestamp, long endTimestamp) {
+    public GpsRangeQuery(List<DeviceSchema> deviceSchema, SensorGroup sensorGroup, SensorGroup gpsSensorGroup,
+                         long startTimestamp, long endTimestamp) {
         super(deviceSchema, sensorGroup, startTimestamp, endTimestamp);
         this.gpsSensorGroup = gpsSensorGroup;
     }

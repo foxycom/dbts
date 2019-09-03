@@ -141,7 +141,7 @@ public class RealDatasetWorkLoad implements IWorkload {
   }
 
   @Override
-  public HeatmapRangeQuery getHeatmapRangeQuery() throws WorkloadException {
+  public GpsRangeQuery getHeatmapRangeQuery() throws WorkloadException {
     return null;
   }
 

@@ -321,13 +321,13 @@ public class SyntheticWorkload implements IWorkload {
         config.QUERY_AGGREGATE_FUN);
   }
 
-  public HeatmapRangeQuery getHeatmapRangeQuery() throws WorkloadException {
+  public GpsRangeQuery getHeatmapRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
     SensorGroup sensorGroup = getSensorGroup();
     SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new HeatmapRangeQuery(queryDevices, sensorGroup, gpsSensorGroup, startTimestamp, endTimestamp);
+    return new GpsRangeQuery(queryDevices, sensorGroup, gpsSensorGroup, startTimestamp, endTimestamp);
   }
 
 

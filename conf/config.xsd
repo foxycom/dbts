@@ -10,7 +10,8 @@
   </xs:complexType>
   <xs:simpleType name="dbSwitch">
     <xs:restriction base="xs:string">
-      <xs:enumeration value="TimescaleDB"/>
+      <xs:enumeration value="TimescaleDB_Wide"/>
+      <xs:enumeration value="TimescaleDB_Narrow"/>
       <xs:enumeration value="IoTDB"/>
       <xs:enumeration value="InfluxDB"/>
       <xs:enumeration value="OpenTSDB"/>
@@ -169,6 +170,7 @@
       <xs:element type="xs:integer" name="deviceNum"/>
       <xs:element type="xs:integer" name="seed"/>
       <xs:element type="xs:integer" name="step"/>
+      <xs:element type="xs:integer" name="radius"/>
       <xs:element type="xs:string" name="aggregateFunction"/>
       <xs:element type="xs:long" name="interval"/>
       <xs:element type="xs:double" name="lowerLimit"/>

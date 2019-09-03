@@ -26,7 +26,6 @@ import org.kairosdb.client.builder.AggregatorFactory;
 import org.kairosdb.client.builder.AggregatorFactory.FilterOperation;
 import org.kairosdb.client.builder.QueryBuilder;
 import org.kairosdb.client.builder.TimeUnit;
-import org.kairosdb.client.builder.aggregator.SamplingAggregator;
 import org.kairosdb.client.response.QueryResponse;
 import org.kairosdb.client.response.QueryResult;
 import org.kairosdb.client.response.Result;
@@ -179,7 +178,7 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(GpsRangeQuery rangeQuery) {
     return null;
   }
 
@@ -250,17 +249,17 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
+  public Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery) {
     return null;
   }
 
   @Override
-  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+  public Status distanceRangeQuery(GpsRangeQuery gpsRangeQuery) {
     return null;
   }
 
   @Override
-  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+  public Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery) {
     return null;
   }
 

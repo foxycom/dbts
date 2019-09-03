@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>TimescaleDB</type>
+        <type>TimescaleDB_Wide</type>
         <name>test</name>
         <host>127.0.0.1</host>
         <port>5432</port>
@@ -20,7 +20,7 @@
     <devices prefix="d_">4</devices>
 
     <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION -->
-    <operationsProportion>0:0:0:0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
+    <operationsProportion>0:0:0:0:0:0:0:0:0:0:1:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
@@ -107,8 +107,8 @@
         </sensorGroup>
     </sensorGroups>
 
-    <batch size="90000"/>
-    <loops>400</loops>
+    <batch size="10000"/>
+    <loops>10</loops>
     <pointStep>2</pointStep>
     <encoding>gorilla</encoding>
 
@@ -145,6 +145,7 @@
         <deviceNum>3</deviceNum>
         <seed>151658</seed>
         <step>1</step>
+        <radius>500</radius>
         <aggregateFunction>sum</aggregateFunction>
         <interval>3600000</interval>
         <lowerLimit>-5</lowerLimit>

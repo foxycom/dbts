@@ -147,7 +147,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case GPS_TRIP_RANGE_QUERY:
             clientMonitoring.start();
           try {
-            dbWrapper.gpsValueRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
+            dbWrapper.gpsValueRangeQuery(syntheticWorkload.getHeatmapRangeQuery());
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a time range query on trip identification because ", e);
           }
@@ -163,7 +163,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case DISTANCE_RANGE_QUERY:
           clientMonitoring.start();
           try {
-            dbWrapper.distanceRangeQuery(syntheticWorkload.getValueRangeQuery());
+            dbWrapper.distanceRangeQuery(syntheticWorkload.getHeatmapRangeQuery());
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a distance range query because ", e);
           }

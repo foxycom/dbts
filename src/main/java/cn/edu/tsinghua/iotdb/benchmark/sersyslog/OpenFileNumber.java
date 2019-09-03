@@ -128,7 +128,7 @@ public class OpenFileNumber {
             case KAIROSDB:
                 filter = "kairosdb";
                 break;
-            case TIMESCALEDB:
+            case TIMESCALEDB_NARROW:
                 filter = "postgresql";
                 break;
             default:

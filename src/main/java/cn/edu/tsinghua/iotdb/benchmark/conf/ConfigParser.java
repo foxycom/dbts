@@ -100,6 +100,7 @@ public enum ConfigParser {
         config.QUERY_DEVICE_NUM = xml.getInt("query.deviceNum", config.QUERY_DEVICE_NUM);
         config.QUERY_SEED = xml.getLong("query.seed", config.QUERY_SEED);
         config.STEP_SIZE = xml.getInt("query.step", config.STEP_SIZE);
+        config.RADIUS = xml.getInt("query.radius", config.RADIUS);
         config.QUERY_AGGREGATE_FUN = Aggregation.valueOf(xml.getString("query.aggregateFunction").toUpperCase());
         config.QUERY_INTERVAL = xml.getLong("query.interval", config.INTERVAL);
         config.QUERY_LOWER_LIMIT = xml.getDouble("query.lowerLimit", config.QUERY_LOWER_LIMIT);

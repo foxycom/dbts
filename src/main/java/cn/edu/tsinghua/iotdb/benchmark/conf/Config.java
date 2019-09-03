@@ -3,29 +3,18 @@ package cn.edu.tsinghua.iotdb.benchmark.conf;
 import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.DataSet;
-import java.io.InputStream;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.BasicSensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
-import cn.edu.tsinghua.iotdb.benchmark.function.FunctionXml;
-
-import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.GEO_DATA_TYPE;
 
 public class Config {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
@@ -54,6 +43,8 @@ public class Config {
 	public long POINT_STEP = 7000;
 	/** 查询时间戳变化增加步长 */
 	public int STEP_SIZE = 1;
+
+	public int RADIUS = 500;
 	/** 数据发送缓存条数 */
 	public int BATCH_SIZE = 10;
 	/** 存储组数量 */
@@ -234,7 +225,7 @@ public class Config {
 	public String DB_NAME = "test";
 	
 	/** Name of database to benchmark */
-	public DB DB_SWITCH = DB.TIMESCALEDB;
+	public DB DB_SWITCH = DB.TIMESCALEDB_NARROW;
 
 	public Mode WORK_MODE = Mode.TEST_WITH_DEFAULT_PATH;
 

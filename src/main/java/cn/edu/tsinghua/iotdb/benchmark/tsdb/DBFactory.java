@@ -25,8 +25,10 @@ public class DBFactory {
         return new InfluxDB();
       case KAIROSDB:
         return new KairosDB();
-      case TIMESCALEDB:
-        return new TimescaleDB();
+      case TIMESCALEDB_NARROW:
+        return new TimescaleDB(TimescaleDB.TableMode.NARROW_TABLE);
+      case TIMESCALEDB_WIDE:
+        return new TimescaleDB(TimescaleDB.TableMode.WIDE_TABLE);
       case FAKEDB:
         return new FakeDB();
       default:

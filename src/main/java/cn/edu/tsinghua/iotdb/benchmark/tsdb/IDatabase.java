@@ -5,8 +5,6 @@ import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
-import org.w3c.dom.ranges.Range;
-import sun.text.normalizer.RangeValueIterator;
 
 import java.util.List;
 
@@ -74,7 +72,7 @@ public interface IDatabase {
    */
   Status gpsRangeQuery(RangeQuery rangeQuery);
 
-  Status gpsValueRangeQuery(ValueRangeQuery rangeQuery);
+  Status gpsValueRangeQuery(GpsRangeQuery gpsRangeQuery);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.
@@ -132,23 +130,23 @@ public interface IDatabase {
   /**
    * TODO comment
    *
-   * @param heatmapRangeQuery
+   * @param gpsRangeQuery
    * @return
    */
-  Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery);
+  Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery);
 
   /**
    * TODO comment
-   * @param valueRangeQuery
+   * @param gpsRangeQueryRangeQuery
    * @return
    */
-  Status distanceRangeQuery(ValueRangeQuery valueRangeQuery);
+  Status distanceRangeQuery(GpsRangeQuery gpsRangeQueryRangeQuery);
 
   /**
    * TODO comment
-   * @param heatmapRangeQuery
+   * @param gpsRangeQuery
    * @return
    */
-  Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery);
+  Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery);
 
 }

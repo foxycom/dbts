@@ -121,6 +121,11 @@ public class SqlBuilder {
         return this;
     }
 
+    public SqlBuilder isNotNull(String column) {
+        builder.append(" ").append(column).append(" IS NOT NULL");
+        return this;
+    }
+
     public SqlBuilder time(RangeQuery rangeQuery) {
         Timestamp startTimestamp = new Timestamp(rangeQuery.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(rangeQuery.getEndTimestamp());
@@ -145,8 +150,19 @@ public class SqlBuilder {
         return this;
     }
 
+    /**
+     * for narrow table only
+     * @param op
+     * @param otherValue
+     * @return
+     */
     public SqlBuilder value(Op op, double otherValue) {
         builder.append(" value ").append(op.sign()).append(" ").append(otherValue);
+        return this;
+    }
+
+    public SqlBuilder value(String column, Op op, double otherValue) {
+        builder.append(" ").append(column).append(" ").append(op.sign()).append(" ").append(otherValue);
         return this;
     }
 

@@ -28,6 +28,6 @@ public interface IWorkload {
 
   LatestPointQuery getLatestPointQuery() throws WorkloadException;
 
-  HeatmapRangeQuery getHeatmapRangeQuery() throws WorkloadException;
+  GpsRangeQuery getHeatmapRangeQuery() throws WorkloadException;
 
 }

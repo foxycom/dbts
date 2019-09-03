@@ -167,7 +167,7 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(GpsRangeQuery rangeQuery) {
     return null;
   }
 
@@ -248,17 +248,17 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
+  public Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery) {
     return null;
   }
 
   @Override
-  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+  public Status distanceRangeQuery(GpsRangeQuery gpsRangeQuery) {
     return null;
   }
 
   @Override
-  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+  public Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery) {
     return null;
   }
 

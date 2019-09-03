@@ -112,7 +112,7 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status gpsValueRangeQuery(ValueRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(GpsRangeQuery rangeQuery) {
     Status status = null;
     Operation operation = Operation.GPS_TRIP_RANGE_QUERY;
     try {
@@ -217,11 +217,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
+  public Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery) {
     Status status = null;
     Operation operation = Operation.HEATMAP_RANGE_QUERY;
     try {
-      status = db.heatmapRangeQuery(heatmapRangeQuery);
+      status = db.heatmapRangeQuery(gpsRangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);
@@ -231,11 +231,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+  public Status distanceRangeQuery(GpsRangeQuery gpsRangeQuery) {
     Status status = null;
     Operation operation = Operation.DISTANCE_RANGE_QUERY;
     try {
-      status = db.distanceRangeQuery(valueRangeQuery);
+      status = db.distanceRangeQuery(gpsRangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);
@@ -245,11 +245,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+  public Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery) {
     Status status = null;
     Operation operation = Operation.BIKES_IN_LOCATION_QUERY;
     try {
-      status = db.bikesInLocationQuery(heatmapRangeQuery);
+      status = db.bikesInLocationQuery(gpsRangeQuery);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);
