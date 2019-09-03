@@ -6,6 +6,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import org.w3c.dom.ranges.Range;
+import sun.text.normalizer.RangeValueIterator;
 
 import java.util.List;
 
@@ -135,5 +136,19 @@ public interface IDatabase {
    * @return
    */
   Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery);
+
+  /**
+   * TODO comment
+   * @param valueRangeQuery
+   * @return
+   */
+  Status distanceRangeQuery(ValueRangeQuery valueRangeQuery);
+
+  /**
+   * TODO comment
+   * @param heatmapRangeQuery
+   * @return
+   */
+  Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery);
 
 }

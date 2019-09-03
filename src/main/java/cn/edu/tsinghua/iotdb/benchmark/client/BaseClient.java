@@ -160,6 +160,22 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to execute a heat map range query because ", e);
           }
           break;
+        case DISTANCE_RANGE_QUERY:
+          clientMonitoring.start();
+          try {
+            dbWrapper.distanceRangeQuery(syntheticWorkload.getValueRangeQuery());
+          } catch (WorkloadException e) {
+            LOGGER.error("Failed to execute a distance range query because ", e);
+          }
+          break;
+        case BIKES_IN_LOCATION_QUERY:
+          clientMonitoring.start();
+          try {
+            dbWrapper.bikesInLocationQuery(syntheticWorkload.getHeatmapRangeQuery());
+          } catch (WorkloadException e) {
+            LOGGER.error("Failed to execute the bikes in location query because ", e);
+          }
+          break;
         default:
           LOGGER.error("Unsupported operation type {}", operation);
       }

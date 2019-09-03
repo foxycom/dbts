@@ -6,21 +6,21 @@
     <db>
         <type>TimescaleDB</type>
         <name>test</name>
-        <host>132.231.13.207</host>
+        <host>127.0.0.1</host>
         <port>5432</port>
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="true" remark="">
+    <mysqlLog active="false" remark="">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">4</devices>
 
-    <!-- INGEST:PRECISE:RANGE:VALUE_RANGE:AGG_RANGE:AGG_VALUE:AGG_RANGE_VALUE:GROUP_BY:LATEST_POINT:GPS_RANGE:GPS_VALUE_RANGE:HEATMAP_RANGE_QUERY -->
-    <operationsProportion>0:0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
+    <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION -->
+    <operationsProportion>0:0:0:0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
@@ -112,7 +112,7 @@
     <pointStep>2</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="true">
+    <serverMonitor active="false">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>
@@ -149,7 +149,7 @@
         <interval>3600000</interval>
         <lowerLimit>-5</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
-        <timeBucket>60000</timeBucket>
+        <timeBucket>300000</timeBucket>
         <limitClause>0</limitClause>
         <limitN>5</limitN>
         <limitOffset>5</limitOffset>

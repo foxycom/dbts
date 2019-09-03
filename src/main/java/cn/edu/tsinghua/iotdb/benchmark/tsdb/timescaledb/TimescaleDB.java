@@ -549,6 +549,54 @@ public class TimescaleDB implements IDatabase {
     return executeQueryAndGetStatus(sql);
   }
 
+  /**
+   * TODO: parametrize the sql query (e. g., device name)
+   *
+   * Computes the distance driven by a bike in the given time range identified by start and end timestamps where current
+   * exceeds some value.
+   *
+   * with trip_begin as (
+   * 	select time_bucket(interval '1 s', time) as second, bike_id from current_benchmark where value > 5
+   * 	and bike_id = 'bike_1' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'
+   * 	group by second, bike_id order by second asc limit 1
+   * ), trip_end as (
+   * 	select time_bucket(interval '1 s', time) as second, bike_id from current_benchmark where value > 5
+   * 	and bike_id = 'bike_1' and time > '2018-08-29 18:00:00.0'and time < '2018-08-29 19:00:00.0'
+   * 	group by second, bike_id order by second desc limit 1
+   * )
+   * select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = b.bike_id and g.bike_id = e.bike_id
+   * and g.time > b.second and g.time < e.second group by g.bike_id;
+   *
+   * @param valueRangeQuery The query parameters object.
+   * @return The status of the execution.
+   */
+  @Override
+  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+    Timestamp startTimestamp = new Timestamp(valueRangeQuery.getStartTimestamp());
+    Timestamp endTimestamp = new Timestamp(valueRangeQuery.getEndTimestamp());
+    String sql = "with trip_begin as (\n" +
+            "\tselect time_bucket(interval '1 s', time) as second, bike_id from current_benchmark where value > 5 and bike_id = 'bike_1' and time > '" + startTimestamp + "' and time < '" + endTimestamp + "'group by second, bike_id order by second asc limit 1\n" +
+            "), trip_end as (\n" +
+            "\tselect time_bucket(interval '1 s', time) as second, bike_id from current_benchmark where value > 5 and bike_id = 'bike_1' and time > '" + startTimestamp + "'and time < '" + endTimestamp + "' group by second, bike_id order by second desc limit 1\n" +
+            ")\n" +
+            "select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = b.bike_id and g.bike_id = e.bike_id\n" +
+            "and g.time > b.second and g.time < e.second group by g.bike_id;";
+    return executeQueryAndGetStatus(sql);
+  }
+
+  /**
+   *
+   * @param heatmapRangeQuery
+   * @return
+   */
+  @Override
+  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    String sql = "with last_location as (\n" +
+            "\tselect bike_id, last(value, time) as location from gps_benchmark group by bike_id\n" +
+            ") select * from last_location l where st_contains(st_buffer(st_setsrid(st_makepoint(13.4319466, 48.5667364),4326)::geography, 1000)::geometry, l.location::geometry);";
+    return executeQueryAndGetStatus(sql);
+  }
+
   /*
    * Executes the SQL query and measures the execution time.
    */

@@ -113,4 +113,14 @@ public class FakeDB implements IDatabase {
   public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
     return null;
   }
+
+  @Override
+  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+    return null;
+  }
+
+  @Override
+  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    return null;
+  }
 }

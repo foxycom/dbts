@@ -254,6 +254,16 @@ public class KairosDB implements IDatabase {
     return null;
   }
 
+  @Override
+  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+    return null;
+  }
+
+  @Override
+  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    return null;
+  }
+
   private Status executeOneQuery(QueryBuilder builder) {
     LOGGER.info("[JSON] {}", builder.build());
     int queryResultPointNum = 0;

@@ -252,6 +252,16 @@ public class InfluxDB implements IDatabase {
     return null;
   }
 
+  @Override
+  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+    return null;
+  }
+
+  @Override
+  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    return null;
+  }
+
   private InfluxDataModel createDataModel(DeviceSchema deviceSchema, Long time,
       List<String> valueList)
       throws TsdbException {

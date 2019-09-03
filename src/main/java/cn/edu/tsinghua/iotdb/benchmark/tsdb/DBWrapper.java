@@ -231,6 +231,34 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
+  public Status distanceRangeQuery(ValueRangeQuery valueRangeQuery) {
+    Status status = null;
+    Operation operation = Operation.DISTANCE_RANGE_QUERY;
+    try {
+      status = db.distanceRangeQuery(valueRangeQuery);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status bikesInLocationQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    Status status = null;
+    Operation operation = Operation.BIKES_IN_LOCATION_QUERY;
+    try {
+      status = db.bikesInLocationQuery(heatmapRangeQuery);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
   public void init() throws TsdbException {
     db.init();
   }
