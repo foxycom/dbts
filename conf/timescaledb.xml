@@ -4,15 +4,15 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>TimescaleDB_Wide</type>
+        <type>TimescaleDB_Narrow</type>
         <name>test</name>
-        <host>127.0.0.1</host>
+        <host>132.231.13.207</host>
         <port>5432</port>
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="false" remark="">
+    <mysqlLog active="false" remark="minute">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
@@ -142,11 +142,11 @@
         <type>7</type>
         <sensorNum>1</sensorNum>
         <sensorGroup></sensorGroup>
-        <deviceNum>3</deviceNum>
+        <deviceNum>1</deviceNum>
         <seed>151658</seed>
         <step>1</step>
         <radius>500</radius>
-        <aggregateFunction>sum</aggregateFunction>
+        <aggregateFunction>avg</aggregateFunction>
         <interval>3600000</interval>
         <lowerLimit>-5</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>

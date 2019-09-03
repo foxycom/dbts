@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>TimescaleDB</type>
+        <type>TimescaleDB_Narrow</type>
         <name>test</name>
         <host>127.0.0.1</host>
         <port>5432</port>
