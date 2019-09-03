@@ -9,19 +9,13 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggValueQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.GroupByQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.LatestPointQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
+import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 
 import java.sql.*;
 import java.util.*;
 
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
@@ -192,6 +186,7 @@ public class TimescaleDB implements IDatabase {
       }
 
       createIndexes();
+      createGridFunction();
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
       throw new TsdbException(e);
@@ -239,6 +234,32 @@ public class TimescaleDB implements IDatabase {
       connection.commit();
     } catch (SQLException e) {
       LOGGER.error("Could not create PG indexes because: {}", e.getMessage());
+    }
+  }
+
+  /*
+   * Registers an SQL function in SQL, which generates a grid for a heat map.
+   */
+  private void createGridFunction() {
+    try (Statement statement = connection.createStatement()) {
+      String sql = "CREATE OR REPLACE FUNCTION ST_CreateGrid(\n" +
+              "        nrow integer, ncol integer,\n" +
+              "        xsize float8, ysize float8,\n" +
+              "        x0 float8 DEFAULT 0, y0 float8 DEFAULT 0,\n" +
+              "        OUT \"row\" integer, OUT col integer,\n" +
+              "        OUT geom geometry)\n" +
+              "    RETURNS SETOF record AS\n" +
+              "$$\n" +
+              "SELECT i + 1 AS row, j + 1 AS col, ST_Translate(cell, j * $3 + $5, i * $4 + $6) AS geom\n" +
+              "FROM generate_series(0, $1 - 1) AS i,\n" +
+              "     generate_series(0, $2 - 1) AS j,\n" +
+              "(\n" +
+              "SELECT ('POLYGON((0 0, 0 '||$4||', '||$3||' '||$4||', '||$3||' 0,0 0))')::geometry AS cell\n" +
+              ") AS foo;\n" +
+              "$$ LANGUAGE sql IMMUTABLE STRICT;";
+      statement.execute(sql);
+    } catch (SQLException e) {
+      LOGGER.error("Could not register grid function.");
     }
   }
 
@@ -501,6 +522,28 @@ public class TimescaleDB implements IDatabase {
             .orderBy("time", SqlBuilder.Order.DESC).limit(1);
     String debug = sqlBuilder.build();
     return executeQueryAndGetStatus(sqlBuilder.build());
+  }
+
+  /**
+   * Creates a heat map with average air quality out of gps points.
+   *
+   * @param heatmapRangeQuery The heatmap query paramters object.
+   * @return The status of the execution.
+   */
+  @Override
+  public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    SensorGroup sensorGroup = heatmapRangeQuery.getSensorGroup();
+    SensorGroup gpsSensorGroup = heatmapRangeQuery.getGpsSensorGroup();
+    GeoPoint startPoint = Constants.GRID_START_POINT;
+    String sql = "with map as (select (st_dump(map.geom)).geom from (\n" +
+            "\tselect st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, "
+            + startPoint.getLongitude() + ", " + startPoint.getLatitude() + ") as grid\n"
+            + ") map)\n"
+            + "select m.geom as cell, avg(a.value) from " + gpsSensorGroup.getTableName() + " g, map m, (\n"
+            + "\tselect time_bucket(interval '1 sec', ab.time) as second, avg(value) as value, bike_id from airquality_benchmark ab group by second, bike_id\n"
+            + ") a\n"
+            + "where g.bike_id = a.bike_id and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;";
+    return executeQueryAndGetStatus(sql);
   }
 
   /*

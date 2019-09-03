@@ -60,6 +60,8 @@ public class OperationController {
         return Operation.GPS_TIME_RANGE_QUERY;
       case 11:
         return Operation.GPS_TRIP_RANGE_QUERY;
+      case 12:
+        return Operation.HEATMAP_RANGE_QUERY;
       default:
         LOGGER.error("Unsupported operation {}, use default operation: INGESTION.", i);
         return Operation.INGESTION;
@@ -100,7 +102,8 @@ public class OperationController {
     GROUP_BY_QUERY("GROUP_BY"),
     LATEST_POINT_QUERY("LATEST_POINT"),
     GPS_TIME_RANGE_QUERY("GPS_TIME_RANGE"),
-    GPS_TRIP_RANGE_QUERY("GPS_TRIP_RANGE");
+    GPS_TRIP_RANGE_QUERY("GPS_TRIP_RANGE"),
+    HEATMAP_RANGE_QUERY("HEATMAP_RANGE");
 
     public String getName() {
       return name;

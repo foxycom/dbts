@@ -12,15 +12,15 @@
         <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="false" remark="some remark">
+    <mysqlLog active="true" remark="">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">4</devices>
 
-    <!-- INGEST:PRECISE:RANGE:VALUE_RANGE:AGG_RANGE:AGG_VALUE:AGG_RANGE_VALUE:GROUP_BY:LATEST_POINT:GPS_RANGE:GPS_VALUE_RANGE -->
-    <operationsProportion>0:0:0:0:0:0:0:0:1:0:0</operationsProportion>
+    <!-- INGEST:PRECISE:RANGE:VALUE_RANGE:AGG_RANGE:AGG_VALUE:AGG_RANGE_VALUE:GROUP_BY:LATEST_POINT:GPS_RANGE:GPS_VALUE_RANGE:HEATMAP_RANGE_QUERY -->
+    <operationsProportion>0:0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
@@ -108,11 +108,11 @@
     </sensorGroups>
 
     <batch size="90000"/>
-    <loops>10</loops>
+    <loops>2</loops>
     <pointStep>2</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="false">
+    <serverMonitor active="true">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>

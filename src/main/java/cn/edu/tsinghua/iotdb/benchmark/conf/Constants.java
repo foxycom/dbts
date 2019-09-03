@@ -55,5 +55,6 @@ public class Constants {
 
     public static final String GEO_DATA_TYPE = "GEOGRAPHY";
     public static final GeoPoint SPAWN_POINT = new GeoPoint(13.4319466, 48.5667364);
+    public static final GeoPoint GRID_START_POINT = new GeoPoint(13.4109466, 48.5567364);
 
 }

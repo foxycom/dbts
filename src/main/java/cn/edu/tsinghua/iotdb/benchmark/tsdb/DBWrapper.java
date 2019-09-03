@@ -7,14 +7,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggValueQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.GroupByQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.LatestPointQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
+import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 
 import java.util.List;
@@ -218,6 +211,20 @@ public class DBWrapper implements IDatabase {
     } catch (Exception e) {
       measurement.addFailOperation(operation);
       // currently we do not have expected result point number
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
+    Status status = null;
+    Operation operation = Operation.HEATMAP_RANGE_QUERY;
+    try {
+      status = db.heatmapRangeQuery(heatmapRangeQuery);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
       LOGGER.error(ERROR_LOG, operation, e);
     }
     return status;

@@ -9,14 +9,7 @@ import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
 import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggRangeValueQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.AggValueQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.GroupByQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.LatestPointQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.ValueRangeQuery;
+import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
@@ -260,21 +253,10 @@ public class SyntheticWorkload implements IWorkload {
     return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
   }
 
-  private SensorGroup getGpsSensorGroup() {
-    SensorGroup gpsSensorGroup = null;
-    for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
-      if (sensorGroup.getName().contains("gps")) {
-        gpsSensorGroup = sensorGroup;
-        break;
-      }
-    }
-    return gpsSensorGroup;
-  }
-
   @Override
   public RangeQuery getGpsRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getGpsSensorGroup();
+    SensorGroup sensorGroup = Sensors.groupOfType("gps");
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
     return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
@@ -282,7 +264,7 @@ public class SyntheticWorkload implements IWorkload {
 
   public ValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getGpsSensorGroup();
+    SensorGroup sensorGroup = Sensors.groupOfType("gps");
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
     return new ValueRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp, config.QUERY_LOWER_LIMIT);
@@ -339,7 +321,14 @@ public class SyntheticWorkload implements IWorkload {
         config.QUERY_AGGREGATE_FUN);
   }
 
-
+  public HeatmapRangeQuery getHeatmapRangeQuery() throws WorkloadException {
+    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
+    SensorGroup sensorGroup = getSensorGroup();
+    SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
+    long startTimestamp = getQueryStartTimestamp();
+    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
+    return new HeatmapRangeQuery(queryDevices, sensorGroup, gpsSensorGroup, startTimestamp, endTimestamp);
+  }
 
 
 }

@@ -72,6 +72,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case PRECISE_QUERY:
+            clientMonitoring.start();
           try {
             dbWrapper.preciseQuery(syntheticWorkload.getPreciseQuery());
           } catch (Exception e) {
@@ -87,6 +88,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case VALUE_RANGE_QUERY:
+          clientMonitoring.start();
           try {
             dbWrapper.valueRangeQuery(syntheticWorkload.getValueRangeQuery());
           } catch (WorkloadException e) {
@@ -102,6 +104,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case AGG_VALUE_QUERY:
+          clientMonitoring.start();
           try {
             dbWrapper.aggValueQuery(syntheticWorkload.getAggValueQuery());
           } catch (WorkloadException e) {
@@ -109,6 +112,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case AGG_RANGE_VALUE_QUERY:
+          clientMonitoring.start();
           try {
             dbWrapper.aggRangeValueQuery(syntheticWorkload.getAggRangeValueQuery());
           } catch (WorkloadException e) {
@@ -116,6 +120,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case GROUP_BY_QUERY:
+            clientMonitoring.start();
           try {
             dbWrapper.groupByQuery(syntheticWorkload.getGroupByQuery());
           } catch (WorkloadException e) {
@@ -123,25 +128,36 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case LATEST_POINT_QUERY:
+            clientMonitoring.start();
           try {
             dbWrapper.latestPointQuery(syntheticWorkload.getLatestPointQuery());
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to do latest point query because ", e);
+            LOGGER.error("Failed to execute latest point query because ", e);
           }
           break;
 
         case GPS_TIME_RANGE_QUERY:
+            clientMonitoring.start();
           try {
             dbWrapper.gpsRangeQuery(syntheticWorkload.getGpsRangeQuery());
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to do a time range query with GPS data.");
+            LOGGER.error("Failed to execute a time range query with GPS data because ", e);
           }
           break;
         case GPS_TRIP_RANGE_QUERY:
+            clientMonitoring.start();
           try {
             dbWrapper.gpsValueRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to do a time range query on trip identification.");
+            LOGGER.error("Failed to execute a time range query on trip identification because ", e);
+          }
+          break;
+        case HEATMAP_RANGE_QUERY:
+            clientMonitoring.start();
+          try {
+            dbWrapper.heatmapRangeQuery(syntheticWorkload.getHeatmapRangeQuery());
+          } catch (WorkloadException e) {
+            LOGGER.error("Failed to execute a heat map range query because ", e);
           }
           break;
         default:

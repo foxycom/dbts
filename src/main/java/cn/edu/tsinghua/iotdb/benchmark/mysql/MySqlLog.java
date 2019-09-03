@@ -41,7 +41,7 @@ public class MySqlLog {
     }
 
     public void initMysql(boolean initTables) {
-        projectID = config.WORK_MODE + "_" + config.DB_SWITCH.name() + "_" + config.REMARK + labID;
+        projectID = config.DB_SWITCH.name() + "_" + config.REMARK + labID;
         if (config.USE_MYSQL) {
             Date date = new Date(labID);
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
@@ -193,53 +193,21 @@ public class MySqlLog {
         return sql;
     }
 
-    /**
-     * Stores the results of an insert benchmark in the database.
-     *
-     * @param index The loop index.
-     * @param costTimeAvg
-     * @param totalTime
-     * @param errorPoint
-     * @param remark
-     */
-    public void saveInsertProcess(int index, double costTimeAvg,
-                                  double totalTime, /*long pointNum, */long errorPoint, String remark) {
-        if (config.USE_MYSQL) {
-            // TODO different rates for different sensor frequencies
-            //double rate = (config.BATCH_SIZE * config.SENSOR_NUMBER / costTime);
-
-            // TODO delete
-            int pointNum = 0;
-
-
-            double rate = pointNum / costTimeAvg;
-            if(Double.isInfinite(rate)) {
-                rate = 0;
-            }
-            String mysqlSql = String.format(Locale.US, "insert into " + config.WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%f,%f,%f,%d,%s)",
-                    System.currentTimeMillis(), "'" + Thread.currentThread().getName() + "'", index,
-                    costTimeAvg, totalTime, rate, errorPoint, "'" + remark + "'");
-            Statement stat;
-            try {
-                stat = mysqlConnection.createStatement();
-                stat.executeUpdate(mysqlSql);
-                stat.close();
-            } catch (Exception e) {
-                LOGGER.error(
-                        "{} save saveInsertProcess info into mysql failed! Error：{}",
-                        Thread.currentThread().getName(), e.getMessage());
-                LOGGER.error("{}", mysqlSql);
-                e.printStackTrace();
-            }
-        }
-    }
-
-
     public void saveCompleteMeasurement(String operation, double costTimeAvg, double costTimeP99, double costTimeMedian,
                                        double totalTime, double rate, long okPointNum, long failPointNum, String remark) {
         if (!config.USE_MYSQL) {
             return;
         }
+
+        try {
+            if (mysqlConnection.isClosed() || !mysqlConnection.isValid(1)) {
+                initMysql(false);
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Could not check status of MySQL connection while saving overall measurement.");
+            throw new IllegalStateException();
+        }
+
         String logSql = String.format(Locale.US, "INSERT INTO " + projectID + " values (%d, %s, %f, %f, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + operation + "'", costTimeAvg, costTimeP99, costTimeMedian,
                 totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
@@ -256,8 +224,7 @@ public class MySqlLog {
         if (!config.USE_MYSQL) {
             return;
         }
-        String logSql = String.format(Locale.US, "INSERT INTO " + config.WORK_MODE + "_" +
-                config.DB_SWITCH + "_" + config.REMARK + labID + "Clients values (%d, %s, %s, %s, %d, %f, %f, %f, %d, %d, %s)",
+        String logSql = String.format(Locale.US, "INSERT INTO " + projectID + "Clients values (%d, %s, %s, %s, %d, %f, %f, %f, %d, %d, %s)",
                 System.currentTimeMillis(), "'" + clientName + "'", "'" + operation + "'", "'" + status + "'",
                 loopIndex, costTime, totalTime, rate, okPointNum, failPointNum, "'" + remark + "'");
         Statement statement;
@@ -284,7 +251,7 @@ public class MySqlLog {
                 rate = point / time;
             }
             String mysqlSql = String.format(
-                    "insert into " + config.WORK_MODE + "_" + config.DB_SWITCH + "_" + config.REMARK + labID + " values(%d,%s,%d,%d,%f,%f,%s)",
+                    "insert into " + projectID + " values(%d,%s,%d,%d,%f,%f,%s)",
                     System.currentTimeMillis(),
                     "'" + Thread.currentThread().getName() + "'",
                     index, point, time, rate, "'" + remark + "'");
@@ -336,189 +303,6 @@ public class MySqlLog {
             LOGGER.error("Could not insert server statistics, because: {}", e.getMessage());
             LOGGER.error("{}", sql);
         }
-    }
-
-    /* TODO legacy code */
-    public void insertSERVER_MODELegacy(double cpu, double mem, double io, double net_recv, double net_send, double pro_mem_size,
-                                  double dataSize, double infoSize, double metadataSize, double overflowSize, double deltaSize,double walSize,
-                                  float tps, float io_read, float io_wrtn,
-                                  List<Integer> openFileList, String remark) {
-        if (config.USE_MYSQL) {
-            Statement stat = null;
-            String sql = "";
-            try {
-                stat = mysqlConnection.createStatement();
-                sql = String.format(Locale.US, "insert into " + projectID + "Server"
-                                + " values(%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s)",
-                        System.currentTimeMillis(),
-                        cpu,
-                        mem,
-                        io,
-                        net_recv,
-                        net_send,
-                        pro_mem_size,
-                        dataSize,
-                        infoSize,
-                        metadataSize,
-                        overflowSize,
-                        deltaSize,
-                        walSize,
-                        tps,
-                        io_read,
-                        io_wrtn,
-                        openFileList.get(0),
-                        openFileList.get(1),
-                        openFileList.get(2),
-                        openFileList.get(3),
-                        openFileList.get(4),
-                        openFileList.get(5),
-                        openFileList.get(6),
-                        openFileList.get(7),
-                        openFileList.get(8),
-                        "'" + remark + "'"
-                        );
-                stat.executeUpdate(sql);
-            } catch (SQLException e) {
-                LOGGER.error("Could not insert server statistics, because: {}", e.getMessage());
-                LOGGER.error("{}", sql);
-                e.printStackTrace();
-            } finally {
-                if (stat != null) {
-                    try {
-                        stat.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
-    // 存储IOTDB实验模型
-    public void saveIoTDBDataModel(String sensor, String path, String type,
-                                   String encoding) {
-        if (!config.USE_MYSQL) {
-            return;
-        }
-        Statement stat = null;
-        String sql = "";
-        try {
-            stat = mysqlConnection.createStatement();
-            sql = String.format("insert into IOTDB_DATA_MODEL" + "_" + day
-                    + " values(NULL, %s, %s, %s, %s, %s)", "'" + projectID
-                    + "'", "'" + sensor + "'", "'" + path + "'", "'" + type
-                    + "'", "'" + encoding + "'");
-            stat.executeUpdate(sql);
-        } catch (SQLException e) {
-            LOGGER.error("{}将结果信息写入mysql失败，because ：{}", sql, e.getMessage());
-            e.printStackTrace();
-        } finally {
-            if (stat != null) {
-                try {
-                    stat.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    // 存储InfluxDB实验模型
-    public void saveInfluxDBDataModel(String measurement, String tag,
-                                      String field, String type) {
-        if (!config.USE_MYSQL) {
-            return;
-        }
-        Statement stat = null;
-        String sql = "";
-        try {
-            stat = mysqlConnection.createStatement();
-            sql = String.format("insert into INFLUXDB_DATA_MODEL" + "_" + day
-                    + " values(NULL, %s, %s, %s, %s, %s)", "'" + projectID
-                    + "'", "'" + measurement + "'", "'" + tag + "'", "'"
-                    + field + "'", "'" + type + "'");
-            stat.executeUpdate(sql);
-        } catch (SQLException e) {
-
-            LOGGER.error("{}InfluxDBDataModel写入mysql失败，because ：{}", sql, e.getMessage());
-            e.printStackTrace();
-        } finally {
-            if (stat != null) {
-                try {
-                    stat.close();
-                } catch (SQLException e) {
-
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    // 存储实验结果
-    public void saveResult(String k, String v) {
-        if (!config.USE_MYSQL) {
-            return;
-        }
-        Statement stat = null;
-        String sql = "";
-        try {
-            stat = mysqlConnection.createStatement();
-            sql = String.format(SAVE_RESULT, "'" + projectID + "'", "'" + k
-                    + "'", "'" + v + "'");
-            stat.executeUpdate(sql);
-        } catch (SQLException e) {
-
-            LOGGER.error("{}将结果信息写入mysql失败，because ：{}", sql, e.getMessage());
-            e.printStackTrace();
-        } finally {
-            if (stat != null) {
-                try {
-                    stat.close();
-                } catch (SQLException e) {
-
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
-    // 存储实验配置信息
-    public void saveConfig(String k, String v) {
-        if (!config.USE_MYSQL) {
-            return;
-        }
-        Statement stat = null;
-        String sql = "";
-        try {
-            stat = mysqlConnection.createStatement();
-            sql = String.format(SAVE_CONFIG, "'" + projectID + "'", "'" + k
-                    + "'", "'" + v + "'");
-            stat.executeUpdate(sql);
-        } catch (SQLException e) {
-
-            LOGGER.error("{}将配置信息写入mysql失败，because ：{}", sql, e.getMessage());
-            e.printStackTrace();
-        } finally {
-            if (stat != null) {
-                try {
-                    stat.close();
-                } catch (SQLException e) {
-
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
-    private String getFullGroupDevicePathByName(String d) {
-        String[] spl = d.split("_");
-        int id = Integer.parseInt(spl[1]);
-        int groupSize = config.DEVICES_NUMBER / config.DEVICE_GROUPS_NUMBER;
-        int groupIndex = id / groupSize;
-        return Constants.ROOT_SERIES_NAME + ".group_" + groupIndex + ".";
-                //+ config.DEVICE_CODES.get(id);
     }
 
     public void saveTestConfig() {
