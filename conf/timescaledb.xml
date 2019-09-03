@@ -6,7 +6,7 @@
     <db>
         <type>TimescaleDB</type>
         <name>test</name>
-        <host>127.0.0.1</host>
+        <host>132.231.13.207</host>
         <port>5432</port>
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
@@ -108,7 +108,7 @@
     </sensorGroups>
 
     <batch size="90000"/>
-    <loops>2</loops>
+    <loops>400</loops>
     <pointStep>2</pointStep>
     <encoding>gorilla</encoding>
 

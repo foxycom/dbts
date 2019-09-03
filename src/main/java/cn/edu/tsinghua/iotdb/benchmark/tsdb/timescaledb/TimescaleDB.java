@@ -534,13 +534,16 @@ public class TimescaleDB implements IDatabase {
   public Status heatmapRangeQuery(HeatmapRangeQuery heatmapRangeQuery) {
     SensorGroup sensorGroup = heatmapRangeQuery.getSensorGroup();
     SensorGroup gpsSensorGroup = heatmapRangeQuery.getGpsSensorGroup();
+    Timestamp startTimestamp = new Timestamp(heatmapRangeQuery.getStartTimestamp());
+    Timestamp endTimestamp = new Timestamp(heatmapRangeQuery.getEndTimestamp());
     GeoPoint startPoint = Constants.GRID_START_POINT;
     String sql = "with map as (select (st_dump(map.geom)).geom from (\n" +
             "\tselect st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, "
             + startPoint.getLongitude() + ", " + startPoint.getLatitude() + ") as grid\n"
             + ") map)\n"
             + "select m.geom as cell, avg(a.value) from " + gpsSensorGroup.getTableName() + " g, map m, (\n"
-            + "\tselect time_bucket(interval '1 sec', ab.time) as second, avg(value) as value, bike_id from airquality_benchmark ab group by second, bike_id\n"
+            + "\tselect time_bucket(interval '1 sec', ab.time) as second, avg(value) as value, bike_id from airquality_benchmark ab "
+            + "where ab.time > '" + startTimestamp + "' and ab.time < '" + endTimestamp + "' group by second, bike_id\n"
             + ") a\n"
             + "where g.bike_id = a.bike_id and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;";
     return executeQueryAndGetStatus(sql);
