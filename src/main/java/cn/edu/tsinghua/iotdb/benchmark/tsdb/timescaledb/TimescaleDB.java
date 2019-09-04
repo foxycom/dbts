@@ -19,11 +19,8 @@ import java.util.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
-import net.sf.cglib.core.Local;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class TimescaleDB implements IDatabase {
 
@@ -280,7 +277,7 @@ public class TimescaleDB implements IDatabase {
   }
 
   /*
-   * Registers an SQL function in SQL, which generates a grid for a heat map.
+   * Registers a function in SQL, which generates a grid for a heat map.
    */
   private void createGridFunction() {
     try (Statement statement = connection.createStatement()) {
@@ -343,12 +340,12 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT value, time, bike_id FROM emg_benchmark WHERE (bike_id = 'bike_10') AND (time = '2018-08-29 18:00:00.0');
+   *  SELECT value, time, bike_id FROM emg_benchmark WHERE (bike_id = 'bike_10') AND (time = '2018-08-29 18:00:00.0');
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') AND (time = '2018-08-29 18:00:00.0');
+   *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') AND (time = '2018-08-29 18:00:00.0');
    * </code></p>
    *
    * @param preciseQuery The query parameters object.
@@ -361,12 +358,12 @@ public class TimescaleDB implements IDatabase {
       List<String> columns = new ArrayList<>(sensorGroup.getFields());
       columns.addAll(Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
       sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName())
-              .where().bikes(preciseQuery.getDeviceSchema()).and().time(preciseQuery);
+              .where().bikes(preciseQuery.getDeviceSchemas()).and().time(preciseQuery);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = sensorGroup.getSensors().get(0);
       List<String> columns = Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(),
               sensor.getName());
-      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(preciseQuery.getDeviceSchema())
+      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(preciseQuery.getDeviceSchemas())
               .and().time(preciseQuery);
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
@@ -377,14 +374,14 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT value FROM emg_benchmark WHERE (bike_id = 'bike_8')
-   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
+   *  SELECT value FROM emg_benchmark WHERE (bike_id = 'bike_8')
+   *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8')
-   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') AND s_40 IS NOT NULL;
+   *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8')
+   *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') AND s_40 IS NOT NULL;
    * </code></p>
    *
    * @param rangeQuery The query parameters object.
@@ -397,11 +394,11 @@ public class TimescaleDB implements IDatabase {
       columns.add(SqlBuilder.Column.VALUE.getName());
 
       sqlBuilder = sqlBuilder.reset().select(columns).from(rangeQuery.getSensorGroup().getTableName())
-              .where().bikes(rangeQuery.getDeviceSchema()).and().time(rangeQuery);
+              .where().bikes(rangeQuery.getDeviceSchemas()).and().time(rangeQuery);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = rangeQuery.getSensorGroup().getSensors().get(0);
       columns.addAll(Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(), sensor.getName()));
-      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(rangeQuery.getDeviceSchema())
+      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(rangeQuery.getDeviceSchemas())
               .and().time(rangeQuery).and().isNotNull(sensor.getName());
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
@@ -412,14 +409,14 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT time, bike_id, value FROM gps_benchmark WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
-   * AND time <= '2018-08-29 19:00:00.0');
+   *  SELECT time, bike_id, value FROM gps_benchmark WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
+   *  AND time <= '2018-08-29 19:00:00.0');
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time, bike_id, s_12 FROM test WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
-   * AND time <= '2018-08-29 19:00:00.0') AND s_12 IS NOT NULL;
+   *  SELECT time, bike_id, s_12 FROM test WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
+   *  AND time <= '2018-08-29 19:00:00.0') AND s_12 IS NOT NULL;
    * </code></p>
    *
    * @param rangeQuery The query parameters object.
@@ -433,11 +430,11 @@ public class TimescaleDB implements IDatabase {
       columns.addAll(sensorGroup.getFields());
 
       sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName())
-              .where().bikes(rangeQuery.getDeviceSchema()).and().time(rangeQuery);
+              .where().bikes(rangeQuery.getDeviceSchemas()).and().time(rangeQuery);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor gpsSensor = rangeQuery.getSensorGroup().getSensors().get(0);
       columns.add(gpsSensor.getName());
-      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(rangeQuery.getDeviceSchema())
+      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(rangeQuery.getDeviceSchemas())
               .and().time(rangeQuery).and().isNotNull(gpsSensor.getName());
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
@@ -448,18 +445,18 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * WITH trip (second, current_value) AS (
+   *  WITH trip (second, current_value) AS (
    *   SELECT time_bucket('1 second', time) AS second, value(AVG)
    *   FROM emg_benchmark WHERE bike_id = 'bike_0' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'
    *   GROUP BY second HAVING AVG(value) > 3.000000
-   * ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
-   * WHERE g.bike_id = 'bike_0';
+   *  ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
+   *  WHERE g.bike_id = 'bike_0';
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time_bucket(interval '1 s', time) AS second, AVG(s_40), s_12 FROM test WHERE bike_id = 'bike_10'
-   * AND s_40 > 3.000000 AND s_12 IS NOT NULL GROUP BY second, s_12;
+   *  SELECT time_bucket(interval '1 s', time) AS second, AVG(s_40), s_12 FROM test WHERE bike_id = 'bike_10'
+   *  AND s_40 > 3.000000 AND s_12 IS NOT NULL GROUP BY second, s_12;
    * </code></p>
    *
    * @param rangeQuery The query parameters object.
@@ -467,7 +464,7 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public Status gpsValueRangeQuery(GpsValueRangeQuery rangeQuery) {
-    DeviceSchema deviceSchema = rangeQuery.getDeviceSchema().get(0);
+    DeviceSchema deviceSchema = rangeQuery.getDeviceSchemas().get(0);
     Timestamp startTimestamp = new Timestamp(Constants.START_TIMESTAMP);
     Timestamp endTimestamp = new Timestamp(Constants.START_TIMESTAMP + config.QUERY_INTERVAL);
     String valueColumn = SqlBuilder.Column.VALUE.getName();
@@ -502,22 +499,22 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * with trip as (
-   * 	select time_bucket(interval '1 s', time) as second, bike_id, avg(value) as value from emg_benchmark
-   * 	where value > 3.000000 and bike_id = 'bike_10'
-   * 	group by second, bike_id
-   * )
-   * select time_bucket(interval '300000 ms', g.time) as half_minute, avg(t.value), t.bike_id, st_makeline(g.value::geometry) from gps_benchmark g, trip t
-   * where g.bike_id = 'bike_10' and g.time = t.second and g.time > '2018-08-29 18:00:00.0' and g.time < '2018-08-29 19:00:00.0'
-   * group by half_minute, t.bike_id;
+   *  WITH trip AS (
+   * 	SELECT time_bucket(interval '1 s', time) AS second, bike_id, AVG(value) AS value FROM emg_benchmark
+   * 	WHERE value > 3.000000 AND bike_id = 'bike_10'
+   * 	GROUP BY second, bike_id
+   *  )
+   *  SELECT time_bucket(interval '300000 ms', g.time) AS half_minute, AVG(t.value), t.bike_id, st_makeline(g.value::geometry) FROM gps_benchmark g, trip t
+   *  WHERE g.bike_id = 'bike_10' AND g.time = t.second AND g.time > '2018-08-29 18:00:00.0' AND g.time < '2018-08-29 19:00:00.0'
+   *  GROUP BY half_minute, t.bike_id;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(s_40), st_makeline(s_12::geometry), bike_id
-   * FROM test WHERE s_40 > 3.0 AND (bike_id = 'bike_7')
-   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
-   * GROUP BY time_bucket, bike_id;
+   *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(s_40), st_makeline(s_12::geometry), bike_id
+   *  FROM test WHERE s_40 > 3.0 AND (bike_id = 'bike_7')
+   *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
+   *  GROUP BY time_bucket, bike_id;
    * </code></p>
    * @param gpsValueRangeQuery
    * @return
@@ -527,7 +524,7 @@ public class TimescaleDB implements IDatabase {
     String sql = "";
     SensorGroup plainSensorGroup = gpsValueRangeQuery.getSensorGroup();
     SensorGroup gpsSensorGroup = gpsValueRangeQuery.getGpsSensorGroup();
-    DeviceSchema deviceSchema = gpsValueRangeQuery.getDeviceSchema().get(0);
+    DeviceSchema deviceSchema = gpsValueRangeQuery.getDeviceSchemas().get(0);
 
     String bikeColumn = SqlBuilder.Column.BIKE.getName();
     String valueColumn = SqlBuilder.Column.VALUE.getName();
@@ -556,7 +553,7 @@ public class TimescaleDB implements IDatabase {
       );
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, config.QUERY_AGGREGATE_FUN, config.TIME_BUCKET)
               .from(tableName).where().value(sensor.getName(), SqlBuilder.Op.GREATER, gpsValueRangeQuery.getValueThreshold())
-              .and().bikes(gpsValueRangeQuery.getDeviceSchema()).and().time(gpsValueRangeQuery)
+              .and().bikes(gpsValueRangeQuery.getDeviceSchemas()).and().time(gpsValueRangeQuery)
               .groupBy(Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
       sql = sqlBuilder.build();
     }
@@ -568,14 +565,14 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT time, bike_id, value FROM emg_benchmark WHERE value > 3.0 AND (bike_id = 'bike_5')
-   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
+   *  SELECT time, bike_id, value FROM emg_benchmark WHERE value > 3.0 AND (bike_id = 'bike_5')
+   *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_5')
-   * AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') AND s_40 > 3.0;
+   *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_5')
+   *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') AND s_40 > 3.0;
    * </code></p>
    *
    * @param valueRangeQuery The query parameters object.
@@ -589,11 +586,11 @@ public class TimescaleDB implements IDatabase {
       columns.addAll(sensorGroup.getFields());
       sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName()).where()
               .value(SqlBuilder.Op.GREATER, valueRangeQuery.getValueThreshold()).and()
-              .bikes(valueRangeQuery.getDeviceSchema()).and().time(valueRangeQuery);
+              .bikes(valueRangeQuery.getDeviceSchemas()).and().time(valueRangeQuery);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = sensorGroup.getSensors().get(0);
       columns.add(sensor.getName());
-      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(valueRangeQuery.getDeviceSchema())
+      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(valueRangeQuery.getDeviceSchemas())
               .and().time(valueRangeQuery)
               .and().value(sensor.getName(), SqlBuilder.Op.GREATER, valueRangeQuery.getValueThreshold());
     }
@@ -606,14 +603,14 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT AVG(value), bike_id FROM emg_benchmark WHERE (time >= '2018-08-29 18:00:00.0'
-   * AND time <= '2018-08-29 19:00:00.0') AND (bike_id = 'bike_8') GROUP BY bike_id;
+   *  SELECT AVG(value), bike_id FROM emg_benchmark WHERE (time >= '2018-08-29 18:00:00.0'
+   *  AND time <= '2018-08-29 19:00:00.0') AND (bike_id = 'bike_8') GROUP BY bike_id;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT AVG(s_40), bike_id FROM test WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
-   * AND (bike_id = 'bike_5') GROUP BY bike_id;
+   *  SELECT AVG(s_40), bike_id FROM test WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
+   *  AND (bike_id = 'bike_5') GROUP BY bike_id;
    * </code></p>
    *
    * @param aggRangeQuery The query parameters object.
@@ -629,13 +626,13 @@ public class TimescaleDB implements IDatabase {
 
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggRangeQuery.getAggrFunc())
               .from(aggRangeQuery.getSensorGroup().getTableName()).where().time(aggRangeQuery)
-              .and().bikes(aggRangeQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+              .and().bikes(aggRangeQuery.getDeviceSchemas()).groupBy(SqlBuilder.Column.BIKE);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = sensorGroup.getSensors().get(0);
       List<String> aggregatedColumns = new ArrayList<>(Collections.singletonList(sensor.getName()));
       List<String> plainColumns = new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggRangeQuery.getAggrFunc())
-              .from(tableName).where().time(aggRangeQuery).and().bikes(aggRangeQuery.getDeviceSchema())
+              .from(tableName).where().time(aggRangeQuery).and().bikes(aggRangeQuery.getDeviceSchemas())
               .groupBy(SqlBuilder.Column.BIKE);
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
@@ -646,12 +643,12 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT AVG(value), bike_id FROM emg_benchmark WHERE value > 3.0 AND (bike_id = 'bike_10') GROUP BY bike_id;
+   *  SELECT AVG(value), bike_id FROM emg_benchmark WHERE value > 3.0 AND (bike_id = 'bike_10') GROUP BY bike_id;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT AVG(s_40), bike_id FROM test WHERE s_40 > 3.0 AND (bike_id = 'bike_10') GROUP BY bike_id;
+   *  SELECT AVG(s_40), bike_id FROM test WHERE s_40 > 3.0 AND (bike_id = 'bike_10') GROUP BY bike_id;
    * </code></p>
    *
    * @param aggValueQuery The query parameters object.
@@ -665,14 +662,14 @@ public class TimescaleDB implements IDatabase {
       List<String> plainColumns = new ArrayList<>(Collections.singleton(SqlBuilder.Column.BIKE.getName()));
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggValueQuery.getAggrFunc())
               .from(sensorGroup.getTableName()).where().value(SqlBuilder.Op.GREATER, aggValueQuery.getValueThreshold())
-              .and().bikes(aggValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+              .and().bikes(aggValueQuery.getDeviceSchemas()).groupBy(SqlBuilder.Column.BIKE);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = sensorGroup.getSensors().get(0);
       List<String> aggregatedColumns = new ArrayList<>(Collections.singletonList(sensor.getName()));
       List<String> plainColumns = new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggValueQuery.getAggrFunc())
               .from(tableName).where().value(sensor.getName(), SqlBuilder.Op.GREATER, aggValueQuery.getValueThreshold())
-              .and().bikes(aggValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+              .and().bikes(aggValueQuery.getDeviceSchemas()).groupBy(SqlBuilder.Column.BIKE);
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
@@ -682,14 +679,14 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT AVG(value), bike_id FROM emg_benchmark WHERE (time >= '2018-08-29 18:00:00.0'
-   * AND time <= '2018-08-29 19:00:00.0') AND value >= 3.0 AND (bike_id = 'bike_8') GROUP BY bike_id;
+   *  SELECT AVG(value), bike_id FROM emg_benchmark WHERE (time >= '2018-08-29 18:00:00.0'
+   *  AND time <= '2018-08-29 19:00:00.0') AND value >= 3.0 AND (bike_id = 'bike_8') GROUP BY bike_id;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT AVG(s_40), bike_id FROM test WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
-   * AND s_40 >= 3.0 AND (bike_id = 'bike_8') GROUP BY bike_id;
+   *  SELECT AVG(s_40), bike_id FROM test WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
+   *  AND s_40 >= 3.0 AND (bike_id = 'bike_8') GROUP BY bike_id;
    * </code></p>
    *
    * @param aggRangeValueQuery The query parameters object.
@@ -705,7 +702,7 @@ public class TimescaleDB implements IDatabase {
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggRangeValueQuery.getAggrFunc())
               .from(sensorGroup.getTableName()).where().time(aggRangeValueQuery)
               .and().value(SqlBuilder.Op.EQUALS_GREATER, aggRangeValueQuery.getValueThreshold())
-              .and().bikes(aggRangeValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+              .and().bikes(aggRangeValueQuery.getDeviceSchemas()).groupBy(SqlBuilder.Column.BIKE);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = sensorGroup.getSensors().get(0);
       List<String> aggregatedColumns = new ArrayList<>(Collections.singletonList(sensor.getName()));
@@ -714,7 +711,7 @@ public class TimescaleDB implements IDatabase {
       sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, aggRangeValueQuery.getAggrFunc())
               .from(tableName).where().time(aggRangeValueQuery)
               .and().value(sensor.getName(), SqlBuilder.Op.EQUALS_GREATER, aggRangeValueQuery.getValueThreshold())
-              .and().bikes(aggRangeValueQuery.getDeviceSchema()).groupBy(SqlBuilder.Column.BIKE);
+              .and().bikes(aggRangeValueQuery.getDeviceSchemas()).groupBy(SqlBuilder.Column.BIKE);
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
@@ -724,14 +721,14 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(value), bike_id FROM emg_benchmark
-   * WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
+   *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(value), bike_id FROM emg_benchmark
+   *  WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(s_40), bike_id FROM test
-   * WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
+   *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(s_40), bike_id FROM test
+   *  WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
    * </code></p>
    *
    * @param groupByQuery The query parameters object.
@@ -762,12 +759,12 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * SELECT value, bike_id, time, sensor_id FROM emg_benchmark WHERE (bike_id = 'bike_5') ORDER BY time DESC LIMIT 1;
+   *  SELECT value, bike_id, time, sensor_id FROM emg_benchmark WHERE (bike_id = 'bike_5') ORDER BY time DESC LIMIT 1;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') ORDER BY time DESC LIMIT 1;
+   *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') ORDER BY time DESC LIMIT 1;
    * </code></p>
    *
    * @param latestPointQuery The query parameters query.
@@ -781,39 +778,38 @@ public class TimescaleDB implements IDatabase {
       columns.addAll(Arrays.asList(SqlBuilder.Column.BIKE.getName(), SqlBuilder.Column.TIME.getName(),
               SqlBuilder.Column.SENSOR.getName()));
       sqlBuilder = sqlBuilder.reset().select(columns).from(sensorGroup.getTableName()).where()
-              .bikes(latestPointQuery.getDeviceSchema())
+              .bikes(latestPointQuery.getDeviceSchemas())
               .orderBy(SqlBuilder.Column.TIME.getName(), SqlBuilder.Order.DESC).limit(1);
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = sensorGroup.getSensors().get(0);
       List<String> columns = new ArrayList<>(Arrays.asList(SqlBuilder.Column.TIME.getName(),
               SqlBuilder.Column.BIKE.getName(), sensor.getName()));
-      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(latestPointQuery.getDeviceSchema())
+      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(latestPointQuery.getDeviceSchemas())
               .orderBy(SqlBuilder.Column.TIME.getName(), SqlBuilder.Order.DESC).limit(1);
     }
     return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * TODO test wide column
    * Creates a heat map with average air quality out of gps points.
    *
    * NARROW_TABLE:
    * <p><code>
-   * with map as (select (st_dump(map.geom)).geom from (
+   *  with map as (select (st_dump(map.geom)).geom from (
    * 	select st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, 13.410947, 48.556736) as grid
-   * ) map)
-   * select m.geom as cell, avg(a.value) from gps_benchmark g, map m, (
+   *  ) map)
+   *  select m.geom as cell, avg(a.value) from gps_benchmark g, map m, (
    * 	select time_bucket(interval '1 sec', ab.time) as second, avg(value) as value, bike_id from emg_benchmark ab where ab.time > '2018-08-29 18:00:00.0' and ab.time < '2018-08-29 19:00:00.0' group by second, bike_id
-   * ) a
-   * where g.bike_id = a.bike_id and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;
+   *  ) a
+   *  where g.bike_id = a.bike_id and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * with map as (select (st_dump(map.geom)).geom from (
+   *  with map as (select (st_dump(map.geom)).geom from (
    * 	select st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, 13.410947, 48.556736) as grid
-   * ) map)
-   * select avg(s_40), m.geom from test t inner join map m on st_contains(m.geom, t.s_12::geometry) where t.s_12 is not null and g.time > '2018-08-29 18:00:00.0' and g.time < '2018-08-29 19:00:00.0' group by m.geom;
+   *  ) map)
+   *  select avg(s_40), m.geom from test t inner join map m on st_contains(m.geom, t.s_12::geometry) where t.s_12 is not null and g.time > '2018-08-29 18:00:00.0' and g.time < '2018-08-29 19:00:00.0' group by m.geom;
    * </code></p>
    * @param gpsRangeQuery The heatmap query paramters object.
    * @return The status of the execution.
@@ -857,27 +853,25 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * TODO: parametrize the sql query (e. g., device name)
-   *
    * Computes the distance driven by a bike in the given time range identified by start and end timestamps where current
    * exceeds some value.
    *
    * NARROW_TABLE:
    * <p><code>
-   * with trip_begin as (
+   *  with trip_begin as (
    * 	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'group by second, bike_id order by second asc limit 1
-   * ), trip_end as (
-   * 	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0'and time < '2018-08-29 19:00:00.0' group by second, bike_id order by second desc limit 1
-   * )
-   * select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = 'bike_10'
-   * and g.time > b.second and g.time < e.second group by g.bike_id;
+   *  ), trip_end as (
+   *  	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0'and time < '2018-08-29 19:00:00.0' group by second, bike_id order by second desc limit 1
+   *  )
+   *  select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = 'bike_10'
+   *  and g.time > b.second and g.time < e.second group by g.bike_id;
    * </code></p>
    *
    * WIDE_TABLE:
    * <p><code>
-   * with trip as (
+   *  with trip as (
    * 	select time_bucket(interval '1000 ms', time) as second, avg(s_40), bike_id, s_12 from test where s_40 > 3.000000 and bike_id ='bike_7' and s_12 is not null group by second, bike_id, s_12
-   * ) select st_length(st_makeline(s_12::geometry)::geography, false) from trip where second > '2018-08-29 18:00:00.0' and second < '2018-08-29 19:00:00.0';
+   *  ) select st_length(st_makeline(s_12::geometry)::geography, false) from trip where second > '2018-08-29 18:00:00.0' and second < '2018-08-29 19:00:00.0';
    * </code></p>
    *
    * @param gpsRangeQueryRangeQuery The query parameters object.
@@ -891,7 +885,7 @@ public class TimescaleDB implements IDatabase {
     String valueColumn = SqlBuilder.Column.VALUE.getName();
     String bikeColumn = SqlBuilder.Column.BIKE.getName();
     String timeColumn = SqlBuilder.Column.TIME.getName();
-    DeviceSchema deviceSchema = gpsRangeQueryRangeQuery.getDeviceSchema().get(0);
+    DeviceSchema deviceSchema = gpsRangeQueryRangeQuery.getDeviceSchemas().get(0);
     SensorGroup plainSensorGroup = gpsRangeQueryRangeQuery.getSensorGroup();
     SensorGroup gpsSensorGroup = gpsRangeQueryRangeQuery.getGpsSensorGroup();
     if (dataModel == TableMode.NARROW_TABLE) {
@@ -928,16 +922,24 @@ public class TimescaleDB implements IDatabase {
    *
    * NARROW_TABLE:
    * <p><code>
-   * with last_location as (
+   *  with last_location as (
    * 	select bike_id, last(value, time) as location from gps_benchmark group by bike_id
-   * ) select * from last_location l where st_contains(st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry, l.location::geometry);
+   *  ) select * from last_location l
+   *  where st_contains(
+   *    st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry,
+   *    l.location::geometry
+   *  );
    * </code></p>
    *
    * WIDE_TABLE:
-   * <p><code>
-   * with last_location as (
+   *  <p><code>
+   *  with last_location as (
    * 	select bike_id, last(s_12, time) as location from test where s_12 is not null group by bike_id
-   * ) select * from last_location l where st_contains(st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry, l.location::geometry);
+   *  ) select * from last_location l
+   *  where st_contains(
+   *    st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry,
+   *    l.location::geometry
+   *  );
    * </code></p>
    * @param gpsRangeQuery
    * @return
@@ -989,13 +991,14 @@ public class TimescaleDB implements IDatabase {
     }
   }
 
-  /**
-   * -- Creating a regular SQL table example.
+  /*
+   * Returns an SQL statement, which creates a narrow table for a single sensor group.
+   *
+   * TODO change sql
    * <p>
    * CREATE TABLE group_0 (time TIMESTAMPTZ NOT NULL, group_id TEXT NOT NULL, bike_id TEXT NOT NULL,
    * s_0 DOUBLE PRECISION NULL, s_1 DOUBLE PRECISION NULL);
    * </p>
-   * @return create table SQL String
    */
   private String getCreateTableSql(SensorGroup sensorGroup) {
     StringBuilder sqlBuilder = new StringBuilder();
@@ -1008,6 +1011,9 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
+  /*
+   * Returns an SQL statement, which creates a wide table for all sensors at once.
+   */
   private String getCreateTableSql() {
     StringBuilder sqlBuilder = new StringBuilder();
     sqlBuilder.append("CREATE TABLE ").append(tableName).append(" (time TIMESTAMPTZ NOT NULL, ")
@@ -1015,7 +1021,6 @@ public class TimescaleDB implements IDatabase {
     config.SENSORS.forEach(sensor -> sqlBuilder.append(", ").append(sensor.getName()).append(" ")
             .append(sensor.getDataType()));
     sqlBuilder.append(");");
-    String debug = sqlBuilder.toString();
     return sqlBuilder.toString();
   }
 
@@ -1052,7 +1057,7 @@ public class TimescaleDB implements IDatabase {
   }
 
   /*
-   * Creates a list of SQL batch queries. Each string is writes points to a distinct sensor group (table).
+   * Creates a list of SQL batch queries. Each string writes points to a distinct narrow table.
    */
   private List<String> getInsertOneBatchSql(Batch batch) {
     Map<Sensor, Point[]> entries = batch.getEntries();
@@ -1095,6 +1100,9 @@ public class TimescaleDB implements IDatabase {
     return sensorQueries;
   }
 
+  /*
+   * Returns an SQL statement, which inserts a batch of points into single wide table.
+   */
   private String getInsertOneWideBatchSql(Batch batch) {
     Map<Long, List<String>> rows = transformBatch(batch);
     StringBuilder sqlBuilder = new StringBuilder();
@@ -1116,6 +1124,10 @@ public class TimescaleDB implements IDatabase {
     return sqlBuilder.toString();
   }
 
+  /*
+   * Transforms a batch from column-oriented format (each column represents readings of one sensor group) to
+   * row-oriented format.
+   */
   private Map<Long, List<String>> transformBatch(Batch batch) {
     Map<Sensor, Point[]> entries = batch.getEntries();
     Map<Long, List<String>> rows = new TreeMap<>();

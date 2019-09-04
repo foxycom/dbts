@@ -4,10 +4,7 @@ import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 
 import static cn.edu.tsinghua.iotdb.benchmark.conf.Constants.START_TIMESTAMP;
 
@@ -110,6 +107,11 @@ public class BasicSensor implements Sensor {
     @Override
     public SensorGroup getSensorGroup() {
         return sensorGroup;
+    }
+
+    @Override
+    public void setSensorGroup(SensorGroup sensorGroup) {
+        this.sensorGroup = sensorGroup;
     }
 
     public List<String> getFields() {

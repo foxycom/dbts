@@ -2,16 +2,19 @@ package cn.edu.tsinghua.iotdb.benchmark.utils;
 
 import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
+import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
 
 public class SqlBuilder {
-    private StringBuilder builder;
+    StringBuilder builder;
 
     public SqlBuilder() {
         builder = new StringBuilder();
@@ -39,7 +42,9 @@ public class SqlBuilder {
 
             builder.append(aggregationFunc.build(aggregatedColumn));
         }
-        plainColumns.forEach(plainColumn -> builder.append(", ").append(plainColumn));
+        if (plainColumns != null) {
+            plainColumns.forEach(plainColumn -> builder.append(", ").append(plainColumn));
+        }
         return this;
     }
 
@@ -134,8 +139,18 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder sensors(RangeQuery rangeQuery) {
-        List<Sensor> sensors = rangeQuery.getSensorGroup().getSensors();
+    public SqlBuilder sensors(Query query) {
+        return sensors(query, false);
+    }
+
+    public SqlBuilder sensors(Query query, boolean single) {
+        List<Sensor> sensors = query.getSensorGroup().getSensors();
+        if (single) {
+            builder.append(" ").append(Column.SENSOR.getName()).append(" = '")
+                    .append(sensors.get(0).getName()).append("'");
+            return this;
+        }
+
         builder.append(" (");
         boolean firstIteration = true;
         for (Sensor sensor : sensors) {
@@ -144,9 +159,15 @@ public class SqlBuilder {
             } else {
                 builder.append(" OR ");
             }
-            builder.append("sensor_id = '").append(sensor.getName()).append("'");
+            builder.append(Column.SENSOR.getName()).append(" = '").append(sensor.getName()).append("'");
         }
         builder.append(")");
+        return this;
+    }
+
+    public SqlBuilder sensorGroup(SensorGroup sensorGroup) {
+        builder.append(" ").append(Column.SENSOR_GROUP.getName()).append(" = '")
+                .append(sensorGroup.getName()).append("'");
         return this;
     }
 
@@ -208,6 +229,10 @@ public class SqlBuilder {
         return this;
     }
 
+    public SqlBuilder groupBy(long time) {
+        throw new NotImplementedException();
+    }
+
     public String build() {
         builder.append(";");
         return builder.toString();
@@ -236,7 +261,8 @@ public class SqlBuilder {
         VALUE("value"),
         BIKE("bike_id"),
         SENSOR("sensor_id"),
-        TIME("time");
+        TIME("time"),
+        SENSOR_GROUP("sensor_group_id");
 
         private String name;
 

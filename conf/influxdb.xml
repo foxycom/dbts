@@ -17,26 +17,26 @@
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">12</devices>
+    <devices prefix="d_">4</devices>
 
     <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION::GPS_AGG_RANGE -->
-    <!--<operationsProportion>0:1:1:1:1:1:1:1:1:1:1:1:1:1:1</operationsProportion>-->
-     <operationsProportion>1:0:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>0:1:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>
+     <!--<operationsProportion>1:0:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>-->
 
     <sensorGroups prefix="s_">
-        <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
+        <sensorGroup name="accelerometer" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gyroscope" fields="x, y, z" dataType="smallint">
+        <sensorGroup name="gyroscope" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="magneticField" fields="x, y, z" dataType="smallint">
+        <sensorGroup name="magneticField" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="incline" fields="x, y, z" dataType="smallint">
+        <sensorGroup name="incline" dataType="smallint">
             <sensor frequency="10" type="basic"/>
         </sensorGroup>
         <sensorGroup name="force" dataType="real">
@@ -46,7 +46,9 @@
             <sensor frequency="50" type="basic"/>
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
-
+        <sensorGroup name="grs" dataType="double">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
         <sensorGroup name="rotaryEncoder" dataType="smallint">
             <sensor frequency="10" type="basic"/>
             <sensor frequency="10" type="basic"/>
@@ -101,8 +103,8 @@
             <sensor frequency="1" type="basic"/>
         </sensorGroup>
         <sensorGroup name="emg" dataType="smallint">
-            <sensor frequency="500" type="basic"/>
-            <sensor frequency="500" type="basic"/>
+            <sensor frequency="100" type="basic"/>
+            <sensor frequency="100" type="basic"/>
         </sensorGroup>
     </sensorGroups>
 
@@ -136,7 +138,7 @@
         <seed>151658</seed>
         <step>1000</step>
         <radius>500</radius>
-        <aggregateFunction>avg</aggregateFunction>
+        <aggregateFunction>mean</aggregateFunction>
         <interval>3600000</interval>
         <lowerLimit>3</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>

@@ -8,7 +8,8 @@ public enum Aggregation {
     MIN,
     LAST,
     FIRST,
-    TIME_BUCKET;
+    TIME_BUCKET,
+    MEAN;
 
     public String build(String column) {
         switch (this) {
@@ -18,6 +19,7 @@ public enum Aggregation {
             case LAST:
             case FIRST:
             case SUM:
+            case MEAN:
             case COUNT:
                 return this.name() + "(" + column + ")";
             case TIME_BUCKET:

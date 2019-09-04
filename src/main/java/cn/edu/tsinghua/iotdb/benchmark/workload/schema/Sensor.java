@@ -27,6 +27,8 @@ public interface Sensor {
 
     SensorGroup getSensorGroup();
 
+    void setSensorGroup(SensorGroup sensorGroup);
+
     List<String> getFields();
 
 }

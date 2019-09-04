@@ -3,20 +3,20 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb.influxdb;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.model.InfluxDataModel;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
+import cn.edu.tsinghua.iotdb.benchmark.utils.InfluxBuilder;
+import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.influxdb.BatchOptions;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Query;
@@ -27,9 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class InfluxDB implements IDatabase {
+  public static final int MILLIS_TO_NANO = 1000000;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InfluxDB.class);
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
 
   private final String influxUrl;
   private final String influxDbName;
@@ -38,16 +39,16 @@ public class InfluxDB implements IDatabase {
   private final String measurementName = "test";
 
   private org.influxdb.InfluxDB influxDbInstance;
-
-  public static final int MILLIS_TO_NANO = 1000000;
+  private SqlBuilder sqlBuilder;
 
   /**
-   * constructor.
+   * Creates an instance of the InfluxDB controller.
    */
   public InfluxDB() {
     influxUrl = String.format("http://%s:%s", config.HOST, config.PORT);
     influxDbName = config.DB_NAME;
     dataType = config.DATA_TYPE.toLowerCase();
+    sqlBuilder = new InfluxBuilder();
   }
 
   @Override
@@ -72,7 +73,6 @@ public class InfluxDB implements IDatabase {
         influxDbInstance.query(new Query("DROP DATABASE " + influxDbName));
       }
 
-      // wait for deletion complete
       LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
       Thread.sleep(config.ERASE_WAIT_TIME);
     } catch (Exception e) {
@@ -105,7 +105,7 @@ public class InfluxDB implements IDatabase {
 
   @Override
   public Status insertOneBatch(Batch batch) {
-    BatchPoints.Builder batchBuilder = BatchPoints.builder();
+    BatchPoints.Builder batchBuilder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
     Map<Sensor, Point[]> entries = batch.getEntries();
     DeviceSchema deviceSchema = batch.getDeviceSchema();
     for (Sensor sensor : deviceSchema.getSensors()) {
@@ -115,18 +115,25 @@ public class InfluxDB implements IDatabase {
 
       for (Point syntheticPoint : entries.get(sensor)) {
         org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
-                .tag("device_name", deviceSchema.getDevice())
-                .tag("sensor_group_name", sensor.getSensorGroup().getName())
-                .tag("sensor_name", sensor.getName());
+                .tag(SqlBuilder.Column.BIKE.getName(), deviceSchema.getDevice())
+                .tag(SqlBuilder.Column.SENSOR_GROUP.getName(), sensor.getSensorGroup().getName())
+                .tag(SqlBuilder.Column.SENSOR.getName(), sensor.getName());
 
-        double value = Double.parseDouble(syntheticPoint.getValue());
-        org.influxdb.dto.Point influxPoint = pointBuilder.addField("value", value)
-                .time(syntheticPoint.getTimestamp(), TimeUnit.MILLISECONDS).build();
-
+        List<String> fields = sensor.getFields();
+        if (fields.size() > 1) {
+          String[] values = syntheticPoint.getValues();
+          for (int i = 0; i < fields.size(); i++) {
+            pointBuilder.addField(fields.get(i), Double.parseDouble(values[i]));
+          }
+        } else {
+          double value = Double.parseDouble(syntheticPoint.getValue());
+          pointBuilder.addField("value", value);
+        }
+        org.influxdb.dto.Point influxPoint = pointBuilder.time(syntheticPoint.getTimestamp(), TimeUnit.MILLISECONDS)
+                .build();
         batchBuilder.point(influxPoint);
       }
     }
-
     BatchPoints batchPoints = batchBuilder.build();
 
     try {
@@ -142,23 +149,36 @@ public class InfluxDB implements IDatabase {
   }
 
   /**
-   * eg. SELECT s_0 FROM group_2  WHERE ( device = 'd_8' ) AND time = 1535558405000000000.
+   * <p><code>
+   *     SELECT value FROM test WHERE (bike_id = 'bike_2') AND sensor_group_id = 'accelerometer'
+   *     AND sensor_id = 's_0' AND time = 1535558400000000000;
+   * </code></p>
    */
   @Override
   public Status preciseQuery(PreciseQuery preciseQuery) {
-    String sql = getPreciseQuerySql(preciseQuery);
-    return executeQueryAndGetStatus(sql);
+    SensorGroup sensorGroup = preciseQuery.getSensorGroup();
+    List<DeviceSchema> deviceSchemas = preciseQuery.getDeviceSchemas();
+    List<String> fields = sensorGroup.getFields();
+    sqlBuilder = sqlBuilder.reset().select(fields).from(measurementName).where().bikes(deviceSchemas)
+            .and().sensorGroup(sensorGroup).and().sensors(preciseQuery, true).and().time(preciseQuery);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * eg. SELECT s_0 FROM group_2  WHERE ( device = 'd_8' ) AND time >= 1535558405000000000 AND time
-   * <= 153555800000.
+   * <p><code>
+   *     SELECT value FROM test WHERE (bike_id = 'bike_2')
+   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000)
+   *     AND sensor_group_id = 'accelerometer' AND sensor_id = 's_0';
+   * </code></p>
    */
   @Override
   public Status rangeQuery(RangeQuery rangeQuery) {
-    String rangeQueryHead = getSimpleQuerySqlHead(rangeQuery.getDeviceSchema());
-    String sql = addWhereTimeClause(rangeQueryHead, rangeQuery);
-    return executeQueryAndGetStatus(sql);
+    SensorGroup sensorGroup = rangeQuery.getSensorGroup();
+    List<DeviceSchema> deviceSchemas = rangeQuery.getDeviceSchemas();
+    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields()).from(measurementName)
+            .where().bikes(deviceSchemas).and().time(rangeQuery).and().sensorGroup(sensorGroup)
+            .and().sensors(rangeQuery, true);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   @Override
@@ -177,79 +197,99 @@ public class InfluxDB implements IDatabase {
   }
 
   /**
-   * eg. SELECT s_3 FROM group_0  WHERE ( device = 'd_3' ) AND time >= 1535558420000000000 AND time
-   * <= 153555800000 AND s_3 > -5.0.
+   * <p><code>
+   *     SELECT value FROM test WHERE (time >= 1535558400000000000 AND time <= 1535562000000000000)
+   *     AND value > 3.0 AND (bike_id = 'bike_3') AND sensor_group_id = 'accelerometer' AND sensor_id = 's_0';
+   * </code></p>
    */
   @Override
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
-    String rangeQueryHead = getSimpleQuerySqlHead(valueRangeQuery.getDeviceSchema());
-    String sqlWithTimeFilter = addWhereTimeClause(rangeQueryHead, valueRangeQuery);
-    String sqlWithValueFilter = addWhereValueClause(valueRangeQuery.getDeviceSchema(),
-        sqlWithTimeFilter, valueRangeQuery.getValueThreshold());
-    return executeQueryAndGetStatus(sqlWithValueFilter);
+    List<DeviceSchema> deviceSchemas = valueRangeQuery.getDeviceSchemas();
+    SensorGroup sensorGroup = valueRangeQuery.getSensorGroup();
+    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields()).from(measurementName).where()
+            .time(valueRangeQuery).and()
+            .value(sensorGroup.getFields().get(0), SqlBuilder.Op.GREATER, config.QUERY_LOWER_LIMIT)
+            .and().bikes(deviceSchemas).and().sensorGroup(sensorGroup).and().sensors(valueRangeQuery, true);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * eg. SELECT count(s_3) FROM group_4  WHERE ( device = 'd_16' ) AND time >= 1535558410000000000
-   * AND time <=8660000000000.
+   * <p><code>
+   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_0')
+   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000)
+   *     AND sensor_group_id = 'accelerometer' AND sensor_id = 's_0';
+   * </code></p>
    */
   @Override
   public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    /*String aggQuerySqlHead = getAggQuerySqlHead(aggRangeQuery.getDeviceSchema(),
-        aggRangeQuery.getAggrFunc());
-    String sql = addWhereTimeClause(aggQuerySqlHead, aggRangeQuery);
-    return executeQueryAndGetStatus(sql);*/
-    return null;
+    SensorGroup sensorGroup = aggRangeQuery.getSensorGroup();
+    List<DeviceSchema> deviceSchemas = aggRangeQuery.getDeviceSchemas();
+    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, aggRangeQuery.getAggrFunc())
+            .from(measurementName).where().bikes(deviceSchemas).and().time(aggRangeQuery).and()
+            .sensorGroup(sensorGroup).and().sensors(aggRangeQuery, true);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * eg. SELECT count(s_3) FROM group_3  WHERE ( device = 'd_12' ) AND s_3 > -5.0.
+   * <p><code>
+   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_0') AND value > 3.0;
+   * </code></p>
    */
   @Override
   public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    /*String aggQuerySqlHead = getAggQuerySqlHead(aggValueQuery.getDeviceSchema(),
-        aggValueQuery.getAggrFunc());
-    String sql = addWhereValueClause(aggValueQuery.getDeviceSchema(), aggQuerySqlHead,
-        aggValueQuery.getValueThreshold());
-    return executeQueryAndGetStatus(sql);*/
-    return null;
+    SensorGroup sensorGroup = aggValueQuery.getSensorGroup();
+    List<DeviceSchema> deviceSchemas = aggValueQuery.getDeviceSchemas();
+    List<String> columns = sensorGroup.getFields();
+    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, aggValueQuery.getAggrFunc())
+            .from(measurementName).where().bikes(deviceSchemas).and()
+            .value(columns.get(0), SqlBuilder.Op.GREATER, config.QUERY_LOWER_LIMIT);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * eg. SELECT count(s_1) FROM group_2  WHERE ( device = 'd_8' ) AND time >= 1535558400000000000
-   * AND time <= 650000000000 AND s_1 > -5.0.
+   * <p><code>
+   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_3')
+   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000) AND value > 3.0;
+   * </code></p>
    */
   @Override
   public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    /*String rangeQueryHead = getAggQuerySqlHead(aggRangeValueQuery.getDeviceSchema(),
-        aggRangeValueQuery.getAggrFunc());
-    String sqlWithTimeFilter = addWhereTimeClause(rangeQueryHead, aggRangeValueQuery);
-    String sqlWithValueFilter = addWhereValueClause(aggRangeValueQuery.getDeviceSchema(),
-        sqlWithTimeFilter, aggRangeValueQuery.getValueThreshold());
-    return executeQueryAndGetStatus(sqlWithValueFilter);*/
-    return null;
+    List<DeviceSchema> deviceSchemas = aggRangeValueQuery.getDeviceSchemas();
+    SensorGroup sensorGroup = aggRangeValueQuery.getSensorGroup();
+    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, aggRangeValueQuery.getAggrFunc())
+            .from(measurementName).where().bikes(deviceSchemas).and().time(aggRangeValueQuery)
+            .and().value(sensorGroup.getFields().get(0), SqlBuilder.Op.GREATER, config.QUERY_LOWER_LIMIT);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * eg. SELECT count(s_3) FROM group_4  WHERE ( device = 'd_16' ) AND time >= 1535558430000000000
-   * AND time <=8680000000000 GROUP BY time(20000ms).
+   * <p><code>
+   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_3')
+   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000) GROUP BY time(300000ms);
+   * </code></p>
    */
   @Override
   public Status groupByQuery(GroupByQuery groupByQuery) {
-   /* String sqlHeader = getAggQuerySqlHead(groupByQuery.getDeviceSchema(), groupByQuery.getAggrFunc());
-    String sqlWithTimeFilter = addWhereTimeClause(sqlHeader, groupByQuery);
-    String sqlWithGroupBy = addGroupByClause(sqlWithTimeFilter, groupByQuery.getGranularity());
-    return executeQueryAndGetStatus(sqlWithGroupBy);*/
-   return null;
+    List<DeviceSchema> deviceSchemas = groupByQuery.getDeviceSchemas();
+    SensorGroup sensorGroup = groupByQuery.getSensorGroup();
+    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, groupByQuery.getAggrFunc())
+            .from(measurementName).where().bikes(deviceSchemas).and().time(groupByQuery).groupBy(groupByQuery.getGranularity());
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   /**
-   * eg. SELECT last(s_2) FROM group_2  WHERE ( device = 'd_8' ).
+   *
+   * <p><code>
+   *     SELECT last(value) FROM test WHERE (bike_id = 'bike_2');
+   * </code></p>
    */
   @Override
   public Status latestPointQuery(LatestPointQuery latestPointQuery) {
-    String sql = getAggQuerySqlHead(latestPointQuery.getDeviceSchema(), "last");
-    return executeQueryAndGetStatus(sql);
+    SensorGroup sensorGroup = latestPointQuery.getSensorGroup();
+    List<DeviceSchema> deviceSchemas = latestPointQuery.getDeviceSchemas();
+    List<String> lastColumn = new ArrayList<>(Collections.singletonList("last(" + sensorGroup.getFields().get(0) + ")"));
+    sqlBuilder = sqlBuilder.reset().select(lastColumn).from(measurementName).where().bikes(deviceSchemas);
+    return executeQueryAndGetStatus(sqlBuilder.build());
   }
 
   @Override
@@ -267,42 +307,8 @@ public class InfluxDB implements IDatabase {
     return null;
   }
 
-  private InfluxDataModel createDataModel(DeviceSchema deviceSchema, Long time,
-      List<String> valueList)
-      throws TsdbException {
-    InfluxDataModel model = new InfluxDataModel();
-    model.measurement = deviceSchema.getGroup();
-    model.tagSet.put("device", deviceSchema.getDevice());
-    model.timestamp = time;
-    List<Sensor> sensors = deviceSchema.getSensors();
-    for (int i = 0; i < sensors.size(); i++) {
-      Number value = parseNumber(valueList.get(i));
-      model.fields.put(sensors.get(i).getName(), value);
-    }
-    return model;
-  }
-
-  private Number parseNumber(String value) throws TsdbException {
-    switch (dataType) {
-      case "float":
-        return Float.parseFloat(value);
-      case "double":
-        return Double.parseDouble(value);
-      case "int":
-      case "int32":
-      case "integer":
-        return Integer.parseInt(value);
-      case "int64":
-      case "long":
-        return Long.parseLong(value);
-      default:
-        throw new TsdbException("unsupported datatype " + dataType);
-
-    }
-  }
-
   private Status executeQueryAndGetStatus(String sql) {
-    LOGGER.debug("{} 提交执行的查询SQL: {}", Thread.currentThread().getName(), sql);
+    LOGGER.debug("{} executes query: {}", Thread.currentThread().getName(), sql);
     long startTimeStamp = System.nanoTime();
     QueryResult results = influxDbInstance.query(new Query(sql, influxDbName));
     int cnt = 0;
@@ -320,98 +326,8 @@ public class InfluxDB implements IDatabase {
       }
     }
     long endTimeStamp = System.nanoTime();
-    LOGGER.debug("{} 查到数据点数: {}", Thread.currentThread().getName(), cnt);
+    LOGGER.debug("{} got result set size: {}", Thread.currentThread().getName(), cnt);
     return new Status(true, endTimeStamp - startTimeStamp, cnt);
-  }
-
-  private static String getPreciseQuerySql(PreciseQuery preciseQuery) {
-    String strTime = "" + preciseQuery.getTimestamp() * MILLIS_TO_NANO;
-    return getSimpleQuerySqlHead(preciseQuery.getDeviceSchema()) + " AND time = " + strTime;
-  }
-
-  /**
-   * add time filter for query statements.
-   *
-   * @param sql sql header
-   * @param rangeQuery range query
-   * @return sql with time filter
-   */
-  private static String addWhereTimeClause(String sql, RangeQuery rangeQuery) {
-    String startTime = "" + rangeQuery.getStartTimestamp() * MILLIS_TO_NANO;
-    String endTime = "" + rangeQuery.getEndTimestamp() * MILLIS_TO_NANO;
-    return sql + " AND time >= " + startTime
-        + " AND time <= " + endTime;
-  }
-
-  /**
-   * add value filter for query statements.
-   *
-   * @param devices query device schema
-   * @param sqlHeader sql header
-   * @param valueThreshold lower bound of query value filter
-   * @return sql with value filter
-   */
-  private static String addWhereValueClause(List<DeviceSchema> devices, String sqlHeader,
-      double valueThreshold) {
-    StringBuilder builder = new StringBuilder(sqlHeader);
-    for (Sensor sensor : devices.get(0).getSensors()) {
-      builder.append(" AND ").append(sensor.getName()).append(" > ").append(valueThreshold);
-    }
-    return builder.toString();
-  }
-
-  /**
-   * add group by clause for query.
-   *
-   * @param sqlHeader sql header
-   * @param timeGranularity time granularity of group by
-   */
-  private static String addGroupByClause(String sqlHeader, long timeGranularity) {
-    StringBuilder builder = new StringBuilder(sqlHeader);
-    builder.append(" GROUP BY time(").append(timeGranularity).append("ms)");
-    return builder.toString();
-  }
-
-  /**
-   * generate simple query header.
-   *
-   * @param devices schema list of query devices
-   * @return Simple Query header. e.g. SELECT s_0, s_3 FROM root.group_0, root.group_1
-   * WHERE(device='d_0' OR device='d_1')
-   */
-  private static String getSimpleQuerySqlHead(List<DeviceSchema> devices) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SELECT ");
-    List<Sensor> querySensors = devices.get(0).getSensors();
-
-    builder.append(querySensors.get(0).getName());
-    for (int i = 1; i < querySensors.size(); i++) {
-      builder.append(", ").append(querySensors.get(i).getName());
-    }
-
-    builder.append(generateConstrainForDevices(devices));
-    return builder.toString();
-  }
-
-  /**
-   * generate aggregation query header.
-   *
-   * @param devices schema list of query devices
-   * @return Simple Query header. e.g. SELECT count(s_0), count(s_3) FROM root.group_0, root.group_1
-   * WHERE(device='d_0' OR device='d_1')
-   */
-  private static String getAggQuerySqlHead(List<DeviceSchema> devices, String method) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SELECT ");
-    List<Sensor> querySensors = devices.get(0).getSensors();
-
-    builder.append(method).append("(").append(querySensors.get(0).getName()).append(")");
-    for (int i = 1; i < querySensors.size(); i++) {
-      builder.append(", ").append(method).append("(").append(querySensors.get(i).getName()).append(")");
-    }
-
-    builder.append(generateConstrainForDevices(devices));
-    return builder.toString();
   }
 
   /**

@@ -1,37 +1,25 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.query.impl;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 
 import java.util.List;
 
-public class RangeQuery {
+public class RangeQuery extends Query {
 
-  private List<DeviceSchema> deviceSchema;
   private long startTimestamp;
   private long endTimestamp;
-  private SensorGroup sensorGroup;
 
-  public RangeQuery(List<DeviceSchema> deviceSchema, SensorGroup sensorGroup, long startTimestamp, long endTimestamp) {
-    this.deviceSchema = deviceSchema;
-    this.sensorGroup = sensorGroup;
+  public RangeQuery(List<DeviceSchema> deviceSchemas, SensorGroup sensorGroup, long startTimestamp, long endTimestamp) {
+    super(deviceSchemas, sensorGroup);
     this.startTimestamp = startTimestamp;
     this.endTimestamp = endTimestamp;
   }
 
-  public RangeQuery(List<DeviceSchema> deviceSchema, long startTimestamp, long endTimestamp) {
-    this.deviceSchema = deviceSchema;
+  public RangeQuery(List<DeviceSchema> deviceSchemas, long startTimestamp, long endTimestamp) {
+    super(deviceSchemas);
     this.startTimestamp = startTimestamp;
     this.endTimestamp = endTimestamp;
-  }
-
-  public List<DeviceSchema> getDeviceSchema() {
-    return deviceSchema;
-  }
-
-  public SensorGroup getSensorGroup() {
-    return sensorGroup;
   }
 
   public long getStartTimestamp() {

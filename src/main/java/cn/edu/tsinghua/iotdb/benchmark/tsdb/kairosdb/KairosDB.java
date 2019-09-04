@@ -149,7 +149,7 @@ public class KairosDB implements IDatabase {
   @Override
   public Status preciseQuery(PreciseQuery preciseQuery) {
     long time = preciseQuery.getTimestamp();
-    QueryBuilder builder = constructBuilder(time, time, preciseQuery.getDeviceSchema());
+    QueryBuilder builder = constructBuilder(time, time, preciseQuery.getDeviceSchemas());
     return executeOneQuery(builder);
   }
 
@@ -157,7 +157,7 @@ public class KairosDB implements IDatabase {
   public Status rangeQuery(RangeQuery rangeQuery) {
     long startTime = rangeQuery.getStartTimestamp();
     long endTime = rangeQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, rangeQuery.getDeviceSchema());
+    QueryBuilder builder = constructBuilder(startTime, endTime, rangeQuery.getDeviceSchemas());
     return executeOneQuery(builder);
   }
 
@@ -165,7 +165,7 @@ public class KairosDB implements IDatabase {
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
     long startTime = valueRangeQuery.getStartTimestamp();
     long endTime = valueRangeQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, valueRangeQuery.getDeviceSchema());
+    QueryBuilder builder = constructBuilder(startTime, endTime, valueRangeQuery.getDeviceSchemas());
     Aggregator filterAggre = AggregatorFactory
         .createFilterAggregator(FilterOperation.LTE, valueRangeQuery.getValueThreshold());
     addAggreForQuery(builder, filterAggre);
@@ -247,7 +247,7 @@ public class KairosDB implements IDatabase {
     //latestPointQuery
     long startTime = latestPointQuery.getStartTimestamp();
     long endTime = latestPointQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, latestPointQuery.getDeviceSchema());
+    QueryBuilder builder = constructBuilder(startTime, endTime, latestPointQuery.getDeviceSchemas());
     Aggregator aggregator = AggregatorFactory.createLastAggregator(5000, TimeUnit.YEARS);
     addAggreForQuery(builder, aggregator);
     return executeOneQuery(builder);

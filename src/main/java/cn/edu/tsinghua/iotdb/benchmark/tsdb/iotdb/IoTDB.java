@@ -153,7 +153,7 @@ public class IoTDB implements IDatabase {
 
   @Override
   public Status rangeQuery(RangeQuery rangeQuery) {
-    String sql = getRangeQuerySql(rangeQuery.getDeviceSchema(), rangeQuery.getStartTimestamp(),
+    String sql = getRangeQuerySql(rangeQuery.getDeviceSchemas(), rangeQuery.getStartTimestamp(),
         rangeQuery.getEndTimestamp());
     return executeQueryAndGetStatus(sql);
   }
@@ -251,7 +251,7 @@ public class IoTDB implements IDatabase {
    */
   @Override
   public Status latestPointQuery(LatestPointQuery latestPointQuery) {
-    String aggQuerySqlHead = getAggQuerySqlHead(latestPointQuery.getDeviceSchema(), "max_time");
+    String aggQuerySqlHead = getAggQuerySqlHead(latestPointQuery.getDeviceSchemas(), "max_time");
     return executeQueryAndGetStatus(aggQuerySqlHead);
   }
 
@@ -271,9 +271,9 @@ public class IoTDB implements IDatabase {
   }
 
   private String getvalueRangeQuerySql(ValueRangeQuery valueRangeQuery) {
-    String rangeQuerySql = getRangeQuerySql(valueRangeQuery.getDeviceSchema(),
+    String rangeQuerySql = getRangeQuerySql(valueRangeQuery.getDeviceSchemas(),
         valueRangeQuery.getStartTimestamp(), valueRangeQuery.getEndTimestamp());
-    String valueFilterClause = getValueFilterClause(valueRangeQuery.getDeviceSchema(),
+    String valueFilterClause = getValueFilterClause(valueRangeQuery.getDeviceSchemas(),
         valueRangeQuery.getValueThreshold());
     return rangeQuerySql + valueFilterClause;
   }
@@ -355,7 +355,7 @@ public class IoTDB implements IDatabase {
 
   private String getPreciseQuerySql(PreciseQuery preciseQuery) {
     String strTime = sdf.format(new Date(preciseQuery.getTimestamp()));
-    return getSimpleQuerySqlHead(preciseQuery.getDeviceSchema()) + " WHERE time = " + strTime;
+    return getSimpleQuerySqlHead(preciseQuery.getDeviceSchemas()) + " WHERE time = " + strTime;
   }
 
   private Status executeQueryAndGetStatus(String sql) {

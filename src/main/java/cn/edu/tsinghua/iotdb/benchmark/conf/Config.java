@@ -90,7 +90,7 @@ public class Config {
  	public String TIMESERIES_TYPE;
 
 	/**样例数据生成路径及文件名*/
-	public String GEN_DATA_FILE_PATH = "/home/liurui/sampleData";
+	public String GEN_DATA_FILE_PATH = "/home/tim/sampleData";
 	/**上一次结果的日志路径*/
 	public String LAST_RESULT_PATH = "/var/lib/jenkins/workspace/IoTDBWeeklyTest/iotdb-benchmark/logs";
 

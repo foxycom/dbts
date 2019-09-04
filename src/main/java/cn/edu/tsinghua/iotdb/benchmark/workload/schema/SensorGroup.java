@@ -38,4 +38,5 @@ public class SensorGroup {
     public List<Sensor> getSensors() {
         return sensors;
     }
+
 }

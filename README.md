@@ -141,10 +141,6 @@ Current version of information recording is dependent on iostat. Please make sur
 Configure 'config.properties'
 Suppose you are using the same parameters as in Quick Start case. The new parameters you should add are INTERVAL and LOG_STOP_FLAG_PATH like:
 
-```
-INTERVAL=0
-LOG_STOP_FLAG_PATH=/home/liurui
-```
 
 INTERVAL=0 means the server information recording with the minimal interval 2 seconds. If you set INTERVAL=n then the interval will be n+2 seconds since the recording process require least 2 seconds. You may want to set the INTERVAL longer when conducting long testing.
 LOG_STOP_FLAG_PATH is the directory where to touch the file 'log_stop_flag' to stop the recording process. Therefore it has to be accessible by IoTDB-benchmark. It is also the data directory of IoTDB.
