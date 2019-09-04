@@ -72,7 +72,19 @@ public interface IDatabase {
    */
   Status gpsRangeQuery(RangeQuery rangeQuery);
 
+  /**
+   * TODO comment
+   * @param gpsRangeQuery
+   * @return
+   */
   Status gpsValueRangeQuery(GpsValueRangeQuery gpsRangeQuery);
+
+  /**
+   * TODO comment
+   * @param gpsAggValueRangeQuery
+   * @return
+   */
+  Status gpsAggValueRangeQuery(GpsAggValueRangeQuery gpsAggValueRangeQuery);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.

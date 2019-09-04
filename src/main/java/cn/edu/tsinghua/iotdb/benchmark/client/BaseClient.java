@@ -176,6 +176,14 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to execute the bikes in location query because ", e);
           }
           break;
+        case GPS_AGG_VALUE_RANGE_QUERY:
+          clientMonitoring.start();
+          try {
+            dbWrapper.gpsAggValueRangeQuery(syntheticWorkload.getGpsAggValueRangeQuery());
+          } catch (WorkloadException e) {
+            LOGGER.error("Failed to execute the gps aggregation in range query because ", e);
+          }
+          break;
         default:
           LOGGER.error("Unsupported operation type {}", operation);
       }

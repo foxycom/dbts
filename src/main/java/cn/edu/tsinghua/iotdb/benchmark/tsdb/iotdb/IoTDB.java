@@ -168,6 +168,11 @@ public class IoTDB implements IDatabase {
     return null;
   }
 
+  @Override
+  public Status gpsAggValueRangeQuery(GpsAggValueRangeQuery gpsAggValueRangeQuery) {
+    return null;
+  }
+
   /**
    * SELECT s_39 FROM root.group_2.d_29
    * WHERE time >= 2010-01-01 12:00:00

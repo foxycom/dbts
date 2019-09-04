@@ -66,6 +66,8 @@ public class OperationController {
         return Operation.DISTANCE_RANGE_QUERY;
       case 14:
         return Operation.BIKES_IN_LOCATION_QUERY;
+      case 15:
+        return Operation.GPS_AGG_VALUE_RANGE_QUERY;
       default:
         LOGGER.error("Unsupported operation {}, use default operation: INGESTION.", i);
         return Operation.INGESTION;
@@ -109,7 +111,8 @@ public class OperationController {
     GPS_TRIP_RANGE_QUERY("GPS_TRIP_RANGE"),
     HEATMAP_RANGE_QUERY("HEATMAP_RANGE"),
     DISTANCE_RANGE_QUERY("DISTANCE_RANGE"),
-    BIKES_IN_LOCATION_QUERY("BIKES_IN_LOCATION");
+    BIKES_IN_LOCATION_QUERY("BIKES_IN_LOCATION"),
+    GPS_AGG_VALUE_RANGE_QUERY("GPS_AGG_VALUE_RANGE");
 
     public String getName() {
       return name;

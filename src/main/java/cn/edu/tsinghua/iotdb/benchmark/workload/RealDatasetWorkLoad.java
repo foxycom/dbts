@@ -103,6 +103,11 @@ public class RealDatasetWorkLoad implements IWorkload {
   }
 
   @Override
+  public GpsAggValueRangeQuery getGpsAggValueRangeQuery() throws WorkloadException {
+    return null;
+  }
+
+  @Override
   public GpsValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
     return null;
   }

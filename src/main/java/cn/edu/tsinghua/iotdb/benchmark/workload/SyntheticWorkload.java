@@ -255,6 +255,17 @@ public class SyntheticWorkload implements IWorkload {
     return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
   }
 
+  @Override
+  public GpsAggValueRangeQuery getGpsAggValueRangeQuery() throws WorkloadException {
+    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
+    SensorGroup regularSensorGroup = getSensorGroup();
+    SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
+    long startTimestamp = getQueryStartTimestamp();
+    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
+    return new GpsAggValueRangeQuery(queryDevices, regularSensorGroup, gpsSensorGroup, startTimestamp,
+            endTimestamp, config.QUERY_LOWER_LIMIT, config.QUERY_AGGREGATE_FUN);
+  }
+
   public GpsValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
     SensorGroup regularSensorGroup = getSensorGroup();

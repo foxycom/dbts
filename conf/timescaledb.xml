@@ -6,21 +6,22 @@
     <db>
         <type>TimescaleDB_Wide</type>
         <name>test</name>
-        <host>132.231.13.207</host>
+        <host>127.0.0.1</host>
         <port>5432</port>
         <erase wait="5000">true</erase>
         <createSchema>true</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="true" remark="wide_ingest">
+    <mysqlLog active="false" remark="Nwide_ingest">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">500</devices>
 
-    <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION -->
-    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>
+    <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION::GPS_AGG_RANGE -->
+    <operationsProportion>0:1:1:1:1:1:1:1:1:1:1:1:1:1:1</operationsProportion>
+   <!-- <operationsProportion>1:0:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>-->
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
@@ -102,13 +103,13 @@
             <sensor frequency="1" type="basic"/>
         </sensorGroup>
         <sensorGroup name="emg" dataType="smallint">
-            <sensor frequency="500" type="basic"/>
-            <sensor frequency="500" type="basic"/>
+            <sensor frequency="100" type="basic"/>
+            <sensor frequency="100" type="basic"/>
         </sensorGroup>
     </sensorGroups>
 
     <batch size="10000"/>
-    <loops>400</loops>
+    <loops>40</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
@@ -135,7 +136,7 @@
         <sensorNum>1</sensorNum>
         <deviceNum>1</deviceNum>
         <seed>151658</seed>
-        <step>1</step>
+        <step>1000</step>
         <radius>500</radius>
         <aggregateFunction>avg</aggregateFunction>
         <interval>3600000</interval>

@@ -125,6 +125,20 @@ public class DBWrapper implements IDatabase {
     return status;
   }
 
+  @Override
+  public Status gpsAggValueRangeQuery(GpsAggValueRangeQuery gpsAggValueRangeQuery) {
+    Status status = null;
+    Operation operation = Operation.GPS_AGG_VALUE_RANGE_QUERY;
+    try {
+      status = db.gpsAggValueRangeQuery(gpsAggValueRangeQuery);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
 
   @Override
   public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {

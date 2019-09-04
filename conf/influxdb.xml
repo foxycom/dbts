@@ -8,31 +8,35 @@
         <name>test</name>
         <host>127.0.0.1</host>
         <port>8086</port>
-        <erase wait="5000">true</erase>
-        <createSchema>true</createSchema>
+        <erase wait="5000">false</erase>
+        <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="true">
+    <mysqlLog active="false" remark="wide_ingest">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">4</devices>
+    <devices prefix="d_">12</devices>
+
+    <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION::GPS_AGG_RANGE -->
+    <!--<operationsProportion>0:1:1:1:1:1:1:1:1:1:1:1:1:1:1</operationsProportion>-->
+     <operationsProportion>1:0:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
-        <sensorGroup name="accelerometer" dataType="double precision">
+        <sensorGroup name="accelerometer" fields="x, y, z" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gyroscope" dataType="double precision">
+        <sensorGroup name="gyroscope" fields="x, y, z" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="magneticField" dataType="double precision">
+        <sensorGroup name="magneticField" fields="x, y, z" dataType="smallint">
             <sensor frequency="100" type="basic"/>
             <sensor frequency="100" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="incline" dataType="double precision">
+        <sensorGroup name="incline" fields="x, y, z" dataType="smallint">
             <sensor frequency="10" type="basic"/>
         </sensorGroup>
         <sensorGroup name="force" dataType="real">
@@ -42,9 +46,7 @@
             <sensor frequency="50" type="basic"/>
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gps" dataType="double">
-            <sensor frequency="1" type="basic"/>
-        </sensorGroup>
+
         <sensorGroup name="rotaryEncoder" dataType="smallint">
             <sensor frequency="10" type="basic"/>
             <sensor frequency="10" type="basic"/>
@@ -104,9 +106,8 @@
         </sensorGroup>
     </sensorGroups>
 
-
-    <batch size="3000"/>
-    <loops>1000</loops>
+    <batch size="10000"/>
+    <loops>10</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
@@ -128,25 +129,18 @@
         <seed>666</seed>
     </timestamp>
 
-    <functions>
-        <line ratio="0.0"/>
-        <sin ratio="0.0"/>
-        <square ratio="0.0"/>
-        <random ratio="0.0"/>
-        <constant ratio="1.0"/>
-    </functions>
-
     <query>
         <type>7</type>
         <sensorNum>1</sensorNum>
         <deviceNum>1</deviceNum>
         <seed>151658</seed>
-        <step>1</step>
-        <aggregateFunction>count</aggregateFunction>
-        <interval>25000</interval>
-        <lowerLimit>-5</lowerLimit>
+        <step>1000</step>
+        <radius>500</radius>
+        <aggregateFunction>avg</aggregateFunction>
+        <interval>3600000</interval>
+        <lowerLimit>3</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
-        <groupBy>20000</groupBy>
+        <timeBucket>300000</timeBucket>
         <limitClause>0</limitClause>
         <limitN>5</limitN>
         <limitOffset>5</limitOffset>
