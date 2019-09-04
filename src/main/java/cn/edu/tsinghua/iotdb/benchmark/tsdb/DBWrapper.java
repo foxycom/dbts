@@ -112,7 +112,7 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status gpsValueRangeQuery(GpsRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(GpsValueRangeQuery rangeQuery) {
     Status status = null;
     Operation operation = Operation.GPS_TRIP_RANGE_QUERY;
     try {
@@ -217,7 +217,7 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery) {
+  public Status heatmapRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
     Status status = null;
     Operation operation = Operation.HEATMAP_RANGE_QUERY;
     try {
@@ -231,7 +231,7 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status distanceRangeQuery(GpsRangeQuery gpsRangeQuery) {
+  public Status distanceRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
     Status status = null;
     Operation operation = Operation.DISTANCE_RANGE_QUERY;
     try {

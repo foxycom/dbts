@@ -4,7 +4,7 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>TimescaleDB_Narrow</type>
+        <type>TimescaleDB_Wide</type>
         <name>test</name>
         <host>127.0.0.1</host>
         <port>5432</port>
@@ -110,7 +110,7 @@
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="false">
+    <serverMonitor active="true">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>
@@ -128,25 +128,18 @@
         <seed>666</seed>
     </timestamp>
 
-    <functions>
-        <line ratio="0.054"/>
-        <sin ratio="0.036"/>
-        <square ratio="0.054"/>
-        <random ratio="0.512"/>
-        <constant ratio="0.352"/>
-    </functions>
-
     <query>
         <type>7</type>
         <sensorNum>1</sensorNum>
         <deviceNum>1</deviceNum>
         <seed>151658</seed>
         <step>1</step>
+        <radius>500</radius>
         <aggregateFunction>count</aggregateFunction>
         <interval>25000</interval>
         <lowerLimit>-5</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
-        <groupBy>20000</groupBy>
+        <timeBucket>20000</timeBucket>
         <limitClause>0</limitClause>
         <limitN>5</limitN>
         <limitOffset>5</limitOffset>

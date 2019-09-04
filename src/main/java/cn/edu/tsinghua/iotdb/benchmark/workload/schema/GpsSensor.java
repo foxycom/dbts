@@ -1,19 +1,19 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
-import cn.edu.tsinghua.iotdb.benchmark.function.Function;
-import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
+import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
+import cn.edu.tsinghua.iotdb.benchmark.function.GeoFunction;
 
 public class GpsSensor extends BasicSensor {
+    private GeoFunction function;
 
-    public GpsSensor(String name, SensorGroup sensorGroup, FunctionParam functionParam, int freq, String dataType) {
-        super(name, sensorGroup, functionParam, freq, dataType);
+    public GpsSensor(String name, SensorGroup sensorGroup, GeoFunction function, int freq, String dataType) {
+        super(name, sensorGroup, null, freq, dataType);
+        this.function = function;
     }
 
     @Override
     public String getValue(long currentTimestamp) {
-        // FIXME cycle is static
-        GeoPoint geoPoint = Function.getGeoLinePoint(functionParam.getMax(), functionParam.getMin(),
-                functionParam.getCycle(), currentTimestamp);
-        return geoPoint.toString();
+        GeoPoint location = function.get(Constants.SPAWN_POINT);
+        return location.toString();
     }
 }

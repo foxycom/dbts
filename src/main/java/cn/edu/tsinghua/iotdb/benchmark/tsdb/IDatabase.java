@@ -72,7 +72,7 @@ public interface IDatabase {
    */
   Status gpsRangeQuery(RangeQuery rangeQuery);
 
-  Status gpsValueRangeQuery(GpsRangeQuery gpsRangeQuery);
+  Status gpsValueRangeQuery(GpsValueRangeQuery gpsRangeQuery);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.
@@ -133,14 +133,14 @@ public interface IDatabase {
    * @param gpsRangeQuery
    * @return
    */
-  Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery);
+  Status heatmapRangeQuery(GpsValueRangeQuery gpsRangeQuery);
 
   /**
    * TODO comment
    * @param gpsRangeQueryRangeQuery
    * @return
    */
-  Status distanceRangeQuery(GpsRangeQuery gpsRangeQueryRangeQuery);
+  Status distanceRangeQuery(GpsValueRangeQuery gpsRangeQueryRangeQuery);
 
   /**
    * TODO comment

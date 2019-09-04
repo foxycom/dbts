@@ -1,6 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
-import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
+import cn.edu.tsinghua.iotdb.benchmark.function.Function;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public interface Sensor {
 
     void setFrequency(int freq);
 
-    FunctionParam getFunctionParam();
+    Function getFunction();
 
     SensorGroup getSensorGroup();
 

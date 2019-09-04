@@ -179,14 +179,7 @@ public class SyntheticWorkload implements IWorkload {
     int deviceId = queryDeviceRandom.nextInt(config.DEVICES_NUMBER);
     DeviceSchema deviceSchema = new DeviceSchema(deviceId);
     List<Sensor> gpsSensor = new ArrayList<>(1);
-
-    // Add only GPS sensor
-    for (Sensor sensor : config.SENSORS) {
-      if (sensor.getSensorGroup().getName().contains("gps")) {
-        gpsSensor.add(sensor);
-        break;
-      }
-    }
+    gpsSensor.add(Sensors.groupOfType("gps").getSensors().get(0));
 
     deviceSchema.setSensors(gpsSensor);
     queryDevices.add(deviceSchema);
@@ -262,12 +255,14 @@ public class SyntheticWorkload implements IWorkload {
     return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
   }
 
-  public ValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
+  public GpsValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
     List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup sensorGroup = Sensors.groupOfType("gps");
+    SensorGroup regularSensorGroup = getSensorGroup();
+    SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new ValueRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp, config.QUERY_LOWER_LIMIT);
+    return new GpsValueRangeQuery(queryDevices, regularSensorGroup, gpsSensorGroup, startTimestamp, endTimestamp,
+            config.QUERY_LOWER_LIMIT);
   }
 
   public ValueRangeQuery getValueRangeQuery() throws WorkloadException {

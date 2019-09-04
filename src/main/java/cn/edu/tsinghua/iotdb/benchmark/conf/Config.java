@@ -5,21 +5,12 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.DataSet;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cn.edu.tsinghua.iotdb.benchmark.function.FunctionParam;
 
 public class Config {
-	private static final Logger LOGGER = LoggerFactory.getLogger(Config.class);
-	private String deviceCode;
-
 	public Config() {
 
 	}
@@ -115,9 +106,6 @@ public class Config {
 	/** Sensors schema */
 	public List<Sensor> FIELDS;
 
-	/** Sensor accuracy of the sensors schema */
-	public int[] PRECISION;
-
 	/** 是否从文件读取数据*/
 	public boolean READ_FROM_FILE = false;
 	/** 一次插入到数据库的条数 */
@@ -127,43 +115,10 @@ public class Config {
 
 	public String LOG_STOP_FLAG_PATH;
 
-	public int STORE_MODE = 1;
-
 	public long LOOP = 10000;
-
-	/** 数据采集丢失率 */
-	public double POINT_LOSE_RATIO = 0.01;
-	// ============ Probability proportions ============ // FIXME 传参数时加上这几个参数
-
-	/** Linear function 0.054 */
-	public double LINE_RATIO = 0.054;
-
-	/** Fourier series 0.036 */
-	// public static double SIN_RATIO=0.386;//0.036
-	public double SIN_RATIO = 0.036;// 0.036
-
-	/** Square wave 0.054 */
-	public double SQUARE_RATIO = 0.054;
-
-	/** Random numbers 0.512 */
-	public double RANDOM_RATIO = 0.512;
-
-	/** Constant numbers 0.352 */
-	// public static double CONSTANT_RATIO= 0.002;//0.352
-	public double CONSTANT_RATIO = 0.352;// 0.352
-
-	public Map<String, Double> ratio = new HashMap<>();
 
 	/** Make random generator deterministic again! */
 	public long DATA_SEED = 666L;
-
-	/** 内置函数参数 */
-	public List<FunctionParam> LINE_LIST = new ArrayList<>();
-	public List<FunctionParam> SIN_LIST = new ArrayList<>();
-	public List<FunctionParam> SQUARE_LIST = new ArrayList<>();
-	public List<FunctionParam> RANDOM_LIST = new ArrayList<>();
-	public List<FunctionParam> CONSTANT_LIST = new ArrayList<>();
-	public List<FunctionParam> GEO_LIST = new ArrayList<>();
 
 	/**
 	 * Sensors list
@@ -178,10 +133,6 @@ public class Config {
 	public double WRITE_RATIO = 0.2;
 	public double SIMPLE_QUERY_RATIO = 0.2;
 	public double MAX_QUERY_RATIO = 0.2;
-	public double MIN_QUERY_RATIO = 0.2;
-	public double AVG_QUERY_RATIO = 0.2;
-	public double COUNT_QUERY_RATIO = 0.2;
-	public double SUM_QUERY_RATIO = 0.2;
 	public double RANDOM_INSERT_RATIO = 0.2;
 	public double UPDATE_RATIO = 0.2;
 

@@ -75,7 +75,7 @@ public class FakeDB implements IDatabase {
   }
 
   @Override
-  public Status gpsValueRangeQuery(GpsRangeQuery rangeQuery) {
+  public Status gpsValueRangeQuery(GpsValueRangeQuery rangeQuery) {
     return null;
   }
 
@@ -110,12 +110,12 @@ public class FakeDB implements IDatabase {
   }
 
   @Override
-  public Status heatmapRangeQuery(GpsRangeQuery gpsRangeQuery) {
+  public Status heatmapRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
     return null;
   }
 
   @Override
-  public Status distanceRangeQuery(GpsRangeQuery gpsRangeQuery) {
+  public Status distanceRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
     return null;
   }
 

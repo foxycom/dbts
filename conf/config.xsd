@@ -166,7 +166,6 @@
     <xs:sequence>
       <xs:element type="xs:string" name="type"/>
       <xs:element type="xs:integer" name="sensorNum"/>
-      <xs:element type="xs:string" name="sensorGroup"/>
       <xs:element type="xs:integer" name="deviceNum"/>
       <xs:element type="xs:integer" name="seed"/>
       <xs:element type="xs:integer" name="step"/>
