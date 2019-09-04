@@ -329,6 +329,7 @@ public class MySqlLog {
             switch (config.DB_SWITCH) {
                 case IOTDB:
                 case TIMESCALEDB_NARROW:
+                case TIMESCALEDB_WIDE:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'ServerIP'", "'" + config.HOST + "'");
                     stat.addBatch(sql);
