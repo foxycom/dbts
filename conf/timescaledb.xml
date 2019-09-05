@@ -17,7 +17,7 @@
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">10</devices>
+    <devices prefix="d_">500</devices>
 
     <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION::GPS_AGG_RANGE -->
    <!-- <operationsProportion>0:1:1:1:1:1:1:1:1:1:1:1:1:1:1</operationsProportion>-->
