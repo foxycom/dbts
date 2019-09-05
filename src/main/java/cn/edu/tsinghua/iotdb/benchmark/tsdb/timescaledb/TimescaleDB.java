@@ -485,10 +485,10 @@ public class TimescaleDB implements IDatabase {
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Sensor sensor = rangeQuery.getSensorGroup().getSensors().get(0);
       Sensor gpsSensor = rangeQuery.getGpsSensorGroup().getSensors().get(0);
-      sql = "SELECT time_bucket(interval '1 s', %s) AS second, AVG(%s), %s FROM %s WHERE %s = '%s' AND %s > %f AND %s IS NOT NULL GROUP BY second, %s;";
+      sql = "SELECT time_bucket(interval '1 s', %s) AS second, AVG(%s), %s FROM %s WHERE %s = '%s' AND %s > %f AND %s IS NOT NULL and time >= '%s' and time <= '%s' GROUP BY second, %s;";
       sql = String.format(Locale.US, sql, timeColumn, sensor.getName(), gpsSensor.getName(), tableName,
               bikeColumn, deviceSchema.getDevice(), sensor.getName(),
-              rangeQuery.getValueThreshold(), gpsSensor.getName(), gpsSensor.getName());
+              rangeQuery.getValueThreshold(), gpsSensor.getName(), startTimestamp, endTimestamp, gpsSensor.getName());
     }
     return executeQueryAndGetStatus(sql);
   }
