@@ -10,6 +10,6 @@ public class Function {
 	}
 
 	public Number get(long timestamp) {
-		return 3 * Math.sin(random.nextDouble() * timestamp) + 3;
+		return 1000 * Math.sin(random.nextDouble() * timestamp) + 1000;
 	}
 }
