@@ -86,6 +86,7 @@ public abstract class BaseClient extends Client implements Runnable {
           } catch (WorkloadException e) {
             LOGGER.error("Failed to do range query with value filter because ", e);
           }
+          break;
         case DOWNSAMPLE:
             clientMonitoring.start();
           try {
@@ -102,7 +103,6 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to execute latest point query because ", e);
           }
           break;
-
         case GPS_PATH_SCAN:
             clientMonitoring.start();
           try {
