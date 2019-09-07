@@ -104,9 +104,11 @@ public class TimescaleDB implements IDatabase {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
 
-      String deleteBikesSql = String.format(DROP_TABLE, "bikes");
-      statement.addBatch(deleteBikesSql);
+      String dropBikeSql = String.format(DROP_TABLE, "bikes");
+      statement.addBatch(dropBikeSql);
 
+      String dropGridTable = String.format(DROP_TABLE, "grid");
+      statement.addBatch(dropGridTable);
       if (dataModel == TableMode.NARROW_TABLE) {
         String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
                 "tablename LIKE '%benchmark'";
@@ -189,6 +191,9 @@ public class TimescaleDB implements IDatabase {
       String insertBikesSql = getInsertBikesSql(schemaList);
       statement.addBatch(insertBikesSql);
 
+      String createGridTableSql = getCreateGridTableSql();
+      statement.addBatch(createGridTableSql);
+
       if (dataModel == TableMode.NARROW_TABLE) {
         for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
           String createTableSql = getCreateTableSql(sensorGroup);
@@ -251,6 +256,8 @@ public class TimescaleDB implements IDatabase {
   private void createIndexes() {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
+      String indexOnGridTableSql = "CREATE INDEX ON grid USING GIST(geom);";
+      statement.addBatch(indexOnGridTableSql);
       if (dataModel == TableMode.NARROW_TABLE) {
         for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
           String createIndexOnBikeSql = "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, time DESC);";
@@ -300,10 +307,24 @@ public class TimescaleDB implements IDatabase {
               "SELECT ('POLYGON((0 0, 0 '||$4||', '||$3||' '||$4||', '||$3||' 0,0 0))')::geometry AS cell\n" +
               ") AS foo;\n" +
               "$$ LANGUAGE sql IMMUTABLE STRICT;";
-      statement.execute(sql);
+      statement.executeUpdate(sql);
     } catch (SQLException e) {
       LOGGER.error("Could not register grid function.");
     }
+  }
+
+  private String getCreateGridTableSql() {
+    String sql = "create table grid as \n" +
+            "select (st_dump(map.geom)).geom from (\n" +
+            "\tselect st_setsrid(st_collect(grid.geom),4326) as geom \n" +
+            "\tfrom ST_CreateGrid(40, 90, 0.0006670, 0.0006670, %f, %f) as grid\n" +
+            ") as map;";
+    sql = String.format(
+            Locale.US,
+            sql,
+            Constants.GRID_START_POINT.getLongitude(),
+            Constants.GRID_START_POINT.getLatitude());
+    return sql;
   }
 
   /**
@@ -385,7 +406,7 @@ public class TimescaleDB implements IDatabase {
    * WIDE_TABLE:
    * <p><code>
    *  select data.time, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
-   * 	select * from test t where t.bike_id = b.bike_id and s_40 > 3.000000 and s_12 is not null
+   * 	select * from test t where t.bike_id = b.bike_id and s_12 is not null
    * 	order by time desc limit 1
    *  ) as data on true;
    * </code></p>
@@ -408,7 +429,7 @@ public class TimescaleDB implements IDatabase {
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
       sql = "select data.time, data.bike_id, b.owner_name, data.%s from bikes b inner join lateral (\n" +
-              "\tselect * from %s t where t.bike_id = b.bike_id and %s > %f and %s is not null\n" +
+              "\tselect * from %s t where t.bike_id = b.bike_id and %s is not null\n" +
               "\torder by time desc limit 1\n" +
               ") as data on true;";
       sql = String.format(
@@ -416,8 +437,6 @@ public class TimescaleDB implements IDatabase {
               sql,
               gpsSensor.getName(),
               tableName,
-              sensor.getName(),
-              query.getThreshold(),
               gpsSensor.getName()
       );
     }
