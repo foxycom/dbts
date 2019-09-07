@@ -76,7 +76,7 @@ public interface IDatabase {
    * @param query
    * @return
    */
-  Status dangerousSpots(Query query);
+  Status offlineBikes(Query query);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.
@@ -113,7 +113,7 @@ public interface IDatabase {
    * @param query
    * @return
    */
-  Status airQualityHeatMap(Query query);
+  Status airPollutionHeatMap(Query query);
 
   /**
    * TODO comment

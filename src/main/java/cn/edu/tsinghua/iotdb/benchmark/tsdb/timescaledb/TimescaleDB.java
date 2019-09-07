@@ -665,33 +665,13 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * TODO change to bikes which are longer offline
-   * Computes road segments with high average sensor measurements values, e.g., accelerometer, identifying spots
-   * where riders often use brakes.
    *
-   * NARROW_TABLE:
-   * <p><code>
-   *  WITH trip AS (
-   * 	SELECT time_bucket(interval '1 s', time) AS second, bike_id, AVG(value) AS value FROM emg_benchmark
-   * 	WHERE value > 3.000000 AND bike_id = 'bike_10'
-   * 	GROUP BY second, bike_id
-   *  )
-   *  SELECT time_bucket(interval '300000 ms', g.time) AS half_minute, AVG(t.value), t.bike_id, st_makeline(g.value::geometry) FROM gps_benchmark g, trip t
-   *  WHERE g.bike_id = 'bike_10' AND g.time = t.second AND g.time > '2018-08-29 18:00:00.0' AND g.time < '2018-08-29 19:00:00.0'
-   *  GROUP BY half_minute, t.bike_id;
-   * </code></p>
    *
-   * WIDE_TABLE:
-   * <p><code>
-   *  select time_bucket(interval '10 s', time) as ten_seconds, st_makeline(s_12::geometry)
-   *  from test t where time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-   *  group by ten_seconds, bike_id having avg(s_40) > 3.000000;
-   * </code></p>
    * @param query
    * @return
    */
   @Override
-  public Status dangerousSpots(Query query) {
+  public Status offlineBikes(Query query) {
     String sql = "";
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
@@ -716,18 +696,22 @@ public class TimescaleDB implements IDatabase {
               timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
               bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select time_bucket(interval '10 s', time) as ten_seconds, st_makeline(%s::geometry) \n" +
-              "from %s t where time >= '%s' and time <= '%s' group by ten_seconds having avg(%s) > %f;";
+      sql = "select b.bike_id, b.owner_name, offline_data.time from bikes b inner join lateral (\n" +
+              "\tselect distinct on (bike_id) bike_id, time from %s t where bike_id not in (\n" +
+              "\t\tselect bike_id from %s t \n" +
+              "\t\twhere time > '%s'\n" +
+              "\t\tgroup by bike_id\n" +
+              "\t) and t.bike_id = b.bike_id group by t.bike_id, t.time\n" +
+              "\torder by bike_id, time desc\n" +
+              ") as offline_data on true;";
       sql = String.format(
               Locale.US,
               sql,
-              gpsSensor.getName(),
               tableName,
-              startTimestamp,
-              endTimestamp,
-              sensor.getName(),
-              query.getThreshold()
+              tableName,
+              endTimestamp
       );
+
     }
     return executeQuery(sql);
   }
@@ -891,7 +875,7 @@ public class TimescaleDB implements IDatabase {
    * @return The status of the execution.
    */
   @Override
-  public Status airQualityHeatMap(Query query) {
+  public Status airPollutionHeatMap(Query query) {
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());

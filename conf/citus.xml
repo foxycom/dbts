@@ -19,7 +19,7 @@
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">100</devices>
 
-    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::DANGEROUS_SPOTS -->
+    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
     <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
 
     <sensorGroups prefix="s_">

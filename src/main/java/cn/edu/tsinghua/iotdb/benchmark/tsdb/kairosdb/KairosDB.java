@@ -159,7 +159,7 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status dangerousSpots(Query query) {
+  public Status offlineBikes(Query query) {
     return null;
   }
 
@@ -179,7 +179,7 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status airQualityHeatMap(Query query) {
+  public Status airPollutionHeatMap(Query query) {
     return null;
   }
 

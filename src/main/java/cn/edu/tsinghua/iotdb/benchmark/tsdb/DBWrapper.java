@@ -105,11 +105,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status dangerousSpots(Query query) {
+  public Status offlineBikes(Query query) {
     Status status = null;
-    Operation operation = Operation.DANGEROUS_SPOTS;
+    Operation operation = Operation.OFFLINE_BIKES;
     try {
-      status = db.dangerousSpots(query);
+      status = db.offlineBikes(query);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);
@@ -161,11 +161,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status airQualityHeatMap(Query query) {
+  public Status airPollutionHeatMap(Query query) {
     Status status = null;
     Operation operation = Operation.AIRQUALITY_HEATMAP;
     try {
-      status = db.airQualityHeatMap(query);
+      status = db.airPollutionHeatMap(query);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);

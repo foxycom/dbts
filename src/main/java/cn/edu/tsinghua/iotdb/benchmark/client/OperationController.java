@@ -59,7 +59,7 @@ public class OperationController {
       case 10:
         return Operation.DOWNSAMPLE;
       case 11:
-        return Operation.DANGEROUS_SPOTS;
+        return Operation.OFFLINE_BIKES;
       default:
         LOGGER.error("Unsupported operation {}, use default operation: INGESTION.", i);
         return Operation.INGESTION;
@@ -100,7 +100,7 @@ public class OperationController {
     BIKES_IN_LOCATION("BIKES_IN_LOCATION"),
     GPS_PATH_SCAN("GPS_PATH_SCAN"),
     DOWNSAMPLE("DOWNSAMPLE"),
-    DANGEROUS_SPOTS("DANGEROUS_SPOTS");
+    OFFLINE_BIKES("OFFLINE_BIKES");
 
     public String getName() {
       return name;

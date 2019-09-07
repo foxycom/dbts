@@ -591,7 +591,7 @@ public class Citus implements IDatabase {
      * @return
      */
     @Override
-    public Status dangerousSpots(Query query) {
+    public Status offlineBikes(Query query) {
         String sql = "";
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
@@ -757,7 +757,7 @@ public class Citus implements IDatabase {
      * @return The status of the execution.
      */
     @Override
-    public Status airQualityHeatMap(Query query) {
+    public Status airPollutionHeatMap(Query query) {
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());

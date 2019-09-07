@@ -74,7 +74,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case PRECISE_POINT:
             clientMonitoring.start();
           try {
-            dbWrapper.precisePoint(syntheticWorkload.getQuery("emg"));
+            dbWrapper.precisePoint(syntheticWorkload.getQuery("light"));
           } catch (Exception e) {
             LOGGER.error("Failed to do precise query because ", e);
           }
@@ -90,7 +90,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case DOWNSAMPLE:
             clientMonitoring.start();
           try {
-            dbWrapper.downsample(syntheticWorkload.getQuery("emg"));
+            dbWrapper.downsample(syntheticWorkload.getQuery("oximeter"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to do group by query because ", e);
           }
@@ -106,7 +106,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case GPS_PATH_SCAN:
             clientMonitoring.start();
           try {
-            dbWrapper.gpsPathScan(syntheticWorkload.getQuery("emg"));
+            dbWrapper.gpsPathScan(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a time range query with GPS data because ", e);
           }
@@ -114,7 +114,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case IDENTIFY_TRIPS:
             clientMonitoring.start();
           try {
-            dbWrapper.identifyTrips(syntheticWorkload.getQuery("emg"));
+            dbWrapper.identifyTrips(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a time range query on trip identification because ", e);
           }
@@ -122,7 +122,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case AIRQUALITY_HEATMAP:
             clientMonitoring.start();
           try {
-            dbWrapper.airQualityHeatMap(syntheticWorkload.getQuery("airquality"));
+            dbWrapper.airPollutionHeatMap(syntheticWorkload.getQuery("particles"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a heat map range query because ", e);
           }
@@ -130,7 +130,7 @@ public abstract class BaseClient extends Client implements Runnable {
         case DISTANCE_DRIVEN:
           clientMonitoring.start();
           try {
-            dbWrapper.distanceDriven(syntheticWorkload.getQuery("emg"));
+            dbWrapper.distanceDriven(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a distance range query because ", e);
           }
@@ -143,10 +143,10 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to execute the bikes in location query because ", e);
           }
           break;
-        case DANGEROUS_SPOTS:
+        case OFFLINE_BIKES:
           clientMonitoring.start();
           try {
-            dbWrapper.dangerousSpots(syntheticWorkload.getQuery("emg"));
+            dbWrapper.offlineBikes(syntheticWorkload.getQuery(""));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute the gps aggregation in range query because ", e);
           }

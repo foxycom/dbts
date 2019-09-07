@@ -162,7 +162,7 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public Status dangerousSpots(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+  public Status offlineBikes(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 
@@ -182,7 +182,7 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public Status airQualityHeatMap(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+  public Status airPollutionHeatMap(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 
