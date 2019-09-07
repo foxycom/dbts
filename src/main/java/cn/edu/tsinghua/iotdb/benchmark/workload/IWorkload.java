@@ -2,34 +2,11 @@ package cn.edu.tsinghua.iotdb.benchmark.workload;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 
 public interface IWorkload {
 
-  Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException;
+  Batch getOneBatch(Bike bike, long loopIndex) throws WorkloadException;
 
-  PreciseQuery getPreciseQuery() throws WorkloadException;
-
-  RangeQuery getRangeQuery() throws WorkloadException;
-
-  RangeQuery getGpsRangeQuery() throws WorkloadException;
-
-  GpsAggValueRangeQuery getGpsAggValueRangeQuery() throws WorkloadException;
-
-  GpsValueRangeQuery getGpsValueRangeQuery() throws WorkloadException;
-
-  ValueRangeQuery getValueRangeQuery() throws WorkloadException;
-
-  AggRangeQuery getAggRangeQuery() throws WorkloadException;
-
-  AggValueQuery getAggValueQuery() throws WorkloadException;
-
-  AggRangeValueQuery getAggRangeValueQuery() throws WorkloadException;
-
-  GroupByQuery getGroupByQuery() throws WorkloadException;
-
-  LatestPointQuery getLatestPointQuery() throws WorkloadException;
-
-  GpsRangeQuery getHeatmapRangeQuery() throws WorkloadException;
-
+  Query getQuery(String sensorType) throws WorkloadException;
 }

@@ -2,7 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.reader;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -123,8 +123,8 @@ public abstract class BasicReader {
    * @param files absolute file paths to read
    * @return device schema list to register
    */
-  public static List<DeviceSchema> getDeviceSchemaList(List<String> files, Config config) {
-    List<DeviceSchema> deviceSchemaList = new ArrayList<>();
+  public static List<Bike> getDeviceSchemaList(List<String> files, Config config) {
+    List<Bike> bikeList = new ArrayList<>();
 
     // remove duplicated devices
     Set<String> devices = new HashSet<>();
@@ -137,8 +137,8 @@ public abstract class BasicReader {
           String deviceId = items[items.length - 1];
           if (!devices.contains(deviceId)) {
             devices.add(deviceId);
-            deviceSchemaList
-                .add(new DeviceSchema(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS));
+            bikeList
+                .add(new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS));
           }
         }
         break;
@@ -148,12 +148,12 @@ public abstract class BasicReader {
               split("/Trajectory")[0].replace("/", "");
           if (!devices.contains(deviceId)) {
             devices.add(deviceId);
-            deviceSchemaList.add(
-                new DeviceSchema(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS));
+            bikeList.add(
+                new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS));
           }
         }
     }
-    return deviceSchemaList;
+    return bikeList;
   }
 
   protected static String calGroupIdStr(String deviceId, int groupNum) {

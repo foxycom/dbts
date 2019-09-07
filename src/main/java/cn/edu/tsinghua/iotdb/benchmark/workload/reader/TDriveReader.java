@@ -4,7 +4,8 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.BasicSensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
+
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -21,7 +22,7 @@ public class TDriveReader extends BasicReader {
   private static Logger logger = LoggerFactory.getLogger(TDriveReader.class);
   private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
-  private DeviceSchema deviceSchema;
+  private Bike bike;
   private List<Sensor> sensors = new ArrayList<>();
 
   public TDriveReader(Config config, List<String> files) {
@@ -33,7 +34,7 @@ public class TDriveReader extends BasicReader {
   @Override
   public void init() {
     currentDeviceId = new File(currentFile).getName();
-    deviceSchema = new DeviceSchema(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
+    bike = new Bike(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
         currentDeviceId, sensors);
   }
 
@@ -46,7 +47,7 @@ public class TDriveReader extends BasicReader {
         records.add(record);
       }
     }
-    return new Batch(deviceSchema, records);
+    return new Batch(bike, records);
   }
 
 

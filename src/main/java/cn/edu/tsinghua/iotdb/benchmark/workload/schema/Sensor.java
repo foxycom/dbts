@@ -23,6 +23,8 @@ public interface Sensor {
 
     void setFrequency(int freq);
 
+    String getTableName();
+
     Function getFunction();
 
     SensorGroup getSensorGroup();

@@ -41,33 +41,25 @@ public class OperationController {
       case 1:
         return Operation.INGESTION;
       case 2:
-        return Operation.PRECISE_QUERY;
+        return Operation.PRECISE_POINT;
       case 3:
-        return Operation.RANGE_QUERY;
+        return Operation.ACTIVE_BIKES;
       case 4:
-        return Operation.VALUE_RANGE_QUERY;
+        return Operation.AIRQUALITY_HEATMAP;
       case 5:
-        return Operation.AGG_RANGE_QUERY;
+        return Operation.DISTANCE_DRIVEN;
       case 6:
-        return Operation.AGG_VALUE_QUERY;
+        return Operation.LAST_KNOWN_POSITION;
       case 7:
-        return Operation.AGG_RANGE_VALUE_QUERY;
+        return Operation.IDENTIFY_TRIPS;
       case 8:
-        return Operation.GROUP_BY_QUERY;
+        return Operation.BIKES_IN_LOCATION;
       case 9:
-        return Operation.LATEST_POINT_QUERY;
+        return Operation.GPS_PATH_SCAN;
       case 10:
-        return Operation.GPS_TIME_RANGE_QUERY;
+        return Operation.DOWNSAMPLE;
       case 11:
-        return Operation.GPS_TRIP_RANGE_QUERY;
-      case 12:
-        return Operation.HEATMAP_RANGE_QUERY;
-      case 13:
-        return Operation.DISTANCE_RANGE_QUERY;
-      case 14:
-        return Operation.BIKES_IN_LOCATION_QUERY;
-      case 15:
-        return Operation.GPS_AGG_VALUE_RANGE_QUERY;
+        return Operation.TRAFFIC_JAMS;
       default:
         LOGGER.error("Unsupported operation {}, use default operation: INGESTION.", i);
         return Operation.INGESTION;
@@ -99,20 +91,16 @@ public class OperationController {
 
   public enum Operation {
     INGESTION("INGESTION"),
-    PRECISE_QUERY("PRECISE_POINT"),
-    RANGE_QUERY("TIME_RANGE"),
-    VALUE_RANGE_QUERY("VALUE_RANGE"),
-    AGG_RANGE_QUERY("AGG_RANGE"),
-    AGG_VALUE_QUERY("AGG_VALUE"),
-    AGG_RANGE_VALUE_QUERY("AGG_RANGE_VALUE"),
-    GROUP_BY_QUERY("GROUP_BY"),
-    LATEST_POINT_QUERY("LATEST_POINT"),
-    GPS_TIME_RANGE_QUERY("GPS_TIME_RANGE"),
-    GPS_TRIP_RANGE_QUERY("GPS_TRIP_RANGE"),
-    HEATMAP_RANGE_QUERY("HEATMAP_RANGE"),
-    DISTANCE_RANGE_QUERY("DISTANCE_RANGE"),
-    BIKES_IN_LOCATION_QUERY("BIKES_IN_LOCATION"),
-    GPS_AGG_VALUE_RANGE_QUERY("GPS_AGG_VALUE_RANGE");
+    PRECISE_POINT("PRECISE_POINT"),
+    ACTIVE_BIKES("ACTIVE_BIKES"),
+    DOWNSAMPLE("DOWNSAMPLE"),
+    LAST_KNOWN_POSITION("LAST_KNOWN_POSITION"),
+    GPS_PATH_SCAN("GPS_PATH_SCAN"),
+    IDENTIFY_TRIPS("IDENTIFY_TRIPS"),
+    AIRQUALITY_HEATMAP("AIRQUALITY_HEATMAP"),
+    DISTANCE_DRIVEN("DISTANCE_DRIVEN"),
+    BIKES_IN_LOCATION("BIKES_IN_LOCATION"),
+    TRAFFIC_JAMS("TRAFFIC_JAMS");
 
     public String getName() {
       return name;

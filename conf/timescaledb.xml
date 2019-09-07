@@ -6,22 +6,21 @@
     <db>
         <type>TimescaleDB_Wide</type>
         <name>test</name>
-        <host>132.231.13.207</host>
+        <host>127.0.0.1</host>
         <port>5432</port>
         <erase wait="5000">true</erase>
         <createSchema>true</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="false" remark="INGEST">
+    <mysqlLog active="true" remark="INGEST">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">500</devices>
 
-    <!-- INGEST::PRECISE::RANGE::VALUE_RANGE::AGG_RANGE::AGG_VALUE::AGG_RANGE_VALUE::GROUP_BY::LATEST_POINT::GPS_RANGE::GPS_VALUE_RANGE::HEATMAP_RANGE::DISTANCE_RANGE::BIKES_IN_LOCATION::GPS_AGG_RANGE -->
-   <!-- <operationsProportion>0:1:1:1:1:1:1:1:1:1:1:1:1:1:1</operationsProportion>-->
-    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0:0:0:0:0</operationsProportion>
+    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::TRAFFIC_JAMS -->
+    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">

@@ -1,15 +1,14 @@
 package cn.edu.tsinghua.iotdb.benchmark.utils;
 
 import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.PreciseQuery;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.RangeQuery;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -105,24 +104,24 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder bikes(List<DeviceSchema> bikeSchemas) {
+    public SqlBuilder bikes(List<Bike> bikeSchemas) {
         builder.append(" (");
         boolean firstIteration = true;
-        for (DeviceSchema bikeSchema : bikeSchemas) {
+        for (Bike bikeSchema : bikeSchemas) {
             if (firstIteration) {
                 firstIteration = false;
             } else {
                 builder.append(" OR ");
             }
-            builder.append("bike_id = '").append(bikeSchema.getDevice()).append("'");
+            builder.append("bike_id = '").append(bikeSchema.getName()).append("'");
         }
         builder.append(")");
         return this;
     }
 
-    public SqlBuilder time(PreciseQuery preciseQuery) {
-        Timestamp timestamp = new Timestamp(preciseQuery.getTimestamp());
-        builder.append(" (time = '").append(timestamp).append("')");
+    public SqlBuilder time(long timestamp) {
+        Timestamp ts = new Timestamp(timestamp);
+        builder.append(" (time = '").append(ts).append("')");
         return this;
     }
 
@@ -131,9 +130,9 @@ public class SqlBuilder {
         return this;
     }
 
-    public SqlBuilder time(RangeQuery rangeQuery) {
-        Timestamp startTimestamp = new Timestamp(rangeQuery.getStartTimestamp());
-        Timestamp endTimestamp = new Timestamp(rangeQuery.getEndTimestamp());
+    public SqlBuilder time(Query query) {
+        Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
+        Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
         builder.append(" (time >= '").append(startTimestamp);
         builder.append("' AND time <= '").append(endTimestamp).append("')");
         return this;
@@ -144,7 +143,10 @@ public class SqlBuilder {
     }
 
     public SqlBuilder sensors(Query query, boolean single) {
-        List<Sensor> sensors = query.getSensorGroup().getSensors();
+        List<Sensor> sensors = new ArrayList<>();
+
+        // TODO fix
+        sensors.add(query.getSensor());
         if (single) {
             builder.append(" ").append(Column.SENSOR.getName()).append(" = '")
                     .append(sensors.get(0).getName()).append("'");

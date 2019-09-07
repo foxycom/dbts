@@ -10,9 +10,8 @@ import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,19 +55,13 @@ public class SyntheticWorkload implements IWorkload {
     return currentTimestamp;
   }
 
-  private Batch getOrderedBatch(DeviceSchema deviceSchema, long loopIndex) {
+  private Batch getOrderedBatch(Bike bike, long loopIndex) {
     Batch batch = new Batch();
     batch.setTimeRange(config.loopTimeRange());
-    for (Sensor sensor : deviceSchema.getSensors()) {
+    for (Sensor sensor : bike.getSensors()) {
       addSensorData(sensor, batch, loopIndex);
     }
-
-    //for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
-    //  long stepOffset = loopIndex * config.BATCH_SIZE + batchOffset;    // point step
-      // addOneRowIntoBatch(deviceSchema, batch, stepOffset);
-    //  addSensorData();
-    //}
-    batch.setDeviceSchema(deviceSchema);
+    batch.setBike(bike);
     return batch;
   }
 
@@ -77,7 +70,7 @@ public class SyntheticWorkload implements IWorkload {
     batch.setTimeRange(timeRange);
   }
 
-  private Batch getDistOutOfOrderBatch(DeviceSchema deviceSchema) {
+  private Batch getDistOutOfOrderBatch(Bike bike) {
     Batch batch = new Batch();
     PossionDistribution possionDistribution = new PossionDistribution(poissonRandom);
     int nextDelta;
@@ -92,17 +85,17 @@ public class SyntheticWorkload implements IWorkload {
         maxTimestampIndex++;
         stepOffset = maxTimestampIndex;
       }
-      addOneRowIntoBatch(deviceSchema, batch, stepOffset);
+      addOneRowIntoBatch(bike, batch, stepOffset);
     }
-    batch.setDeviceSchema(deviceSchema);
+    batch.setBike(bike);
     return batch;
   }
 
-  static void addOneRowIntoBatch(DeviceSchema deviceSchema, Batch batch, long stepOffset) {
+  static void addOneRowIntoBatch(Bike bike, Batch batch, long stepOffset) {
     List<String> values = new ArrayList<>();
     long currentTimestamp;
     currentTimestamp = getCurrentTimestamp(stepOffset);
-    for (Sensor sensor : deviceSchema.getSensors()) {
+    for (Sensor sensor : bike.getSensors()) {
 
       // Different sensors may collect data with different frequencies
       if (sensor.hasValue(currentTimestamp)) {
@@ -144,10 +137,10 @@ public class SyntheticWorkload implements IWorkload {
     return null;
   }
 
-  public Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException {
+  public Batch getOneBatch(Bike bike, long loopIndex) throws WorkloadException {
     if (!config.USE_OVERFLOW) {
       long st = System.nanoTime();
-      Batch batch = getOrderedBatch(deviceSchema, loopIndex);
+      Batch batch = getOrderedBatch(bike, loopIndex);
       long en = System.nanoTime();
       double time = (en - st) / Constants.NANO_TO_SECONDS;
       LOGGER.info(String.format(Locale.US, "Generated one batch of size %d in %.3f s", batch.pointNum(), time));
@@ -162,7 +155,7 @@ public class SyntheticWorkload implements IWorkload {
           batch = getGlobalOutOfOrderBatch();
           break;
         case 2:
-          batch = getDistOutOfOrderBatch(deviceSchema);
+          batch = getDistOutOfOrderBatch(bike);
           break;
         default:
           throw new WorkloadException("Unsupported overflow mode: " + config.OVERFLOW_MODE);
@@ -172,45 +165,24 @@ public class SyntheticWorkload implements IWorkload {
     }
   }
 
-  private List<DeviceSchema> getGpsQueryDeviceSchemaList() throws WorkloadException {
+  private List<Bike> getQueryBikesList() throws WorkloadException {
     checkQuerySchemaParams();
-    List<DeviceSchema> queryDevices = new ArrayList<>();
-
-    int deviceId = queryDeviceRandom.nextInt(config.DEVICES_NUMBER);
-    DeviceSchema deviceSchema = new DeviceSchema(deviceId);
-    List<Sensor> gpsSensor = new ArrayList<>(1);
-    gpsSensor.add(Sensors.groupOfType("gps").getSensors().get(0));
-
-    deviceSchema.setSensors(gpsSensor);
-    queryDevices.add(deviceSchema);
-    return queryDevices;
-  }
-
-  // TODO better handling for non-gps sensors
-  private SensorGroup getSensorGroup() throws WorkloadException {
-    checkQuerySchemaParams();
-    Sensor sensor = Sensors.minInterval(config.SENSORS);
-    return sensor.getSensorGroup();
-  }
-
-  private List<DeviceSchema> getQueryDeviceSchemaList() throws WorkloadException {
-    checkQuerySchemaParams();
-    List<DeviceSchema> queryDevices = new ArrayList<>();
+    List<Bike> queryDevices = new ArrayList<>();
     List<Integer> clientDevicesIndex = new ArrayList<>();
     for (int m = 0; m < config.DEVICES_NUMBER; m++) {
       clientDevicesIndex.add(m);
     }
     Collections.shuffle(clientDevicesIndex, queryDeviceRandom);
     for (int m = 0; m < config.QUERY_DEVICE_NUM; m++) {
-      DeviceSchema deviceSchema = new DeviceSchema(clientDevicesIndex.get(m));
-      List<Sensor> sensors = deviceSchema.getSensors();
+      Bike bike = new Bike(clientDevicesIndex.get(m));
+      List<Sensor> sensors = bike.getSensors();
       Collections.shuffle(sensors, queryDeviceRandom);
       List<Sensor> querySensors = new ArrayList<>();
       for (int i = 0; i < config.QUERY_SENSOR_NUM; i++) {
         querySensors.add(sensors.get(i));
       }
-      deviceSchema.setSensors(querySensors);
-      queryDevices.add(deviceSchema);
+      bike.setSensors(querySensors);
+      queryDevices.add(bike);
     }
     return queryDevices;
   }
@@ -225,116 +197,22 @@ public class SyntheticWorkload implements IWorkload {
   }
 
   private long getQueryStartTimestamp() {
-    long currentQueryLoop = operationLoops.get(Operation.PRECISE_QUERY);
+    long currentQueryLoop = operationLoops.get(Operation.PRECISE_POINT);
     long timestampOffset = currentQueryLoop * config.STEP_SIZE * config.POINT_STEP;
-    operationLoops.put(Operation.PRECISE_QUERY, currentQueryLoop + 1);
+    operationLoops.put(Operation.PRECISE_POINT, currentQueryLoop + 1);
     return Constants.START_TIMESTAMP + timestampOffset;
   }
 
-  public PreciseQuery getPreciseQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    long timestamp = getQueryStartTimestamp();
-    return new PreciseQuery(queryDevices, sensorGroup, timestamp);
-  }
-
-  public RangeQuery getRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
+  public Query getQuery(String sensorType) throws WorkloadException {
+    List<Bike> bikes = getQueryBikesList();
+    Sensor sensor = Sensors.ofType(sensorType);
+    Sensor gpsSensor = Sensors.ofType("gps");
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
+    Query query = new Query();
+    query = query.setSensor(sensor).setGpsSensor(gpsSensor).setBikes(bikes).setStartTimestamp(startTimestamp)
+            .setEndTimestamp(endTimestamp).setAggrFunc(config.QUERY_AGGREGATE_FUN).setThreshold(config.QUERY_LOWER_LIMIT);
+    return query;
   }
-
-  @Override
-  public RangeQuery getGpsRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup sensorGroup = Sensors.groupOfType("gps");
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new RangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp);
-  }
-
-  @Override
-  public GpsAggValueRangeQuery getGpsAggValueRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup regularSensorGroup = getSensorGroup();
-    SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new GpsAggValueRangeQuery(queryDevices, regularSensorGroup, gpsSensorGroup, startTimestamp,
-            endTimestamp, config.QUERY_LOWER_LIMIT, config.QUERY_AGGREGATE_FUN);
-  }
-
-  public GpsValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup regularSensorGroup = getSensorGroup();
-    SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new GpsValueRangeQuery(queryDevices, regularSensorGroup, gpsSensorGroup, startTimestamp, endTimestamp,
-            config.QUERY_LOWER_LIMIT);
-  }
-
-  public ValueRangeQuery getValueRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new ValueRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
-        config.QUERY_LOWER_LIMIT);
-  }
-
-  public AggRangeQuery getAggRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new AggRangeQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
-        config.QUERY_AGGREGATE_FUN);
-  }
-
-  public AggValueQuery getAggValueQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    return new AggValueQuery(queryDevices, sensorGroup, config.QUERY_AGGREGATE_FUN, config.QUERY_LOWER_LIMIT);
-  }
-
-  public AggRangeValueQuery getAggRangeValueQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new AggRangeValueQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
-        config.QUERY_AGGREGATE_FUN, config.QUERY_LOWER_LIMIT);
-  }
-
-  public GroupByQuery getGroupByQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new GroupByQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp, config.QUERY_AGGREGATE_FUN,
-        config.TIME_BUCKET);
-  }
-
-  public LatestPointQuery getLatestPointQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new LatestPointQuery(queryDevices, sensorGroup, startTimestamp, endTimestamp,
-        config.QUERY_AGGREGATE_FUN);
-  }
-
-  public GpsRangeQuery getHeatmapRangeQuery() throws WorkloadException {
-    List<DeviceSchema> queryDevices = getGpsQueryDeviceSchemaList();
-    SensorGroup sensorGroup = getSensorGroup();
-    SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
-    long startTimestamp = getQueryStartTimestamp();
-    long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
-    return new GpsRangeQuery(queryDevices, sensorGroup, gpsSensorGroup, startTimestamp, endTimestamp);
-  }
-
 
 }

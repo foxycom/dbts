@@ -5,7 +5,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,20 +39,20 @@ public class SingletonWorkload {
 
   private Batch getOrderedBatch() {
     long curLoop = insertLoop.getAndIncrement();
-    DeviceSchema deviceSchema = new DeviceSchema((int) (curLoop % config.DEVICES_NUMBER));
+    Bike bike = new Bike((int) (curLoop % config.DEVICES_NUMBER));
     Batch batch = new Batch();
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
       long stepOffset = (curLoop / config.DEVICES_NUMBER) * config.BATCH_SIZE + batchOffset;
-      SyntheticWorkload.addOneRowIntoBatch(deviceSchema, batch, stepOffset);
+      SyntheticWorkload.addOneRowIntoBatch(bike, batch, stepOffset);
     }
-    batch.setDeviceSchema(deviceSchema);
+    batch.setBike(bike);
     return batch;
   }
 
   private Batch getDistOutOfOrderBatch() {
     long curLoop = insertLoop.getAndIncrement();
     int deviceIndex = (int) (curLoop % config.DEVICES_NUMBER);
-    DeviceSchema deviceSchema = new DeviceSchema(deviceIndex);
+    Bike bike = new Bike(deviceIndex);
     Batch batch = new Batch();
     PossionDistribution possionDistribution = new PossionDistribution(poissonRandom);
     int nextDelta;
@@ -66,9 +66,9 @@ public class SingletonWorkload {
         // generate normal increasing timestamp
         stepOffset = deviceMaxTimeIndexMap.get(deviceIndex).getAndIncrement();
       }
-      SyntheticWorkload.addOneRowIntoBatch(deviceSchema, batch, stepOffset);
+      SyntheticWorkload.addOneRowIntoBatch(bike, batch, stepOffset);
     }
-    batch.setDeviceSchema(deviceSchema);
+    batch.setBike(bike);
     return batch;
   }
 

@@ -7,7 +7,6 @@ import cn.edu.tsinghua.iotdb.benchmark.client.RealDatasetClient;
 import cn.edu.tsinghua.iotdb.benchmark.client.SyntheticClient;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
-import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.mysql.MySqlLog;
@@ -16,8 +15,8 @@ import cn.edu.tsinghua.iotdb.benchmark.monitor.ServerMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.BasicReader;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
 
 import java.io.File;
 import java.io.IOException;
@@ -109,8 +108,8 @@ public class App {
             }
             try {
                 DataSchema dataSchema = DataSchema.getInstance();
-                List<DeviceSchema> schemaList = new ArrayList<>();
-                for(List<DeviceSchema> schemas: dataSchema.getClientBindSchema().values()) {
+                List<Bike> schemaList = new ArrayList<>();
+                for(List<Bike> schemas: dataSchema.getClientBindSchema().values()) {
                     schemaList.addAll(schemas);
                 }
                 dbWrapper.registerSchema(schemaList);
@@ -175,7 +174,7 @@ public class App {
 
         Collections.sort(files);
 
-        List<DeviceSchema> deviceSchemaList = BasicReader.getDeviceSchemaList(files, config);
+        List<Bike> bikeList = BasicReader.getDeviceSchemaList(files, config);
 
         Measurement measurement = new Measurement();
         DBWrapper dbWrapper = new DBWrapper(measurement);
@@ -194,7 +193,7 @@ public class App {
             try {
                 // register device schema
                 LOGGER.info("start to register schema");
-                dbWrapper.registerSchema(deviceSchemaList);
+                dbWrapper.registerSchema(bikeList);
             } catch (TsdbException e) {
                 LOGGER.error("Register {} schema failed because ", config.DB_SWITCH, e);
             }

@@ -39,9 +39,6 @@ public class FileSize {
         config = ConfigParser.INSTANCE.config();
 
         switch (config.DB_SWITCH){
-            case IOTDB:
-
-                break;
             case INFLUXDB:
                 FileSizeKinds.DATA.path = config.LOG_STOP_FLAG_PATH + "/data/" + config.DB_NAME;
                 FileSizeKinds.DELTA.path = config.LOG_STOP_FLAG_PATH + "/data/" + config.DB_NAME + "/autogen";

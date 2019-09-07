@@ -119,9 +119,6 @@ public class OpenFileNumber {
 
         String filter = "";
         switch (config.DB_SWITCH) {
-            case IOTDB:
-                filter = "/data/";
-                break;
             case INFLUXDB:
                 filter = ".influxdb";
                 break;

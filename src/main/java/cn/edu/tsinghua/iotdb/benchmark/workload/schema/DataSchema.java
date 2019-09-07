@@ -13,9 +13,9 @@ public class DataSchema {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DataSchema.class);
     private static Config config = ConfigParser.INSTANCE.config();
-  private static final Map<Integer, List<DeviceSchema>> CLIENT_BIND_SCHEMA = new HashMap<>();
+  private static final Map<Integer, List<Bike>> CLIENT_BIND_SCHEMA = new HashMap<>();
 
-  public Map<Integer, List<DeviceSchema>> getClientBindSchema() {
+  public Map<Integer, List<Bike>> getClientBindSchema() {
     return CLIENT_BIND_SCHEMA;
   }
 
@@ -43,14 +43,14 @@ public class DataSchema {
     int deviceId = 0;
     int mod = config.DEVICES_NUMBER % config.CLIENTS_NUMBER;
     for (int clientId = 0; clientId < config.CLIENTS_NUMBER; clientId++) {
-      List<DeviceSchema> deviceSchemaList = new ArrayList<>();
+      List<Bike> bikeList = new ArrayList<>();
       for (int j = 0; j < eachClientDeviceNum; j++) {
-        deviceSchemaList.add(new DeviceSchema(deviceId++));
+        bikeList.add(new Bike(deviceId++));
       }
       if (clientId < mod) {
-        deviceSchemaList.add(new DeviceSchema(deviceId++));
+        bikeList.add(new Bike(deviceId++));
       }
-      CLIENT_BIND_SCHEMA.put(clientId, deviceSchemaList);
+      CLIENT_BIND_SCHEMA.put(clientId, bikeList);
     }
   }
 }

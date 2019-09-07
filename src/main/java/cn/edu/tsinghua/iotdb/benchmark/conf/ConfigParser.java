@@ -119,6 +119,7 @@ public enum ConfigParser {
             config.SENSOR_GROUPS.add(sensorGroup);
             List<HierarchicalConfiguration<ImmutableNode>> sensors = sensorGroups.get(i).configurationsAt("sensor");
             for (int j = 0; j < sensors.size(); j++) {
+
                 HierarchicalConfiguration<ImmutableNode> sensorConfig = sensors.get(j);
                 int sensorIndex = config.SENSORS.size();
                 String name = sensorNamePrefix + sensorIndex;
@@ -145,6 +146,7 @@ public enum ConfigParser {
                     default:
                         throw new IllegalStateException("Inappropriate sensor type.");
                 }
+
                 sensorGroup.addSensor(sensor);
             }
         }

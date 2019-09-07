@@ -9,14 +9,12 @@ import cn.edu.tsinghua.iotdb.benchmark.utils.InfluxBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.influxdb.BatchOptions;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Query;
@@ -89,7 +87,7 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public void registerSchema(List<DeviceSchema> schemaList) throws TsdbException {
+  public void registerSchema(List<Bike> schemaList) throws TsdbException {
     try {
       influxDbInstance.query(new Query("CREATE DATABASE " + influxDbName));
     } catch (Exception e) {
@@ -107,15 +105,15 @@ public class InfluxDB implements IDatabase {
   public Status insertOneBatch(Batch batch) {
     BatchPoints.Builder batchBuilder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
     Map<Sensor, Point[]> entries = batch.getEntries();
-    DeviceSchema deviceSchema = batch.getDeviceSchema();
-    for (Sensor sensor : deviceSchema.getSensors()) {
+    Bike bike = batch.getBike();
+    for (Sensor sensor : bike.getSensors()) {
       if (entries.get(sensor).length == 0) {
         continue;
       }
 
       for (Point syntheticPoint : entries.get(sensor)) {
         org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
-                .tag(SqlBuilder.Column.BIKE.getName(), deviceSchema.getDevice())
+                .tag(SqlBuilder.Column.BIKE.getName(), bike.getName())
                 .tag(SqlBuilder.Column.SENSOR_GROUP.getName(), sensor.getSensorGroup().getName())
                 .tag(SqlBuilder.Column.SENSOR.getName(), sensor.getName());
 
@@ -148,164 +146,56 @@ public class InfluxDB implements IDatabase {
     }
   }
 
-  /**
-   * <p><code>
-   *     SELECT value FROM test WHERE (bike_id = 'bike_2') AND sensor_group_id = 'accelerometer'
-   *     AND sensor_id = 's_0' AND time = 1535558400000000000;
-   * </code></p>
-   */
   @Override
-  public Status preciseQuery(PreciseQuery preciseQuery) {
-    SensorGroup sensorGroup = preciseQuery.getSensorGroup();
-    List<DeviceSchema> deviceSchemas = preciseQuery.getDeviceSchemas();
-    List<String> fields = sensorGroup.getFields();
-    sqlBuilder = sqlBuilder.reset().select(fields).from(measurementName).where().bikes(deviceSchemas)
-            .and().sensorGroup(sensorGroup).and().sensors(preciseQuery, true).and().time(preciseQuery);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  /**
-   * <p><code>
-   *     SELECT value FROM test WHERE (bike_id = 'bike_2')
-   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000)
-   *     AND sensor_group_id = 'accelerometer' AND sensor_id = 's_0';
-   * </code></p>
-   */
-  @Override
-  public Status rangeQuery(RangeQuery rangeQuery) {
-    SensorGroup sensorGroup = rangeQuery.getSensorGroup();
-    List<DeviceSchema> deviceSchemas = rangeQuery.getDeviceSchemas();
-    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields()).from(measurementName)
-            .where().bikes(deviceSchemas).and().time(rangeQuery).and().sensorGroup(sensorGroup)
-            .and().sensors(rangeQuery, true);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  @Override
-  public Status gpsRangeQuery(RangeQuery RangeQuery) {
+  public Status precisePoint(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 
   @Override
-  public Status gpsValueRangeQuery(GpsValueRangeQuery rangeQuery) {
+  public Status gpsPathScan(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 
   @Override
-  public Status gpsAggValueRangeQuery(GpsAggValueRangeQuery gpsAggValueRangeQuery) {
-    return null;
-  }
-
-  /**
-   * <p><code>
-   *     SELECT value FROM test WHERE (time >= 1535558400000000000 AND time <= 1535562000000000000)
-   *     AND value > 3.0 AND (bike_id = 'bike_3') AND sensor_group_id = 'accelerometer' AND sensor_id = 's_0';
-   * </code></p>
-   */
-  @Override
-  public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
-    List<DeviceSchema> deviceSchemas = valueRangeQuery.getDeviceSchemas();
-    SensorGroup sensorGroup = valueRangeQuery.getSensorGroup();
-    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields()).from(measurementName).where()
-            .time(valueRangeQuery).and()
-            .value(sensorGroup.getFields().get(0), SqlBuilder.Op.GREATER, config.QUERY_LOWER_LIMIT)
-            .and().bikes(deviceSchemas).and().sensorGroup(sensorGroup).and().sensors(valueRangeQuery, true);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  /**
-   * <p><code>
-   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_0')
-   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000)
-   *     AND sensor_group_id = 'accelerometer' AND sensor_id = 's_0';
-   * </code></p>
-   */
-  @Override
-  public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    SensorGroup sensorGroup = aggRangeQuery.getSensorGroup();
-    List<DeviceSchema> deviceSchemas = aggRangeQuery.getDeviceSchemas();
-    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, aggRangeQuery.getAggrFunc())
-            .from(measurementName).where().bikes(deviceSchemas).and().time(aggRangeQuery).and()
-            .sensorGroup(sensorGroup).and().sensors(aggRangeQuery, true);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  /**
-   * <p><code>
-   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_0') AND value > 3.0;
-   * </code></p>
-   */
-  @Override
-  public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    SensorGroup sensorGroup = aggValueQuery.getSensorGroup();
-    List<DeviceSchema> deviceSchemas = aggValueQuery.getDeviceSchemas();
-    List<String> columns = sensorGroup.getFields();
-    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, aggValueQuery.getAggrFunc())
-            .from(measurementName).where().bikes(deviceSchemas).and()
-            .value(columns.get(0), SqlBuilder.Op.GREATER, config.QUERY_LOWER_LIMIT);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  /**
-   * <p><code>
-   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_3')
-   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000) AND value > 3.0;
-   * </code></p>
-   */
-  @Override
-  public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    List<DeviceSchema> deviceSchemas = aggRangeValueQuery.getDeviceSchemas();
-    SensorGroup sensorGroup = aggRangeValueQuery.getSensorGroup();
-    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, aggRangeValueQuery.getAggrFunc())
-            .from(measurementName).where().bikes(deviceSchemas).and().time(aggRangeValueQuery)
-            .and().value(sensorGroup.getFields().get(0), SqlBuilder.Op.GREATER, config.QUERY_LOWER_LIMIT);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  /**
-   * <p><code>
-   *     SELECT MEAN(value) FROM test WHERE (bike_id = 'bike_3')
-   *     AND (time >= 1535558400000000000 AND time <= 1535562000000000000) GROUP BY time(300000ms);
-   * </code></p>
-   */
-  @Override
-  public Status groupByQuery(GroupByQuery groupByQuery) {
-    List<DeviceSchema> deviceSchemas = groupByQuery.getDeviceSchemas();
-    SensorGroup sensorGroup = groupByQuery.getSensorGroup();
-    sqlBuilder = sqlBuilder.reset().select(sensorGroup.getFields(), null, groupByQuery.getAggrFunc())
-            .from(measurementName).where().bikes(deviceSchemas).and().time(groupByQuery).groupBy(groupByQuery.getGranularity());
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  /**
-   *
-   * <p><code>
-   *     SELECT last(value) FROM test WHERE (bike_id = 'bike_2');
-   * </code></p>
-   */
-  @Override
-  public Status latestPointQuery(LatestPointQuery latestPointQuery) {
-    SensorGroup sensorGroup = latestPointQuery.getSensorGroup();
-    List<DeviceSchema> deviceSchemas = latestPointQuery.getDeviceSchemas();
-    List<String> lastColumn = new ArrayList<>(Collections.singletonList("last(" + sensorGroup.getFields().get(0) + ")"));
-    sqlBuilder = sqlBuilder.reset().select(lastColumn).from(measurementName).where().bikes(deviceSchemas);
-    return executeQueryAndGetStatus(sqlBuilder.build());
-  }
-
-  @Override
-  public Status heatmapRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
+  public Status identifyTrips(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 
   @Override
-  public Status distanceRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
+  public Status trafficJams(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 
   @Override
-  public Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery) {
+  public Status lastTimeActivelyDriven(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
+
+  @Override
+  public Status downsample(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    return null;
+  }
+
+  @Override
+  public Status lastKnownPosition(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    return null;
+  }
+
+  @Override
+  public Status airQualityHeatMap(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    return null;
+  }
+
+  @Override
+  public Status distanceDriven(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    return null;
+  }
+
+  @Override
+  public Status bikesInLocation(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    return null;
+  }
+
 
   private Status executeQueryAndGetStatus(String sql) {
     LOGGER.debug("{} executes query: {}", Thread.currentThread().getName(), sql);
@@ -336,10 +226,10 @@ public class InfluxDB implements IDatabase {
    * @param devices schema list of query devices
    * @return from and where clause
    */
-  private static String generateConstrainForDevices(List<DeviceSchema> devices) {
+  private static String generateConstrainForDevices(List<Bike> devices) {
     StringBuilder builder = new StringBuilder();
     Set<String> groups = new HashSet<>();
-    for (DeviceSchema d : devices) {
+    for (Bike d : devices) {
       groups.add(d.getGroup());
     }
     builder.append(" FROM ");
@@ -348,8 +238,8 @@ public class InfluxDB implements IDatabase {
     }
     builder.deleteCharAt(builder.lastIndexOf(","));
     builder.append("WHERE (");
-    for (DeviceSchema d : devices) {
-      builder.append(" device = '" + d.getDevice() + "' OR");
+    for (Bike d : devices) {
+      builder.append(" device = '" + d.getName() + "' OR");
     }
     builder.delete(builder.lastIndexOf("OR"), builder.length());
     builder.append(")");

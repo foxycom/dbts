@@ -7,7 +7,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,7 +114,7 @@ public class SyntheticWorkloadTest {
     config.IS_RANDOM_TIMESTAMP_INTERVAL = false;
     SyntheticWorkload syntheticWorkload = new SyntheticWorkload(1);
     for (int i = 0; i < 3; i++) {
-      Batch batch = syntheticWorkload.getOneBatch(new DeviceSchema(1), i);
+      Batch batch = syntheticWorkload.getOneBatch(new Bike(1), i);
       long old = 0;
       for(Record record: batch.getRecords()){
         // 检查map里timestamp获取到的是否是按序的

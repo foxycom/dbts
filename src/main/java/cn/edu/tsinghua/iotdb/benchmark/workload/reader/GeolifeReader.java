@@ -3,7 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.reader;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ public class GeolifeReader extends BasicReader {
 
   private static Logger logger = LoggerFactory.getLogger(GeolifeReader.class);
   private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-hh:mm:ss");
-  private DeviceSchema deviceSchema;
+  private Bike bike;
 
   public GeolifeReader(Config config, List<String> files) {
     super(config, files);
@@ -49,7 +49,7 @@ public class GeolifeReader extends BasicReader {
     for (int i = 0; i < 6; i++) {
       reader.readLine();
     }
-    deviceSchema = new DeviceSchema(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
+    bike = new Bike(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
         currentDeviceId, config.FIELDS);
   }
 
@@ -62,6 +62,6 @@ public class GeolifeReader extends BasicReader {
         records.add(record);
       }
     }
-    return new Batch(deviceSchema, records);
+    return new Batch(bike, records);
   }
 }

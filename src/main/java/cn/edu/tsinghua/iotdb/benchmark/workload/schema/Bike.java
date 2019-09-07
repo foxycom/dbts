@@ -8,9 +8,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeviceSchema {
+public class Bike {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DeviceSchema.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(Bike.class);
   private static Config config = ConfigParser.INSTANCE.config();
   public static final String GROUP_NAME_PREFIX = "group_";
   private static final String DEVICE_NAME_PREFIX = "bike_";
@@ -18,45 +18,40 @@ public class DeviceSchema {
   // each device belongs to one group, i.e., database
   private String group;
 
-  // deviceId
+  // bikeId
   private String device;
 
   // sensorIds
   private List<Sensor> sensors;
 
   // only for synthetic data set
-  private int deviceId;
+  private int bikeId;
 
-  public DeviceSchema(int deviceId) {
-    this.deviceId = deviceId;
-    this.device = DEVICE_NAME_PREFIX + deviceId;
+  public Bike(int bikeId) {
+    this.bikeId = bikeId;
+    this.device = DEVICE_NAME_PREFIX + bikeId;
     sensors = new ArrayList<>();
-    try {
-      createEvenlyAllocDeviceSchema();
-    } catch (WorkloadException e) {
-      LOGGER.error("Create device schema failed.", e);
-    }
+    createEvenlyAllocBikeSchema();
   }
 
-  public DeviceSchema(String group, String device, List<Sensor> sensors) {
+  public Bike(String group, String device, List<Sensor> sensors) {
     this.group = GROUP_NAME_PREFIX + group;
     this.device = DEVICE_NAME_PREFIX + device;
     this.sensors = sensors;
   }
 
 
-  private void createEvenlyAllocDeviceSchema() throws WorkloadException {
-    int thisDeviceGroupIndex = calGroupId(deviceId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
-    //System.out.println("device " + deviceId +" sg " + thisDeviceGroupIndex);
+  private void createEvenlyAllocBikeSchema() {
+    int thisDeviceGroupIndex = calGroupId(bikeId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
     group = GROUP_NAME_PREFIX + thisDeviceGroupIndex;
     sensors.addAll(config.SENSORS);
   }
 
-  static int calGroupId(int deviceId, int deviceNum, int groupNum) throws WorkloadException {
-    return deviceId%groupNum;
+  static int calGroupId(int bikeId, int deviceNum, int groupNum) {
+    return bikeId % groupNum;
   }
 
-  public String getDevice() {
+  public String getName() {
     return device;
   }
 

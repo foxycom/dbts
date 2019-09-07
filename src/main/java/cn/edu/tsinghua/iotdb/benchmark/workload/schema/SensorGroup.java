@@ -16,7 +16,7 @@ public class SensorGroup {
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public void addSensor(Sensor sensor) {

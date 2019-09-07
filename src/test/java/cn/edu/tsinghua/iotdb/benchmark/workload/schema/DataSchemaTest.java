@@ -25,7 +25,7 @@ public class DataSchemaTest {
     int mod = config.DEVICES_NUMBER % config.CLIENTS_NUMBER;
     int deviceNumEachClient = config.DEVICES_NUMBER / config.CLIENTS_NUMBER;
     DataSchema dataSchema = DataSchema.getInstance();
-    Map<Integer, List<DeviceSchema>> client2Schema = dataSchema.getClientBindSchema();
+    Map<Integer, List<Bike>> client2Schema = dataSchema.getClientBindSchema();
     for (int clientId : client2Schema.keySet()){
       int deviceNumInClient = client2Schema.get(clientId).size();
       if ( clientId < mod){

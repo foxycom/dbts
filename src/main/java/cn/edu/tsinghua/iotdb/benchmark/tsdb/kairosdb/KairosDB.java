@@ -10,7 +10,7 @@ import cn.edu.tsinghua.iotdb.benchmark.utils.HttpRequest;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import com.alibaba.fastjson.JSON;
 import java.io.IOException;
@@ -22,10 +22,7 @@ import java.util.List;
 import java.util.Map;
 import org.kairosdb.client.HttpClient;
 import org.kairosdb.client.builder.Aggregator;
-import org.kairosdb.client.builder.AggregatorFactory;
-import org.kairosdb.client.builder.AggregatorFactory.FilterOperation;
 import org.kairosdb.client.builder.QueryBuilder;
-import org.kairosdb.client.builder.TimeUnit;
 import org.kairosdb.client.response.QueryResponse;
 import org.kairosdb.client.response.QueryResult;
 import org.kairosdb.client.response.Result;
@@ -88,7 +85,7 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public void registerSchema(List<DeviceSchema> schemaList) {
+  public void registerSchema(List<Bike> schemaList) {
     //no need for KairosDB
   }
 
@@ -98,12 +95,12 @@ public class KairosDB implements IDatabase {
   }
 
 
-  private LinkedList<KairosDataModel> createDataModel(DeviceSchema deviceSchema, long timestamp,
-      List<String> recordValues) {
+  private LinkedList<KairosDataModel> createDataModel(Bike bike, long timestamp,
+                                                      List<String> recordValues) {
     LinkedList<KairosDataModel> models = new LinkedList<>();
-    String groupId = deviceSchema.getGroup();
+    String groupId = bike.getGroup();
     int i = 0;
-    for (Sensor sensor : deviceSchema.getSensors()) {
+    for (Sensor sensor : bike.getSensors()) {
       KairosDataModel model = new KairosDataModel();
       model.setName(sensor.getName());
       // KairosDB do not support float as data type
@@ -116,7 +113,7 @@ public class KairosDB implements IDatabase {
       model.setValue(recordValues.get(i));
       Map<String, String> tags = new HashMap<>();
       tags.put(GROUP_STR, groupId);
-      tags.put(DEVICE_STR, deviceSchema.getDevice());
+      tags.put(DEVICE_STR, bike.getName());
       model.setTags(tags);
       models.addLast(model);
       i++;
@@ -130,7 +127,7 @@ public class KairosDB implements IDatabase {
     long en;
     LinkedList<KairosDataModel> models = new LinkedList<>();
     for (Record record : batch.getRecords()) {
-      models.addAll(createDataModel(batch.getDeviceSchema(), record.getTimestamp(),
+      models.addAll(createDataModel(batch.getBike(), record.getTimestamp(),
           record.getRecordDataValue()));
     }
     String body = JSON.toJSONString(models);
@@ -147,124 +144,52 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status preciseQuery(PreciseQuery preciseQuery) {
-    long time = preciseQuery.getTimestamp();
-    QueryBuilder builder = constructBuilder(time, time, preciseQuery.getDeviceSchemas());
-    return executeOneQuery(builder);
-  }
-
-  @Override
-  public Status rangeQuery(RangeQuery rangeQuery) {
-    long startTime = rangeQuery.getStartTimestamp();
-    long endTime = rangeQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, rangeQuery.getDeviceSchemas());
-    return executeOneQuery(builder);
-  }
-
-  @Override
-  public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
-    long startTime = valueRangeQuery.getStartTimestamp();
-    long endTime = valueRangeQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, valueRangeQuery.getDeviceSchemas());
-    Aggregator filterAggre = AggregatorFactory
-        .createFilterAggregator(FilterOperation.LTE, valueRangeQuery.getValueThreshold());
-    addAggreForQuery(builder, filterAggre);
-    return executeOneQuery(builder);
-  }
-
-  @Override
-  public Status gpsRangeQuery(RangeQuery RangeQuery) {
+  public Status precisePoint(Query query) {
     return null;
   }
 
   @Override
-  public Status gpsValueRangeQuery(GpsValueRangeQuery rangeQuery) {
+  public Status gpsPathScan(Query query) {
     return null;
   }
 
   @Override
-  public Status gpsAggValueRangeQuery(GpsAggValueRangeQuery gpsAggValueRangeQuery) {
+  public Status identifyTrips(Query query) {
     return null;
   }
 
   @Override
-  public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    /*long startTime = aggRangeQuery.getStartTimestamp();
-    long endTime = aggRangeQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, aggRangeQuery.getDeviceSchema());
-    // convert to second
-    int timeInterval = (int) (endTime - startTime) + 1;
-    Aggregator aggregator = new SamplingAggregator(aggRangeQuery.getAggrFunc(), timeInterval,
-        TimeUnit.MILLISECONDS);
-    addAggreForQuery(builder, aggregator);
-    return executeOneQuery(builder);*/
+  public Status trafficJams(Query query) {
     return null;
   }
 
   @Override
-  public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    /*long startTime = aggValueQuery.getStartTimestamp();
-    long endTime = aggValueQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, aggValueQuery.getDeviceSchema());
-    Aggregator funAggre = new SamplingAggregator(aggValueQuery.getAggrFunc(), 5000, TimeUnit.YEARS);
-    Aggregator filterAggre = AggregatorFactory
-        .createFilterAggregator(FilterOperation.LTE, aggValueQuery.getValueThreshold());
-    addAggreForQuery(builder, filterAggre, funAggre);
-    return executeOneQuery(builder);*/
+  public Status lastTimeActivelyDriven(Query query) {
     return null;
   }
 
   @Override
-  public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    /*long startTime = aggRangeValueQuery.getStartTimestamp();
-    long endTime = aggRangeValueQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime,
-        aggRangeValueQuery.getDeviceSchema());
-    int timeInterval = (int) (endTime - startTime) + 1;
-    Aggregator funAggre = new SamplingAggregator(aggRangeValueQuery.getAggrFunc(), timeInterval,
-        TimeUnit.SECONDS);
-    Aggregator filterAggre = AggregatorFactory
-        .createFilterAggregator(FilterOperation.LTE, aggRangeValueQuery.getValueThreshold());
-    addAggreForQuery(builder, filterAggre, funAggre);
-    return executeOneQuery(builder);*/
+  public Status downsample(Query query) {
     return null;
   }
 
   @Override
-  public Status groupByQuery(GroupByQuery groupByQuery) {
-    /*long startTime = groupByQuery.getStartTimestamp();
-    long endTime = groupByQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, groupByQuery.getDeviceSchema());
-    Aggregator funAggre = new SamplingAggregator(groupByQuery.getAggrFunc(),
-        (int) groupByQuery.getGranularity(), TimeUnit.MILLISECONDS);
-    addAggreForQuery(builder, funAggre);
-    return executeOneQuery(builder);*/
+  public Status lastKnownPosition(Query query) {
     return null;
   }
 
   @Override
-  public Status latestPointQuery(LatestPointQuery latestPointQuery) {
-    //latestPointQuery
-    long startTime = latestPointQuery.getStartTimestamp();
-    long endTime = latestPointQuery.getEndTimestamp();
-    QueryBuilder builder = constructBuilder(startTime, endTime, latestPointQuery.getDeviceSchemas());
-    Aggregator aggregator = AggregatorFactory.createLastAggregator(5000, TimeUnit.YEARS);
-    addAggreForQuery(builder, aggregator);
-    return executeOneQuery(builder);
-  }
-
-  @Override
-  public Status heatmapRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
+  public Status airQualityHeatMap(Query query) {
     return null;
   }
 
   @Override
-  public Status distanceRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
+  public Status distanceDriven(Query query) {
     return null;
   }
 
   @Override
-  public Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery) {
+  public Status bikesInLocation(Query query) {
     return null;
   }
 
@@ -286,15 +211,15 @@ public class KairosDB implements IDatabase {
     }
   }
 
-  private QueryBuilder constructBuilder(long st, long et, List<DeviceSchema> deviceSchemaList) {
+  private QueryBuilder constructBuilder(long st, long et, List<Bike> bikeList) {
     QueryBuilder builder = QueryBuilder.getInstance();
     builder.setStart(new Date(st))
         .setEnd(new Date(et));
-    for (DeviceSchema deviceSchema : deviceSchemaList) {
-      for (Sensor sensor : deviceSchema.getSensors()) {
+    for (Bike bike : bikeList) {
+      for (Sensor sensor : bike.getSensors()) {
         builder.addMetric(sensor.getName())
-            .addTag(DEVICE_STR, deviceSchema.getDevice())
-            .addTag(GROUP_STR, deviceSchema.getGroup());
+            .addTag(DEVICE_STR, bike.getName())
+            .addTag(GROUP_STR, bike.getGroup());
       }
     }
     return builder;

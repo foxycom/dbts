@@ -89,16 +89,6 @@ public class MySqlLog {
                 return;
             }
             switch (config.DB_SWITCH) {
-                case IOTDB:
-                    if (!hasTable("IOTDB_DATA_MODEL" + "_" + day)) {
-                        stat.executeUpdate("create table IOTDB_DATA_MODEL"
-                                + "_"
-                                + day
-                                + " (id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, projectID VARCHAR(150), sensor VARCHAR(50) NOT NULL, path VARCHAR(600), type VARCHAR(50), encoding VARCHAR(50))AUTO_INCREMENT = 1;");
-                        LOGGER.info("Table IOTDB_DATA_MODEL_{} create success!",
-                                day);
-                    }
-                    break;
                 case INFLUXDB:
                     int i = 0,
                             groupId = 0;
@@ -327,7 +317,6 @@ public class MySqlLog {
                 stat.addBatch(sql);
             }
             switch (config.DB_SWITCH) {
-                case IOTDB:
                 case TIMESCALEDB_NARROW:
                 case TIMESCALEDB_WIDE:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
@@ -335,9 +324,7 @@ public class MySqlLog {
                     stat.addBatch(sql);
                     break;
                 case INFLUXDB:
-                case OPENTSDB:
                 case KAIROSDB:
-                case CTSDB:
                     String TSHost = config.DB_URL.substring(config.DB_URL.lastIndexOf('/') + 1, config.DB_URL.lastIndexOf(':'));
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'ServerIP'", "'" + TSHost + "'");

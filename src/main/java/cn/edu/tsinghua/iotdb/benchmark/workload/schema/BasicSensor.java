@@ -100,6 +100,11 @@ public class BasicSensor implements Sensor {
     }
 
     @Override
+    public String getTableName() {
+        return sensorGroup.getTableName();
+    }
+
+    @Override
     public Function getFunction() {
         return function;
     }

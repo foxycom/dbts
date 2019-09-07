@@ -1,14 +1,13 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
-import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.BasicReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.GeolifeReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.ReddReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.reader.TDriveReader;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ public class RealDatasetWorkLoad implements IWorkload {
   private BasicReader reader;
 
   private Config config;
-  private List<DeviceSchema> deviceSchemaList;
+  private List<Bike> bikeList;
   private long startTime;
   private long endTime;
 
@@ -60,12 +59,12 @@ public class RealDatasetWorkLoad implements IWorkload {
     }
 
     //init device schema list
-    deviceSchemaList = new ArrayList<>();
+    bikeList = new ArrayList<>();
     for (int i = 1; i <= config.QUERY_DEVICE_NUM; i++) {
       String deviceIdStr = "" + i;
-      DeviceSchema deviceSchema = new DeviceSchema(calGroupIdStr(deviceIdStr, config.DEVICE_GROUPS_NUMBER),
+      Bike bike = new Bike(calGroupIdStr(deviceIdStr, config.DEVICE_GROUPS_NUMBER),
           deviceIdStr, sensorList);
-      deviceSchemaList.add(deviceSchema);
+      bikeList.add(bike);
     }
 
     //init startTime, endTime
@@ -83,72 +82,15 @@ public class RealDatasetWorkLoad implements IWorkload {
   }
 
   @Override
-  public Batch getOneBatch(DeviceSchema deviceSchema, long loopIndex) throws WorkloadException {
+  public Batch getOneBatch(Bike bike, long loopIndex) throws WorkloadException {
     throw new WorkloadException("not support in real data workload.");
   }
 
   @Override
-  public PreciseQuery getPreciseQuery() {
-    return new PreciseQuery(deviceSchemaList, startTime);
-  }
-
-  @Override
-  public RangeQuery getRangeQuery() {
-    return new RangeQuery(deviceSchemaList, startTime, endTime);
-  }
-
-  @Override
-  public RangeQuery getGpsRangeQuery() throws WorkloadException {
+  public Query getQuery(String sensorType) throws WorkloadException {
     return null;
   }
 
-  @Override
-  public GpsAggValueRangeQuery getGpsAggValueRangeQuery() throws WorkloadException {
-    return null;
-  }
-
-  @Override
-  public GpsValueRangeQuery getGpsValueRangeQuery() throws WorkloadException {
-    return null;
-  }
-
-  @Override
-  public ValueRangeQuery getValueRangeQuery() {
-    return new ValueRangeQuery(deviceSchemaList, startTime, endTime, config.QUERY_LOWER_LIMIT);
-  }
-
-  @Override
-  public AggRangeQuery getAggRangeQuery() {
-    return new AggRangeQuery(deviceSchemaList, startTime, endTime, config.QUERY_AGGREGATE_FUN);
-  }
-
-  @Override
-  public AggValueQuery getAggValueQuery() {
-    return new AggValueQuery(startTime, endTime, deviceSchemaList, config.QUERY_AGGREGATE_FUN,
-        config.QUERY_LOWER_LIMIT);
-  }
-
-  @Override
-  public AggRangeValueQuery getAggRangeValueQuery() {
-    return new AggRangeValueQuery(deviceSchemaList, startTime, endTime, config.QUERY_AGGREGATE_FUN,
-        config.QUERY_LOWER_LIMIT);
-  }
-
-  @Override
-  public GroupByQuery getGroupByQuery() {
-    return new GroupByQuery(deviceSchemaList, startTime, endTime, config.QUERY_AGGREGATE_FUN,
-        config.QUERY_INTERVAL);
-  }
-
-  @Override
-  public LatestPointQuery getLatestPointQuery() {
-    return new LatestPointQuery(deviceSchemaList, startTime, endTime, Aggregation.LAST);
-  }
-
-  @Override
-  public GpsRangeQuery getHeatmapRangeQuery() throws WorkloadException {
-    return null;
-  }
 
   static String calGroupIdStr(String deviceId, int groupNum) {
     return String.valueOf(deviceId.hashCode() % groupNum);

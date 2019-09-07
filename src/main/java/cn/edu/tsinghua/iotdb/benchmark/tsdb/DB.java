@@ -4,14 +4,10 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public enum DB {
-    IOTDB,
     INFLUXDB,
-    OPENTSDB,
-    CTSDB,
     KAIROSDB,
     TIMESCALEDB_NARROW,
-    TIMESCALEDB_WIDE,
-    FAKEDB;
+    TIMESCALEDB_WIDE;
 
     private IDatabase db;
 

@@ -3,14 +3,14 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.reader;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Record;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ReddReader extends BasicReader {
 
-  private DeviceSchema deviceSchema;
+  private Bike bike;
 
   public ReddReader(Config config, List<String> files) {
     super(config, files);
@@ -19,7 +19,7 @@ public class ReddReader extends BasicReader {
   @Override
   public void init() {
     currentDeviceId = new File(currentFile).getName();
-    deviceSchema = new DeviceSchema(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
+    bike = new Bike(calGroupIdStr(currentDeviceId, config.DEVICE_GROUPS_NUMBER),
         currentDeviceId, config.FIELDS);
   }
 
@@ -32,7 +32,7 @@ public class ReddReader extends BasicReader {
         records.add(record);
       }
     }
-    return new Batch(deviceSchema, records);
+    return new Batch(bike, records);
   }
 
   private Record convertToRecord(String line) {

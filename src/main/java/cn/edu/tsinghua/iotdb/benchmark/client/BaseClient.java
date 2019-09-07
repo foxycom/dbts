@@ -6,8 +6,9 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.SingletonWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -48,10 +49,10 @@ public abstract class BaseClient extends Client implements Runnable {
           clientMonitoring.start();
           if (config.BIND_CLIENTS_TO_DEVICES) {
             try {
-              List<DeviceSchema> schema = dataSchema.getClientBindSchema().get(clientThreadId);
+              List<Bike> schema = dataSchema.getClientBindSchema().get(clientThreadId);
               int i = 1;
-              for (DeviceSchema deviceSchema : schema) {
-                Batch batch = syntheticWorkload.getOneBatch(deviceSchema, insertLoopIndex);
+              for (Bike bike : schema) {
+                Batch batch = syntheticWorkload.getOneBatch(bike, insertLoopIndex);
                 barrier.await();
                 dbWrapper.insertOneBatch(batch);
                 double progress = (double) (i * 100) / schema.size();
@@ -70,115 +71,82 @@ public abstract class BaseClient extends Client implements Runnable {
             }
           }
           break;
-        case PRECISE_QUERY:
+        case PRECISE_POINT:
             clientMonitoring.start();
           try {
-            dbWrapper.preciseQuery(syntheticWorkload.getPreciseQuery());
+            dbWrapper.precisePoint(syntheticWorkload.getQuery("emg"));
           } catch (Exception e) {
             LOGGER.error("Failed to do precise query because ", e);
           }
           break;
-        case RANGE_QUERY:
+        case ACTIVE_BIKES:
           clientMonitoring.start();
           try {
-            dbWrapper.rangeQuery(syntheticWorkload.getRangeQuery());
-          } catch (Exception e) {
-            LOGGER.error("Failed to do range query because ", e);
-          }
-          break;
-        case VALUE_RANGE_QUERY:
-          clientMonitoring.start();
-          try {
-            dbWrapper.valueRangeQuery(syntheticWorkload.getValueRangeQuery());
+            dbWrapper.lastTimeActivelyDriven(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to do range query with value filter because ", e);
           }
-          break;
-        case AGG_RANGE_QUERY:
-          clientMonitoring.start();
-          try {
-            dbWrapper.aggRangeQuery(syntheticWorkload.getAggRangeQuery());
-          } catch (WorkloadException e) {
-            LOGGER.error("Failed to do aggregation range query because ", e);
-          }
-          break;
-        case AGG_VALUE_QUERY:
-          clientMonitoring.start();
-          try {
-            dbWrapper.aggValueQuery(syntheticWorkload.getAggValueQuery());
-          } catch (WorkloadException e) {
-            LOGGER.error("Failed to do aggregation query with value filter because ", e);
-          }
-          break;
-        case AGG_RANGE_VALUE_QUERY:
-          clientMonitoring.start();
-          try {
-            dbWrapper.aggRangeValueQuery(syntheticWorkload.getAggRangeValueQuery());
-          } catch (WorkloadException e) {
-            LOGGER.error("Failed to do aggregation range query with value filter because ", e);
-          }
-          break;
-        case GROUP_BY_QUERY:
+        case DOWNSAMPLE:
             clientMonitoring.start();
           try {
-            dbWrapper.groupByQuery(syntheticWorkload.getGroupByQuery());
+            dbWrapper.downsample(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to do group by query because ", e);
           }
           break;
-        case LATEST_POINT_QUERY:
+        case LAST_KNOWN_POSITION:
             clientMonitoring.start();
           try {
-            dbWrapper.latestPointQuery(syntheticWorkload.getLatestPointQuery());
+            dbWrapper.lastKnownPosition(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute latest point query because ", e);
           }
           break;
 
-        case GPS_TIME_RANGE_QUERY:
+        case GPS_PATH_SCAN:
             clientMonitoring.start();
           try {
-            dbWrapper.gpsRangeQuery(syntheticWorkload.getGpsRangeQuery());
+            dbWrapper.gpsPathScan(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a time range query with GPS data because ", e);
           }
           break;
-        case GPS_TRIP_RANGE_QUERY:
+        case IDENTIFY_TRIPS:
             clientMonitoring.start();
           try {
-            dbWrapper.gpsValueRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
+            dbWrapper.identifyTrips(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a time range query on trip identification because ", e);
           }
           break;
-        case HEATMAP_RANGE_QUERY:
+        case AIRQUALITY_HEATMAP:
             clientMonitoring.start();
           try {
-            dbWrapper.heatmapRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
+            dbWrapper.airQualityHeatMap(syntheticWorkload.getQuery("airquality"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a heat map range query because ", e);
           }
           break;
-        case DISTANCE_RANGE_QUERY:
+        case DISTANCE_DRIVEN:
           clientMonitoring.start();
           try {
-            dbWrapper.distanceRangeQuery(syntheticWorkload.getGpsValueRangeQuery());
+            dbWrapper.distanceDriven(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute a distance range query because ", e);
           }
           break;
-        case BIKES_IN_LOCATION_QUERY:
+        case BIKES_IN_LOCATION:
           clientMonitoring.start();
           try {
-            dbWrapper.bikesInLocationQuery(syntheticWorkload.getHeatmapRangeQuery());
+            dbWrapper.bikesInLocation(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute the bikes in location query because ", e);
           }
           break;
-        case GPS_AGG_VALUE_RANGE_QUERY:
+        case TRAFFIC_JAMS:
           clientMonitoring.start();
           try {
-            dbWrapper.gpsAggValueRangeQuery(syntheticWorkload.getGpsAggValueRangeQuery());
+            dbWrapper.trafficJams(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute the gps aggregation in range query because ", e);
           }

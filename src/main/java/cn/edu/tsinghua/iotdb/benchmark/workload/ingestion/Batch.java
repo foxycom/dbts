@@ -1,9 +1,8 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.ingestion;
 
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 
-import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.Map;
 
 public class Batch {
 
-  private DeviceSchema deviceSchema;
+  private Bike bike;
   private List<Record> records;
   private long timeRange;
   private Map<Sensor, Point[]> entries = new HashMap<>();
@@ -20,17 +19,17 @@ public class Batch {
     records = new ArrayList<>();
   }
 
-  public Batch(DeviceSchema deviceSchema, List<Record> records) {
-    this.deviceSchema = deviceSchema;
+  public Batch(Bike bike, List<Record> records) {
+    this.bike = bike;
     this.records = records;
   }
 
-  public DeviceSchema getDeviceSchema() {
-    return deviceSchema;
+  public Bike getBike() {
+    return bike;
   }
 
-  public void setDeviceSchema(DeviceSchema deviceSchema) {
-    this.deviceSchema = deviceSchema;
+  public void setBike(Bike bike) {
+    this.bike = bike;
   }
 
   public List<Record> getRecords() {

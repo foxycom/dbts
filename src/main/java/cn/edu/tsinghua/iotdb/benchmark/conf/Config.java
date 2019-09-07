@@ -159,6 +159,8 @@ public class Config {
 	public long REAL_QUERY_START_TIME = 0;
 	public long REAL_QUERY_STOP_TIME = Long.MAX_VALUE;
 
+	public long END_TIMESTAMP = 1535583999980L;
+
 	/** MySQL logging DB HOST and user credentials */
 	public String MYSQL_URL = "jdbc:mysql://166.111.141.168:3306/benchmark?"
 			+ "user=root&password=Ise_Nel_2017&useUnicode=true&characterEncoding=UTF8&useSSL=false";

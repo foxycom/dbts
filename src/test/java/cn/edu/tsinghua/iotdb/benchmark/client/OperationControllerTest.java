@@ -45,7 +45,7 @@ public class OperationControllerTest {
     }
     config.OPERATION_PROPORTION = "0:1:0:0:0:0:0:0:0";
     for(int i=0;i<loop;i++){
-      assertEquals(Operation.PRECISE_QUERY, operationController.getNextOperationType());
+      assertEquals(Operation.PRECISE_POINT, operationController.getNextOperationType());
     }
   }
 

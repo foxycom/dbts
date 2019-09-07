@@ -7,8 +7,8 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Measurement;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DeviceSchema;
+import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 
 import java.util.List;
 import java.util.Locale;
@@ -49,8 +49,8 @@ public class DBWrapper implements IDatabase {
         String currentThread = Thread.currentThread().getName();
         double throughput = batch.pointNum() / (timeInMillis / Constants.MILLIS_TO_SECONDS);
         String log = String.format(Locale.US, "%s INSERT ONE batch latency (DEVICE: %s, GROUP: %s), %.2f ms, THROUGHPUT: %.2f points/s",
-                currentThread, batch.getDeviceSchema().getDevice(),
-                batch.getDeviceSchema().getGroup(), timeInMillis, throughput);
+                currentThread, batch.getBike().getName(),
+                batch.getBike().getGroup(), timeInMillis, throughput);
         LOGGER.info(log);
       } else {
         measurement.addFailOperation(operation, batch.pointNum());
@@ -62,214 +62,148 @@ public class DBWrapper implements IDatabase {
     return status;
   }
 
+  @Override
+  public Status precisePoint(Query query) {
+    Status status = null;
+    Operation operation = Operation.PRECISE_POINT;
+    try {
+      status = db.precisePoint(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status gpsPathScan(Query query) {
+    Status status = null;
+    Operation operation = Operation.GPS_PATH_SCAN;
+    try {
+      status = db.gpsPathScan(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status identifyTrips(Query query) {
+    Status status = null;
+    Operation operation = Operation.IDENTIFY_TRIPS;
+    try {
+      status = db.identifyTrips(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status trafficJams(Query query) {
+    Status status = null;
+    Operation operation = Operation.TRAFFIC_JAMS;
+    try {
+      status = db.trafficJams(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status lastTimeActivelyDriven(Query query) {
+    Status status = null;
+    Operation operation = Operation.ACTIVE_BIKES;
+    try {
+      status = db.lastTimeActivelyDriven(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status downsample(Query query) {
+    Status status = null;
+    Operation operation = Operation.DOWNSAMPLE;
+    try {
+      status = db.downsample(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status lastKnownPosition(Query query) {
+    Status status = null;
+    Operation operation = Operation.LAST_KNOWN_POSITION;
+    try {
+      status = db.lastKnownPosition(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status airQualityHeatMap(Query query) {
+    Status status = null;
+    Operation operation = Operation.AIRQUALITY_HEATMAP;
+    try {
+      status = db.airQualityHeatMap(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status distanceDriven(Query query) {
+    Status status = null;
+    Operation operation = Operation.DISTANCE_DRIVEN;
+    try {
+      status = db.distanceDriven(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
+  @Override
+  public Status bikesInLocation(Query query) {
+    Status status = null;
+    Operation operation = Operation.BIKES_IN_LOCATION;
+    try {
+      status = db.bikesInLocation(query);
+      handleQueryOperation(status, operation);
+    } catch (Exception e) {
+      measurement.addFailOperation(operation);
+      LOGGER.error(ERROR_LOG, operation, e);
+    }
+    return status;
+  }
+
   public void incrementLoopIndex() {
     measurement.incrementLoopIndex();
-  }
-
-  @Override
-  public Status preciseQuery(PreciseQuery preciseQuery) {
-    Status status = null;
-    Operation operation = Operation.PRECISE_QUERY;
-    try {
-      status = db.preciseQuery(preciseQuery);
-      handleQueryOperation(status, operation);
-
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status rangeQuery(RangeQuery rangeQuery) {
-    Status status = null;
-    Operation operation = Operation.RANGE_QUERY;
-    try {
-      status = db.rangeQuery(rangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status gpsRangeQuery(RangeQuery rangeQuery) {
-    Status status = null;
-    Operation operation = Operation.GPS_TIME_RANGE_QUERY;
-    try {
-      status = db.gpsRangeQuery(rangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status gpsValueRangeQuery(GpsValueRangeQuery rangeQuery) {
-    Status status = null;
-    Operation operation = Operation.GPS_TRIP_RANGE_QUERY;
-    try {
-      status = db.gpsValueRangeQuery(rangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status gpsAggValueRangeQuery(GpsAggValueRangeQuery gpsAggValueRangeQuery) {
-    Status status = null;
-    Operation operation = Operation.GPS_AGG_VALUE_RANGE_QUERY;
-    try {
-      status = db.gpsAggValueRangeQuery(gpsAggValueRangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-
-  @Override
-  public Status valueRangeQuery(ValueRangeQuery valueRangeQuery) {
-    Status status = null;
-    Operation operation = Operation.VALUE_RANGE_QUERY;
-    try {
-      status = db.valueRangeQuery(valueRangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status aggRangeQuery(AggRangeQuery aggRangeQuery) {
-    Status status = null;
-    Operation operation = Operation.AGG_RANGE_QUERY;
-    try {
-      status = db.aggRangeQuery(aggRangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status aggValueQuery(AggValueQuery aggValueQuery) {
-    Status status = null;
-    Operation operation = Operation.AGG_VALUE_QUERY;
-    try {
-      status = db.aggValueQuery(aggValueQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status aggRangeValueQuery(AggRangeValueQuery aggRangeValueQuery) {
-    Status status = null;
-    Operation operation = Operation.AGG_RANGE_VALUE_QUERY;
-    try {
-      status = db.aggRangeValueQuery(aggRangeValueQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status groupByQuery(GroupByQuery groupByQuery) {
-    Status status = null;
-    Operation operation = Operation.GROUP_BY_QUERY;
-    try {
-      status = db.groupByQuery(groupByQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status latestPointQuery(LatestPointQuery latestPointQuery) {
-    Status status = null;
-    Operation operation = Operation.LATEST_POINT_QUERY;
-    try {
-      status = db.latestPointQuery(latestPointQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status heatmapRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
-    Status status = null;
-    Operation operation = Operation.HEATMAP_RANGE_QUERY;
-    try {
-      status = db.heatmapRangeQuery(gpsRangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status distanceRangeQuery(GpsValueRangeQuery gpsRangeQuery) {
-    Status status = null;
-    Operation operation = Operation.DISTANCE_RANGE_QUERY;
-    try {
-      status = db.distanceRangeQuery(gpsRangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
-  }
-
-  @Override
-  public Status bikesInLocationQuery(GpsRangeQuery gpsRangeQuery) {
-    Status status = null;
-    Operation operation = Operation.BIKES_IN_LOCATION_QUERY;
-    try {
-      status = db.bikesInLocationQuery(gpsRangeQuery);
-      handleQueryOperation(status, operation);
-    } catch (Exception e) {
-      measurement.addFailOperation(operation);
-      LOGGER.error(ERROR_LOG, operation, e);
-    }
-    return status;
   }
 
   @Override
@@ -288,7 +222,7 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public void registerSchema(List<DeviceSchema> schemaList) throws TsdbException {
+  public void registerSchema(List<Bike> schemaList) throws TsdbException {
     double createSchemaTimeInSecond;
     long en = 0;
     long st = 0;

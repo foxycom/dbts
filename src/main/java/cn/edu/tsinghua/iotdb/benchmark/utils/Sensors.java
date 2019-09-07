@@ -24,10 +24,21 @@ public class Sensors {
         return sensorWithMinInterval;
     }
 
-    public static SensorGroup groupOfType(String type) {
+    public static Sensor ofType(String type) {
+        Sensor typedSensor = null;
+        for (Sensor sensor : config.SENSORS) {
+            if (sensor.getSensorGroup().getName().toLowerCase().contains(type.toLowerCase())) {
+                typedSensor = sensor;
+                break;
+            }
+        }
+        return typedSensor;
+    }
+
+    public static SensorGroup groupOfType(String groupType) {
         SensorGroup sensorGroup = null;
         for (SensorGroup sg : config.SENSOR_GROUPS) {
-            if (sg.getName().contains(type)) {
+            if (sg.getName().toLowerCase().contains(groupType.toLowerCase())) {
                 sensorGroup = sg;
                 break;
             }
