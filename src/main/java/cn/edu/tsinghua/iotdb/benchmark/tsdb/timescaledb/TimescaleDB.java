@@ -625,7 +625,7 @@ public class TimescaleDB implements IDatabase {
       sql = "select b.bike_id, b.owner_name, st_length(st_makeline(%s::geometry)::geography, false) \n" +
               "from bikes b inner join lateral (\n" +
               "\tselect time_bucket(interval '1 s', time) as second, %s from %s t \n" +
-              "\twhere t.bike_id = b.bike_id and time >= '%s' and time <= '%s'\n" +
+              "\twhere t.bike_id = b.bike_id and bike_id = '%s' and time >= '%s' and time <= '%s'\n" +
               "\tgroup by second, %s having avg(%s) > %f\n" +
               ") as data on true\n" +
               "group by b.bike_id, b.owner_name;";
@@ -635,6 +635,7 @@ public class TimescaleDB implements IDatabase {
               gpsSensor.getName(),
               gpsSensor.getName(),
               tableName,
+              bike.getName(),
               startTimestamp,
               endTimestamp,
               gpsSensor.getName(),
