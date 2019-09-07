@@ -105,11 +105,11 @@ public class DBWrapper implements IDatabase {
   }
 
   @Override
-  public Status trafficJams(Query query) {
+  public Status dangerousSpots(Query query) {
     Status status = null;
-    Operation operation = Operation.TRAFFIC_JAMS;
+    Operation operation = Operation.DANGEROUS_SPOTS;
     try {
-      status = db.trafficJams(query);
+      status = db.dangerousSpots(query);
       handleQueryOperation(status, operation);
     } catch (Exception e) {
       measurement.addFailOperation(operation);

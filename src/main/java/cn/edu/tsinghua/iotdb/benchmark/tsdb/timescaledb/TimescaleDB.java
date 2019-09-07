@@ -666,8 +666,8 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * Computes an average value per distance which has been driven within a given time range, e. g. energy consumption.
-   * A trip is identified by a sensor value which exceeds certain threshold.
+   * Computes road segments with high average sensor measurements values, e.g., accelerometer, identifying spots
+   * where riders often use brakes.
    *
    * NARROW_TABLE:
    * <p><code>
@@ -683,16 +683,15 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(s_40), st_makeline(s_12::geometry), bike_id
-   *  FROM test WHERE s_40 > 3.0 AND (bike_id = 'bike_7')
-   *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0')
-   *  GROUP BY time_bucket, bike_id;
+   *  select time_bucket(interval '10 s', time) as five_seconds, st_makeline(s_12::geometry)
+   *  from test t where time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
+   *  group by five_seconds having avg(s_40) > 3.000000;
    * </code></p>
    * @param query
    * @return
    */
   @Override
-  public Status trafficJams(Query query) {
+  public Status dangerousSpots(Query query) {
     String sql = "";
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
@@ -717,15 +716,18 @@ public class TimescaleDB implements IDatabase {
               timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
               bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      List<String> aggregatedColumns = new ArrayList<>(Collections.singletonList(sensor.getName()));
-      List<String> plainColumns = new ArrayList<>(
-              Arrays.asList("st_makeline(" + gpsSensor.getName() + "::geometry)", SqlBuilder.Column.BIKE.getName())
+      sql = "select time_bucket(interval '10 s', time) as five_seconds, st_makeline(%s::geometry) \n" +
+              "from %s t where time >= '%s' and time <= '%s' group by five_seconds having avg(%s) > %f;";
+      sql = String.format(
+              Locale.US,
+              sql,
+              gpsSensor.getName(),
+              tableName,
+              startTimestamp,
+              endTimestamp,
+              sensor.getName(),
+              query.getThreshold()
       );
-      sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, config.QUERY_AGGREGATE_FUN, config.TIME_BUCKET)
-              .from(tableName).where().value(sensor.getName(), SqlBuilder.Op.GREATER, query.getThreshold())
-              .and().bikes(query.getBikes()).and().time(query)
-              .groupBy(Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
-      sql = sqlBuilder.build();
     }
     return executeQuery(sql);
   }

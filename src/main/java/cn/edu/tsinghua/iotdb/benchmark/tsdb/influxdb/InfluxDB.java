@@ -162,7 +162,7 @@ public class InfluxDB implements IDatabase {
   }
 
   @Override
-  public Status trafficJams(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+  public Status dangerousSpots(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
 

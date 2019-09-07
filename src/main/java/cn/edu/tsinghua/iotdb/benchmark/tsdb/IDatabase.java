@@ -76,7 +76,7 @@ public interface IDatabase {
    * @param query
    * @return
    */
-  Status trafficJams(Query query);
+  Status dangerousSpots(Query query);
 
   /**
    * Query data of one or multiple sensors in a time range with a value filter.

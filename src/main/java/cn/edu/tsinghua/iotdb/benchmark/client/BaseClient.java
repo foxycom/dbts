@@ -143,10 +143,10 @@ public abstract class BaseClient extends Client implements Runnable {
             LOGGER.error("Failed to execute the bikes in location query because ", e);
           }
           break;
-        case TRAFFIC_JAMS:
+        case DANGEROUS_SPOTS:
           clientMonitoring.start();
           try {
-            dbWrapper.trafficJams(syntheticWorkload.getQuery("emg"));
+            dbWrapper.dangerousSpots(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
             LOGGER.error("Failed to execute the gps aggregation in range query because ", e);
           }

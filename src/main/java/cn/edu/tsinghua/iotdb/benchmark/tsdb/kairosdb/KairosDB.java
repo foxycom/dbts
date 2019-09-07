@@ -159,7 +159,7 @@ public class KairosDB implements IDatabase {
   }
 
   @Override
-  public Status trafficJams(Query query) {
+  public Status dangerousSpots(Query query) {
     return null;
   }
 
