@@ -5,6 +5,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public enum DB {
     INFLUXDB,
+    CITUS,
     KAIROSDB,
     TIMESCALEDB_NARROW,
     TIMESCALEDB_WIDE;

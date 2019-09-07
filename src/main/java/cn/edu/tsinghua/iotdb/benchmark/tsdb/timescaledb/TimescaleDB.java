@@ -190,6 +190,7 @@ public class TimescaleDB implements IDatabase {
       // Inserts all bikes.
       String insertBikesSql = getInsertBikesSql(schemaList);
       statement.addBatch(insertBikesSql);
+      createGridFunction();
 
       String createGridTableSql = getCreateGridTableSql();
       statement.addBatch(createGridTableSql);
@@ -213,12 +214,11 @@ public class TimescaleDB implements IDatabase {
         statement.addBatch(createTableSql);
         statement.executeBatch();
         connection.commit();
-        String converToHyperTableSql = String.format(CONVERT_TO_HYPERTABLE, tableName);
-        statement.execute(converToHyperTableSql);
+        String convertToHyperTableSql = String.format(CONVERT_TO_HYPERTABLE, tableName);
+        statement.execute(convertToHyperTableSql);
       }
 
       createIndexes();
-      createGridFunction();
     } catch (SQLException e) {
       LOGGER.error("Can't create PG table because: {}", e.getMessage());
       System.out.println(e.getNextException());
@@ -361,7 +361,6 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * TODO ready
    * Selects data points, which are stored with a given timestamp.
    *
    * NARROW_TABLE:
@@ -666,6 +665,7 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
+   * TODO change to bikes which are longer offline
    * Computes road segments with high average sensor measurements values, e.g., accelerometer, identifying spots
    * where riders often use brakes.
    *
@@ -683,9 +683,9 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  select time_bucket(interval '10 s', time) as five_seconds, st_makeline(s_12::geometry)
+   *  select time_bucket(interval '10 s', time) as ten_seconds, st_makeline(s_12::geometry)
    *  from test t where time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-   *  group by five_seconds, bike_id having avg(s_40) > 3.000000;
+   *  group by ten_seconds, bike_id having avg(s_40) > 3.000000;
    * </code></p>
    * @param query
    * @return
@@ -716,8 +716,8 @@ public class TimescaleDB implements IDatabase {
               timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
               bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select time_bucket(interval '10 s', time) as five_seconds, st_makeline(%s::geometry) \n" +
-              "from %s t where time >= '%s' and time <= '%s' group by five_seconds having avg(%s) > %f;";
+      sql = "select time_bucket(interval '10 s', time) as ten_seconds, st_makeline(%s::geometry) \n" +
+              "from %s t where time >= '%s' and time <= '%s' group by ten_seconds having avg(%s) > %f;";
       sql = String.format(
               Locale.US,
               sql,
@@ -860,6 +860,7 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
+   * todo change
    * Creates a heat map with average air quality out of gps points.
    *
    * NARROW_TABLE:

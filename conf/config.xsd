@@ -12,12 +12,9 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="TimescaleDB_Wide"/>
       <xs:enumeration value="TimescaleDB_Narrow"/>
-      <xs:enumeration value="IoTDB"/>
       <xs:enumeration value="InfluxDB"/>
-      <xs:enumeration value="OpenTSDB"/>
-      <xs:enumeration value="CTSDB"/>
       <xs:enumeration value="KairosDB"/>
-      <xs:enumeration value="FakeDB"/>
+      <xs:enumeration value="Citus"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:complexType name="dbType">

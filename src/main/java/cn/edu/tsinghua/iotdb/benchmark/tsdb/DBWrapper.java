@@ -226,9 +226,9 @@ public class DBWrapper implements IDatabase {
     double createSchemaTimeInSecond;
     long en = 0;
     long st = 0;
-    LOGGER.info("Registering schema...");
     try {
       if (config.CREATE_SCHEMA) {
+        LOGGER.info("Registering schema...");
         st = System.nanoTime();
         db.registerSchema(schemaList);
         en = System.nanoTime();
