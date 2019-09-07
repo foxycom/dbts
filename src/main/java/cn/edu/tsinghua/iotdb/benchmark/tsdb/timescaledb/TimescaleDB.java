@@ -685,7 +685,7 @@ public class TimescaleDB implements IDatabase {
    * <p><code>
    *  select time_bucket(interval '10 s', time) as five_seconds, st_makeline(s_12::geometry)
    *  from test t where time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-   *  group by five_seconds having avg(s_40) > 3.000000;
+   *  group by five_seconds, bike_id having avg(s_40) > 3.000000;
    * </code></p>
    * @param query
    * @return
