@@ -899,21 +899,11 @@ public class TimescaleDB implements IDatabase {
               gpsSensor.getTableName(), timeColumn, valueColumn, bikeColumn, sensor.getTableName(), timeColumn,
               startTimestamp, timeColumn, endTimestamp, bikeColumn, bikeColumn, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "with gps as (\n" +
-              "\tselect time_bucket(interval '1 s', time) as second, bike_id, %s \n" +
-              "\tfrom %s t \n" +
-              "\tgroup by second, bike_id, %s\n" +
-              "\thaving %s is not null\n" +
-              "), pollution as (\n" +
-              "\tselect time_bucket(interval '1 s', time) as second, bike_id, avg(%s) \n" +
-              "\tfrom %s t\n" +
-              "\tgroup by second, bike_id\n" +
-              ") select st_x(g.%s::geometry) as longitude, st_y(g.%s::geometry) as latitude, p.avg \n" +
-              "from gps g, pollution p \n" +
-              "where p.bike_id = g.bike_id and p.second = g.second;";
+      sql = "select st_x(%s::geometry) as longitude, \n" +
+              "st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
+              "where %s is not null\n" +
+              "group by %s;";
       sql = String.format(Locale.US, sql,
-              gpsSensor.getName(),
-              tableName,
               gpsSensor.getName(),
               gpsSensor.getName(),
               sensor.getName(),
