@@ -4,12 +4,12 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>TimescaleDB_Wide</type>
+        <type>Citus</type>
         <name>test</name>
         <host>127.0.0.1</host>
         <port>5432</port>
-        <erase wait="5000">true</erase>
-        <createSchema>true</createSchema>
+        <erase wait="5000">false</erase>
+        <createSchema>false</createSchema>
     </db>
     <mode>server_mode</mode>
     <mysqlLog active="true">

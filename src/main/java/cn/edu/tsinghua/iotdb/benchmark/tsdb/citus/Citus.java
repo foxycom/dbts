@@ -59,7 +59,7 @@ public class Citus implements IDatabase {
                     Constants.POSTGRESQL_PASSWD
             );
         } catch (Exception e) {
-            LOGGER.error("Initialize TimescaleDB failed because ", e);
+            LOGGER.error("Initialize Citus failed because ", e);
             throw new TsdbException(e);
         }
     }
