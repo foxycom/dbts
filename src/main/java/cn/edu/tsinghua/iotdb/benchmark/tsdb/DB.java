@@ -1,5 +1,6 @@
 package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.citus.Citus;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -26,6 +27,13 @@ public enum DB {
             case TIMESCALEDB_WIDE:
                 if (db == null) {
                     db = new TimescaleDB(TimescaleDB.TableMode.WIDE_TABLE);
+                    db.init();
+                }
+                size = db.getSize();
+                break;
+            case CITUS:
+                if (db == null) {
+                    db = new Citus();
                     db.init();
                 }
                 size = db.getSize();

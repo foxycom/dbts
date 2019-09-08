@@ -7,7 +7,7 @@
         <type>Citus</type>
         <name>test</name>
         <host>127.0.0.1</host>
-        <port>5432</port>
+        <port>9700</port>
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>

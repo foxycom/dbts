@@ -30,7 +30,6 @@ public class Citus implements IDatabase {
     private static Config config;
     private static final Logger LOGGER = LoggerFactory.getLogger(Citus.class);
     private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
-    private long initialDbSize;
     private SqlBuilder sqlBuilder;
     private Faker nameFaker;
 
@@ -64,25 +63,6 @@ public class Citus implements IDatabase {
         }
     }
 
-    /*
-     * Returns the size of a given database in bytes.
-     */
-    private long getInitialSize() {
-        String sql = "";
-        long initialSize = 0;
-        try (Statement statement = connection.createStatement()) {
-            sql = "SELECT pg_database_size('%s') as initial_db_size;";
-            sql = String.format(sql, config.DB_NAME);
-            ResultSet rs = statement.executeQuery(sql);
-            if (rs.next()) {
-                initialSize = rs.getLong("initial_db_size");
-            }
-        } catch (SQLException e) {
-            LOGGER.warn("Could not query the initial DB size of TimescaleDB with: {}", sql);
-        }
-        return initialSize;
-    }
-
     /**
      * Erases the data from the database by dropping benchmark tables.
      *
@@ -98,8 +78,6 @@ public class Citus implements IDatabase {
             statement.addBatch(String.format(DROP_TABLE, tableName));
             statement.executeBatch();
             connection.commit();
-
-            initialDbSize = getInitialSize();
 
             // wait for deletion complete
             LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
@@ -193,13 +171,15 @@ public class Citus implements IDatabase {
     public float getSize() throws TsdbException {
         float resultInGB = 0.0f;
         try (Statement statement = connection.createStatement()) {
-            String selectSizeSql = String.format("SELECT pg_database_size('%s') as db_size;", config.DB_NAME);
+            String selectSizeSql = "SELECT logicalrelid AS name, " +
+                    "citus_total_relation_size(logicalrelid) AS size " +
+                    "FROM pg_dist_partition";
             ResultSet rs = statement.executeQuery(selectSizeSql);
-            if (rs.next()) {
-                long resultInB = rs.getLong("db_size");
-                resultInB -= initialDbSize;
-                resultInGB = (float) resultInB / B2GB;
+            long resultInB = 0L;
+            while (rs.next()) {
+                resultInB += rs.getLong("size");
             }
+            resultInGB = (float) resultInB / B2GB;
             return resultInGB;
         } catch (SQLException e) {
             LOGGER.error("Could not read the size of the data because: {}", e.getMessage());
