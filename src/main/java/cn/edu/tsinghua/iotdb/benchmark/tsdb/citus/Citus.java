@@ -285,14 +285,12 @@ public class Citus implements IDatabase {
     /**
      * Selects data points, which are stored with a given timestamp.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  SELECT value, time, bike_id FROM emg_benchmark WHERE (bike_id = 'bike_10') AND (time = '2018-08-29 18:00:00.0');
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') AND (time = '2018-08-29 18:00:00.0');
+     *  SELECT time, b.bike_id, b.owner_name, s_33
+     *  FROM test t, bikes b
+     *  WHERE b.bike_id = t.bike_id
+     *  AND b.bike_id = 'bike_51'
+     *  AND time = '2018-08-30 02:00:00.0';
      * </code></p>
      *
      * @param query The query parameters object.
@@ -301,29 +299,36 @@ public class Citus implements IDatabase {
     @Override
     public Status precisePoint(Query query) {
         Sensor sensor = query.getSensor();
-        long timestamp = query.getStartTimestamp();
-
-        List<String> columns = Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(),
-                sensor.getName());
-        sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(query.getBikes())
-                .and().time(timestamp);
-        return executeQuery(sqlBuilder.build());
+        Bike bike = query.getBikes().get(0);
+        Timestamp timestamp = new Timestamp(query.getStartTimestamp());
+        String sql = "SELECT time, b.bike_id, b.owner_name, %s \n" +
+                "FROM %s t, bikes b\n" +
+                "WHERE b.bike_id = t.bike_id\n" +
+                "AND b.bike_id = '%s' \n" +
+                "AND time = '%s';";
+        sql = String.format(
+                Locale.US,
+                sql,
+                sensor.getName(),
+                tableName,
+                bike.getName(),
+                timestamp
+        );
+        return executeQuery(sql);
     }
 
     /**
      * Selects the last known GPS position of bikes.
-     *
-     * NARROW_TABLE:
+
      * <p><code>
-     *  SELECT value, bike_id, time, sensor_id FROM gps_benchmark WHERE (bike_id = 'bike_5') ORDER BY time DESC LIMIT 1;
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  select data.time, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
-     * 	select * from test t where t.bike_id = b.bike_id and s_12 is not null
-     * 	order by time desc limit 1
-     *  ) as data on true;
+     *  WITH location AS (
+     * 	 SELECT DISTINCT ON(bike_id) bike_id, s_12, time
+     * 	 FROM test t
+     * 	 WHERE s_12 IS NOT NULL
+     * 	 GROUP BY bike_id, time, s_12
+     * 	 ORDER BY bike_id, time desc
+     *  ) SELECT l.time, b.bike_id, b.owner_name, l.s_12
+     *  FROM location l, bikes b WHERE b.bike_id = l.bike_id;
      * </code></p>
      *
      * @param query The query parameters query.
@@ -334,14 +339,14 @@ public class Citus implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         String sql = "";
 
-        sql = "with location as (\n" +
-                "\tselect distinct on(bike_id) bike_id, %s, time \n" +
-                "\tfrom %s t\n" +
-                "\twhere %s is not null\n" +
-                "\tgroup by bike_id, time, %s\n" +
-                "\torder by bike_id, time desc\n" +
-                ") select l.time, b.bike_id, b.owner_name, l.%s \n" +
-                "from location l, bikes b where b.bike_id = l.bike_id;";
+        sql = "WITH location AS (\n" +
+                "\tSELECT DISTINCT ON(bike_id) bike_id, %s, time \n" +
+                "\tFROM %s t\n" +
+                "\tWHERE %s IS NOT NULL\n" +
+                "\tGROUP BY bike_id, time, %s\n" +
+                "\tORDER BY bike_id, time desc\n" +
+                ") SELECT l.time, b.bike_id, b.owner_name, l.%s \n" +
+                "FROM location l, bikes b WHERE b.bike_id = l.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -358,22 +363,15 @@ public class Citus implements IDatabase {
     /**
      * Performs a scan of gps data points in a given time range for specified number of bikes.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  SELECT time, bike_id, value FROM gps_benchmark WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
-     *  AND time <= '2018-08-29 19:00:00.0');
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  select data.bike_id, b.owner_name, data.location from bikes b inner join lateral (
-     * 	select s_12 as location, bike_id from test t
-     * 	where t.bike_id = b.bike_id
-     * 	and bike_id = 'bike_0'
-     * 	and s_12 is not null
-     * 	and time >= '2018-08-29 18:00:00.0'
-     * 	and time <= '2018-08-29 19:00:00.0'
-     *  ) as data on true;
+     *  SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
+     * 	 SELECT s_12 AS location, bike_id FROM test t
+     * 	 WHERE t.bike_id = b.bike_id
+     * 	 AND bike_id = 'bike_67'
+     * 	 AND s_12 IS NOT NULL
+     * 	 AND time >= '2018-08-30 02:00:00.0'
+     * 	 AND time <= '2018-08-30 03:00:00.0'
+     *  ) AS data ON true;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -388,14 +386,14 @@ public class Citus implements IDatabase {
         List<String> columns = new ArrayList<>(Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
         String sql = "";
 
-        sql = "select data.bike_id, b.owner_name, data.location from bikes b inner join lateral (\n" +
-                "\tselect %s as location, bike_id from test t\n" +
-                "\twhere t.bike_id = b.bike_id \n" +
-                "\tand bike_id = '%s' \n" +
-                "\tand %s is not null\n" +
-                "\tand time >= '%s' \n" +
-                "\tand time <= '%s'\n" +
-                ") as data on true;";
+        sql = "SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n" +
+                "\tSELECT %s AS location, bike_id FROM test t\n" +
+                "\tWHERE t.bike_id = b.bike_id \n" +
+                "\tAND bike_id = '%s' \n" +
+                "\tAND %s IS NOT NULL\n" +
+                "\tAND time >= '%s' \n" +
+                "\tAND time <= '%s'\n" +
+                ") AS data ON true;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -411,30 +409,19 @@ public class Citus implements IDatabase {
     /**
      * Identifies active trips, when current value is above a threshold.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  WITH trip (second, current_value) AS (
-     *   SELECT time_bucket('1 second', time) AS second, value(AVG)
-     *   FROM emg_benchmark WHERE bike_id = 'bike_0' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'
-     *   GROUP BY second HAVING AVG(value) > 3.000000
-     *  ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
-     *  WHERE g.bike_id = 'bike_0';
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  select data.second, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
-     * 	select time_bucket(interval '1 s', time) as second, bike_id, s_12
-     * 	from test t
-     * 	where t.bike_id = b.bike_id
-     * 	and t.bike_id = 'bike_2'
-     * 	and s_12 is not null
-     * 	and time >= '2018-08-29 18:00:00.0'
-     * 	and time < '2018-08-29 19:00:00.0'
-     * 	group by second, bike_id, s_12
-     * 	having avg(s_40) >= 3.000000
-     *  ) as data on true
-     *  order by data.second asc, data.bike_id;
+     *  SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (
+     * 	 SELECT date_trunc('second', time) AS second, bike_id, s_12
+     * 	 FROM test t
+     * 	 WHERE t.bike_id = b.bike_id
+     * 	 AND t.bike_id = 'bike_51'
+     * 	 AND s_12 IS NOT NULL
+     * 	 AND time >= '2018-08-30 02:00:00.0'
+     * 	 AND time < '2018-08-30 03:00:00.0'
+     * 	 GROUP BY second, bike_id, s_12
+     * 	 HAVING AVG(s_17) >= 1000.000000
+     *  ) AS data ON true
+     *  ORDER BY data.second asc, data.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -449,18 +436,18 @@ public class Citus implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         String sql = "";
 
-        sql = "select data.second, data.bike_id, b.owner_name, data.%s from bikes b inner join lateral (\n" +
-                "\tselect date_trunc('second', time) as second, bike_id, %s\n" +
-                "\tfrom test t \n" +
-                "\twhere t.bike_id = b.bike_id \n" +
-                "\tand t.bike_id = '%s'\n" +
-                "\tand %s is not null \n" +
-                "\tand time >= '%s' \n" +
-                "\tand time < '%s'\n" +
-                "\tgroup by second, bike_id, %s\n" +
-                "\thaving avg(%s) >= %f\n" +
-                ") as data on true\n" +
-                "order by data.second asc, data.bike_id;";
+        sql = "SELECT data.second, data.bike_id, b.owner_name, data.%s FROM bikes b INNER JOIN LATERAL (\n" +
+                "\tSELECT date_trunc('second', time) AS second, bike_id, %s\n" +
+                "\tFROM test t \n" +
+                "\tWHERE t.bike_id = b.bike_id \n" +
+                "\tAND t.bike_id = '%s'\n" +
+                "\tAND %s IS NOT NULL \n" +
+                "\tAND time >= '%s' \n" +
+                "\tAND time < '%s'\n" +
+                "\tGROUP BY second, bike_id, %s\n" +
+                "\tHAVING AVG(%s) >= %f\n" +
+                ") AS data ON true\n" +
+                "ORDER BY data.second asc, data.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -481,27 +468,20 @@ public class Citus implements IDatabase {
     /**
      * Computes the distance driven by a bike in the given time range identified by start and end timestamps where current
      * exceeds some value.
-     *
-     * NARROW_TABLE:
+
      * <p><code>
-     *  with trip_begin as (
-     * 	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'group by second, bike_id order by second asc limit 1
-     *  ), trip_end as (
-     *  	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0'and time < '2018-08-29 19:00:00.0' group by second, bike_id order by second desc limit 1
+     *  WITH data AS (
+     * 	 SELECT date_trunc('second', time) AS second, bike_id, s_12
+     * 	 FROM test t
+     * 	 WHERE bike_id = 'bike_51'
+     * 	 AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+     * 	 GROUP BY second, bike_id, s_12
+     * 	 HAVING AVG(s_17) > 1000.000000 AND s_12 IS NOT NULL
+     * 	 ORDER BY second
      *  )
-     *  select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = 'bike_10'
-     *  and g.time > b.second and g.time < e.second group by g.bike_id;
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  select b.bike_id, b.owner_name, st_length(st_makeline(s_12::geometry)::geography, false)
-     *  from bikes b inner join lateral (
-     * 	select time_bucket(interval '1 s', time) as second, s_12 from test t
-     * 	where t.bike_id = b.bike_id and time >= '2018-08-29 18:00:00.0' and time <= '2018-08-29 19:00:00.0'
-     * 	group by second, s_12 having avg(s_40) > 3.000000
-     *  ) as data on true
-     *  group by b.bike_id, b.owner_name;
+     *  SELECT d.bike_id, ST_LENGTH(ST_MAKELINE(d.s_12::geometry)::geography)
+     *  FROM data d
+     *  GROUP BY d.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -516,18 +496,18 @@ public class Citus implements IDatabase {
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
 
-        sql = "with data as (\n" +
-                "\tselect date_trunc('second', time) as second, bike_id, %s \n" +
-                "\tfrom %s t\n" +
-                "\twhere bike_id = '%s' \n" +
-                "\tand time >= '%s' and time <= '%s'\n" +
-                "\tgroup by second, bike_id, %s\n" +
-                "\thaving avg(%s) > %f and %s is not null\n" +
-                "\torder by second\n" +
+        sql = "WITH data AS (\n" +
+                "\tSELECT date_trunc('second', time) AS second, bike_id, %s \n" +
+                "\tFROM %s t\n" +
+                "\tWHERE bike_id = '%s' \n" +
+                "\tAND time >= '%s' AND time <= '%s'\n" +
+                "\tGROUP BY second, bike_id, %s\n" +
+                "\tHAVING AVG(%s) > %f AND %s IS NOT NULL\n" +
+                "\tORDER BY second\n" +
                 ")\n" +
-                "select d.bike_id, st_length(st_makeline(d.%s::geometry)::geography) \n" +
-                "from data d\n" +
-                "group by d.bike_id;";
+                "SELECT d.bike_id, ST_LENGTH(ST_MAKELINE(d.%s::geometry)::geography) \n" +
+                "FROM data d\n" +
+                "GROUP BY d.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -563,9 +543,9 @@ public class Citus implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  select time_bucket(interval '10 s', time) as five_seconds, st_makeline(s_12::geometry)
-     *  from test t where time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-     *  group by five_seconds, bike_id having avg(s_40) > 3.000000;
+     *  SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
+     * 	 SELECT DISTINCT(bike_id) FROM test t WHERE time > '2018-08-30 03:00:00.0'
+     *  );
      * </code></p>
      * @param query
      * @return
@@ -575,8 +555,8 @@ public class Citus implements IDatabase {
         String sql = "";
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
 
-        sql = "select distinct(bike_id) from bikes where bike_id not in (\n" +
-                "\tselect distinct(bike_id) from %s t where time > '%s'\n" +
+        sql = "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n" +
+                "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n" +
                 ");";
         sql = String.format(
                 Locale.US,
@@ -588,28 +568,19 @@ public class Citus implements IDatabase {
     }
 
     /**
-     *
-     * TODO probably include also gps coordinates or path segment
      * Scans metrics of a sensor in a specific time interval and selects those which have a certain value.
-     *
-     * NARROW_TABLE:
+
      * <p><code>
-     *  SELECT time, bike_id, value FROM emg_benchmark WHERE value > 3.0 AND (bike_id = 'bike_5')
-     *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (
-     * 	SELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t
-     * 	WHERE t.bike_id = b.bike_id AND time > '2018-08-29 18:00:00.0'
-     * 	AND s_17 IS NOT NULL
-     * 	GROUP BY minute, bike_id
-     * 	HAVING AVG(s_17) > 3.000000
-     * 	ORDER BY minute DESC LIMIT 1
-     *  ) AS data
-     *  ON true
-     *  ORDER BY b.bike_id, data.minute DESC;
+     *  WITH last_trip AS (
+     * 	 SELECT date_trunc('minute', time) AS minute, bike_id FROM test t
+     * 	 WHERE time > '2018-08-30 02:00:00.0'
+     * 	 GROUP BY minute, bike_id
+     * 	 HAVING AVG(s_17) > 1000.000000
+     * 	 ORDER BY minute
+     *  )
+     *  SELECT DISTINCT ON (b.bike_id) l.minute, b.bike_id, b.owner_name
+     *  FROM last_trip l, bikes b WHERE b.bike_id = l.bike_id
+     *  ORDER BY b.bike_id, l.minute DESC;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -618,9 +589,6 @@ public class Citus implements IDatabase {
     @Override
     public Status lastTimeActivelyDriven(Query query) {
         Sensor sensor = query.getSensor();
-        List<String> columns = new ArrayList<>(
-                Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName())
-        );
         String sql = "";
 
         Timestamp timestamp = new Timestamp(query.getStartTimestamp());
@@ -631,8 +599,9 @@ public class Citus implements IDatabase {
                 "\tHAVING AVG(%s) > %f\n" +
                 "\tORDER BY minute\n" +
                 ")\n" +
-                "SELECT DISTINCT ON (l.bike_id) l.minute, l.bike_id \n" +
-                "FROM last_trip l ORDER BY l.bike_id, l.minute DESC;";
+                "SELECT DISTINCT ON (b.bike_id) l.minute, b.bike_id, b.owner_name\n" +
+                "FROM last_trip l, bikes b WHERE b.bike_id = l.bike_id \n" +
+                "ORDER BY b.bike_id, l.minute DESC;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -647,23 +616,17 @@ public class Citus implements IDatabase {
     /**
      * Groups entries within a time range in time buckets and by bikes and aggregates values in each time bucket.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(value), bike_id FROM emg_benchmark
-     *  WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  with downsample as (
-     * 	select date_trunc('minutes', time) as minute, bike_id, avg(s_40) as value
-     * 	from test t
-     * 	where bike_id = 'bike_51'
-     * 	and time >= '2018-08-30 02:00:00.0'
-     * 	and time <= '2018-08-30 03:00:00.0'
-     * 	group by bike_id, minute
-     * ) select d.minute, b.bike_id, b.owner_name, d.value
-     * from downsample d, bikes b where b.bike_id = d.bike_id;
+     *  WITH downsample AS (
+     * 	 SELECT date_trunc('minutes', time) as minute, bike_id, AVG(s_27) AS value
+     * 	 FROM test t
+     * 	 WHERE bike_id = 'bike_51'
+     * 	 AND time >= '2018-08-30 02:00:00.0'
+     * 	 AND time <= '2018-08-30 03:00:00.0'
+     * 	 GROUP BY bike_id, minute
+     *  ) SELECT d.minute, b.bike_id, b.owner_name, d.value
+     *  FROM downsample d, bikes b WHERE b.bike_id = d.bike_id
+     *  ORDER BY d.minute, b.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -676,15 +639,16 @@ public class Citus implements IDatabase {
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
         String sql = "";
-        sql = "with downsample as (\n" +
-                "\tselect date_trunc('minutes', time) as minute, bike_id, avg(%s) as value\n" +
-                "\tfrom %s t \n" +
-                "\twhere bike_id = '%s'\n" +
-                "\tand time >= '%s'\n" +
-                "\tand time <= '%s'\n" +
-                "\tgroup by bike_id, minute\n" +
-                ") select d.minute, b.bike_id, b.owner_name, d.value \n" +
-                "from downsample d, bikes b where b.bike_id = d.bike_id;";
+        sql = "WITH downsample AS (\n" +
+                "\tSELECT date_trunc('minutes', time) as minute, bike_id, AVG(%s) AS value\n" +
+                "\tFROM %s t \n" +
+                "\tWHERE bike_id = '%s'\n" +
+                "\tAND time >= '%s'\n" +
+                "\tAND time <= '%s'\n" +
+                "\tGROUP BY bike_id, minute\n" +
+                ") SELECT d.minute, b.bike_id, b.owner_name, d.value \n" +
+                "FROM downsample d, bikes b WHERE b.bike_id = d.bike_id \n" +
+                "ORDER BY d.minute, b.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -702,10 +666,8 @@ public class Citus implements IDatabase {
      * Creates a heat map with average air quality out of gps points.
      *
      * <p><code>
-     *  select st_x(s_12::geometry) as longitude, st_y(s_12::geometry) as latitude, avg(s_34)
-     *  from test t
-     *  where s_12 is not null and time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-     *  group by s_12;
+     *  SELECT ST_X(s_12::geometry) AS longitude, ST_Y(s_12::geometry) AS latitude, AVG(s_34) FROM test t
+     *  WHERE s_12 IS NOT NULL AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0' GROUP BY s_12;
      * </code></p>
      * @param query The heatmap query paramters object.
      * @return The status of the execution.
@@ -716,11 +678,10 @@ public class Citus implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-        GeoPoint startPoint = Constants.GRID_START_POINT;
         String sql = "";
 
-        sql = "select st_x(%s::geometry) as longitude, st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
-                "where %s is not null and time >= '%s' and time <= '%s' group by %s;";
+        sql = "SELECT ST_X(%s::geometry) AS longitude, ST_Y(%s::geometry) AS latitude, AVG(%s) FROM %s t \n" +
+                "WHERE %s IS NOT NULL AND time >= '%s' AND time <= '%s' GROUP BY %s;";
         sql = String.format(Locale.US, sql,
                 gpsSensor.getName(),
                 gpsSensor.getName(),
@@ -734,33 +695,19 @@ public class Citus implements IDatabase {
         return executeQuery(sql);
     }
 
-
-
     /**
      * Selects bikes whose last gps location lies in a certain area.
      *
-     * NARROW_TABLE:
-     * <p><code>
-     *  with last_location as (
-     * 	select bike_id, last(value, time) as location from gps_benchmark group by bike_id
-     *  ) select * from last_location l
-     *  where st_contains(
-     *    st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry,
-     *    l.location::geometry
-     *  );
-     * </code></p>
-     *
-     * WIDE_TABLE:
      *  <p><code>
-     *  with data as (
-     * 	 select distinct on (bike_id) bike_id, s_12 as location from test t
-     * 	 where s_12 is not null
-     * 	 group by bike_id, time, s_12
-     * 	 order by bike_id, time desc
-     *  ) select b.bike_id, b.owner_name, d.location from data d, bikes b
-     *  where b.bike_id = d.bike_id
-     *  and st_contains(st_buffer(
-     * 		st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500
+     *  WITH data AS (
+     * 	 SELECT DISTINCT ON (bike_id) bike_id, s_12 AS location FROM test t
+     * 	 WHERE s_12 IS NOT NULL
+     * 	 GROUP BY bike_id, time, s_12
+     * 	 ORDER BY bike_id, time DESC
+     *  ) SELECT b.bike_id, b.owner_name, d.location from data d, bikes b
+     *  WHERE b.bike_id = d.bike_id
+     *  AND ST_CONTAINS(ST_BUFFER(
+     * 		ST_SETSRID(ST_MAKEPOINT(13.431947, 48.566736),4326)::geography, 500
      * 	)::geometry, d.location::geometry);
      * </code></p>
      * @param query
@@ -770,15 +717,15 @@ public class Citus implements IDatabase {
     public Status bikesInLocation(Query query) {
         String sql = "";
         Sensor gpsSensor = query.getGpsSensor();
-        sql = "with data as (\n" +
-                "\tselect distinct on (bike_id) bike_id, %s as location from %s t\n" +
-                "\twhere %s is not null\n" +
-                "\tgroup by bike_id, time, %s\n" +
-                "\torder by bike_id, time desc\n" +
-                ") select b.bike_id, b.owner_name, d.location from data d, bikes b \n" +
-                "where b.bike_id = d.bike_id\n" +
-                "and st_contains(st_buffer(\n" +
-                "\t\tst_setsrid(st_makepoint(%f, %f),4326)::geography, %d\n" +
+        sql = "WITH data AS (\n" +
+                "\tSELECT DISTINCT ON (bike_id) bike_id, %s AS location FROM %s t\n" +
+                "\tWHERE %s IS NOT NULL\n" +
+                "\tGROUP BY bike_id, time, %s\n" +
+                "\tORDER BY bike_id, time DESC\n" +
+                ") SELECT b.bike_id, b.owner_name, d.location from data d, bikes b \n" +
+                "WHERE b.bike_id = d.bike_id\n" +
+                "AND ST_CONTAINS(ST_BUFFER(\n" +
+                "\t\tST_SETSRID(ST_MAKEPOINT(%f, %f),4326)::geography, %d\n" +
                 "\t)::geometry, d.location::geometry);";
         sql = String.format(
                 Locale.US,

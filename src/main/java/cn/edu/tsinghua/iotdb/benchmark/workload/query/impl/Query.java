@@ -2,6 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.workload.query.impl;
 
 import cn.edu.tsinghua.iotdb.benchmark.enums.Aggregation;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 
 import java.util.List;
@@ -14,6 +15,7 @@ public class Query {
     private long endTimestamp;
     private Aggregation aggrFunc;
     private double threshold;
+    private GeoPoint location;
 
     public Query() { }
 
@@ -52,6 +54,11 @@ public class Query {
         return this;
     }
 
+    public Query setLocation(GeoPoint location) {
+        this.location = location;
+        return this;
+    }
+
     public List<Bike> getBikes() {
         return bikes;
     }
@@ -78,5 +85,9 @@ public class Query {
 
     public double getThreshold() {
         return threshold;
+    }
+
+    public GeoPoint getLocation() {
+        return location;
     }
 }

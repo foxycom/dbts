@@ -12,6 +12,11 @@ public class GeoPoint {
         this.latitude = latitude;
     }
 
+    public GeoPoint(GeoPoint other) {
+        this.longitude = other.longitude;
+        this.latitude = other.latitude;
+    }
+
     public double getLongitude() {
         return longitude;
     }

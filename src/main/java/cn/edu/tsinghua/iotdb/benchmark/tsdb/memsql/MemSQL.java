@@ -14,7 +14,6 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,7 @@ public class MemSQL implements IDatabase {
     private Connection connection;
     private static String tableName;
     private static Config config;
-    private static final Logger LOGGER = LoggerFactory.getLogger(cn.edu.tsinghua.iotdb.benchmark.tsdb.citus.Citus.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MemSQL.class);
     private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s;";
     private long initialDbSize;
     private SqlBuilder sqlBuilder;
@@ -265,10 +264,10 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  select data.time, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
-     * 	select * from test t where t.bike_id = b.bike_id and s_12 is not null
-     * 	order by time desc limit 1
-     *  ) as data on true;
+     *  SELECT LAST_VALUE(t.s_12) OVER(PARTITION BY t.bike_id ORDER BY (time)),
+     *  MAX(time), t.bike_id, b.owner_name FROM test t, bikes b
+     *  WHERE t.s_12 IS NOT NULL AND t.bike_id = b.bike_id
+     *  GROUP BY t.bike_id;
      * </code></p>
      *
      * @param query The query parameters query.
@@ -279,21 +278,15 @@ public class MemSQL implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         String sql = "";
 
-        sql = "with location as (\n" +
-                "\tselect distinct on(bike_id) bike_id, %s, time \n" +
-                "\tfrom %s t\n" +
-                "\twhere %s is not null\n" +
-                "\tgroup by bike_id, time, %s\n" +
-                "\torder by bike_id, time desc\n" +
-                ") select l.time, b.bike_id, b.owner_name, l.%s \n" +
-                "from location l, bikes b where b.bike_id = l.bike_id;";
+        sql = "SELECT LAST_VALUE(t.%s) OVER(PARTITION BY t.bike_id ORDER BY (time)), \n" +
+                "MAX(time), t.bike_id, b.owner_name FROM %s t, bikes b\n" +
+                "WHERE t.%s IS NOT NULL AND t.bike_id = b.bike_id\n" +
+                "GROUP BY t.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
                 tableName,
-                gpsSensor.getName(),
-                gpsSensor.getName(),
                 gpsSensor.getName()
         );
 
@@ -311,14 +304,12 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  select data.bike_id, b.owner_name, data.location from bikes b inner join lateral (
-     * 	select s_12 as location, bike_id from test t
-     * 	where t.bike_id = b.bike_id
-     * 	and bike_id = 'bike_0'
-     * 	and s_12 is not null
-     * 	and time >= '2018-08-29 18:00:00.0'
-     * 	and time <= '2018-08-29 19:00:00.0'
-     *  ) as data on true;
+     *  SELECT s_12 AS location, t.bike_id, b.owner_name FROM test t, bikes b
+     * 	WHERE b.bike_id = t.bike_id
+     * 	AND t.bike_id = 'bike_5'
+     * 	AND s_12 IS NOT NULL
+     * 	AND time >= '2018-08-30 02:00:00.0'
+     * 	AND time <= '2018-08-30 03:00:00.0';
      * </code></p>
      *
      * @param query The query parameters object.
@@ -330,21 +321,19 @@ public class MemSQL implements IDatabase {
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
         Sensor gpsSensor = query.getGpsSensor();
         Bike bike = query.getBikes().get(0);
-        List<String> columns = new ArrayList<>(Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
         String sql = "";
 
-        sql = "select data.bike_id, b.owner_name, data.location from bikes b inner join lateral (\n" +
-                "\tselect %s as location, bike_id from test t\n" +
-                "\twhere t.bike_id = b.bike_id \n" +
-                "\tand bike_id = '%s' \n" +
-                "\tand %s is not null\n" +
-                "\tand time >= '%s' \n" +
-                "\tand time <= '%s'\n" +
-                ") as data on true;";
+        sql = "SELECT %s AS location, t.bike_id, b.owner_name FROM %s t, bikes b\n" +
+                "\tWHERE b.bike_id = t.bike_id\n" +
+                "\tAND t.bike_id = '%s' \n" +
+                "\tAND %s IS NOT NULL\n" +
+                "\tAND time >= '%s' \n" +
+                "\tAND time <= '%s';\n";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
+                tableName,
                 bike.getName(),
                 gpsSensor.getName(),
                 startTimestamp,
@@ -368,18 +357,20 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  select data.second, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
-     * 	select time_bucket(interval '1 s', time) as second, bike_id, s_12
-     * 	from test t
-     * 	where t.bike_id = b.bike_id
-     * 	and t.bike_id = 'bike_2'
-     * 	and s_12 is not null
-     * 	and time >= '2018-08-29 18:00:00.0'
-     * 	and time < '2018-08-29 19:00:00.0'
-     * 	group by second, bike_id, s_12
-     * 	having avg(s_40) >= 3.000000
-     *  ) as data on true
-     *  order by data.second asc, data.bike_id;
+     *  WITH data AS (
+     * 	 SELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS SECOND,
+     * 	 bike_id, s_12
+     * 	 FROM test t
+     * 	 WHERE bike_id = 'bike_8'
+     * 	 AND s_12 IS NOT NULL
+     * 	 AND time >= '2018-08-30 02:00:00.0'
+     * 	 AND time < '2018-08-30 03:00:00.0'
+     * 	 GROUP BY second, bike_id, s_12
+     * 	 HAVING AVG(s_17) >= 1000.000000
+     * )
+     * SELECT d.second, d.bike_id, b.owner_name, d.s_12 FROM bikes b, data d
+     * WHERE d.bike_id = b.bike_id
+     * ORDER BY d.second ASC, d.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -394,30 +385,33 @@ public class MemSQL implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         String sql = "";
 
-        sql = "select data.second, data.bike_id, b.owner_name, data.%s from bikes b inner join lateral (\n" +
-                "\tselect date_trunc('second', time) as second, bike_id, %s\n" +
-                "\tfrom test t \n" +
-                "\twhere t.bike_id = b.bike_id \n" +
-                "\tand t.bike_id = '%s'\n" +
-                "\tand %s is not null \n" +
-                "\tand time >= '%s' \n" +
-                "\tand time < '%s'\n" +
-                "\tgroup by second, bike_id, %s\n" +
-                "\thaving avg(%s) >= %f\n" +
-                ") as data on true\n" +
-                "order by data.second asc, data.bike_id;";
+        sql = "WITH data AS (\n" +
+                "\tSELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS SECOND, \n" +
+                "\tbike_id, %s\n" +
+                "\tFROM %s t \n" +
+                "\tWHERE bike_id = '%s'\n" +
+                "\tAND %s IS NOT NULL \n" +
+                "\tAND time >= '%s' \n" +
+                "\tAND time < '%s'\n" +
+                "\tGROUP BY second, bike_id, %s\n" +
+                "\tHAVING AVG(%s) >= %f\n" +
+                ")\n" +
+                "SELECT d.second, d.bike_id, b.owner_name, d.%s FROM bikes b, data d\n" +
+                "WHERE d.bike_id = b.bike_id\n" +
+                "ORDER BY d.second ASC, d.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
-                gpsSensor.getName(),
+                tableName,
                 bike.getName(),
                 gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp,
                 gpsSensor.getName(),
                 sensor.getName(),
-                query.getThreshold()
+                query.getThreshold(),
+                gpsSensor.getName()
         );
 
         return executeQuery(sql);
@@ -440,13 +434,21 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  select b.bike_id, b.owner_name, st_length(st_makeline(s_12::geometry)::geography, false)
-     *  from bikes b inner join lateral (
-     * 	select time_bucket(interval '1 s', time) as second, s_12 from test t
-     * 	where t.bike_id = b.bike_id and time >= '2018-08-29 18:00:00.0' and time <= '2018-08-29 19:00:00.0'
-     * 	group by second, s_12 having avg(s_40) > 3.000000
-     *  ) as data on true
-     *  group by b.bike_id, b.owner_name;
+     *  with data as (
+     * 	 select from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, s_12
+     * 	 from test t
+     * 	 where bike_id = 'bike_5'
+     * 	 and time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
+     * 	 group by second, bike_id, s_12
+     * 	 having avg(s_17) > 1000.0 and s_12 is not null
+     * 	 order by second
+     *  )
+     *  select d.bike_id, b.owner_name,
+     *  geography_length(
+     *     concat('LINESTRING(', group_concat(concat(geography_longitude(s_12), ' ', geography_latitude(s_12))), ')')
+     *  ) from data d, bikes b
+     *  where d.bike_id = b.bike_id
+     *  group by d.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -462,16 +464,19 @@ public class MemSQL implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
 
         sql = "with data as (\n" +
-                "\tselect date_trunc('second', time) as second, bike_id, %s \n" +
+                "\tselect from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, %s \n" +
                 "\tfrom %s t\n" +
                 "\twhere bike_id = '%s' \n" +
                 "\tand time >= '%s' and time <= '%s'\n" +
                 "\tgroup by second, bike_id, %s\n" +
-                "\thaving avg(%s) > %f and %s is not null\n" +
+                "\thaving avg(%s) > %s and %s is not null\n" +
                 "\torder by second\n" +
                 ")\n" +
-                "select d.bike_id, st_length(st_makeline(d.%s::geometry)::geography) \n" +
-                "from data d\n" +
+                "select d.bike_id, b.owner_name, \n" +
+                "geography_length(\n" +
+                "    concat('LINESTRING(', group_concat(concat(geography_longitude(%s), ' ', geography_latitude(%s))), ')')\n" +
+                ") from data d, bikes b\n" +
+                "where d.bike_id = b.bike_id\n" +
                 "group by d.bike_id;";
         sql = String.format(
                 Locale.US,
@@ -485,43 +490,30 @@ public class MemSQL implements IDatabase {
                 sensor.getName(),
                 query.getThreshold(),
                 gpsSensor.getName(),
+                gpsSensor.getName(),
                 gpsSensor.getName()
         );
         return executeQuery(sql);
     }
 
     /**
-     * Computes road segments with high average sensor measurements values, e.g., accelerometer, identifying spots
-     * where riders often use brakes.
+     * Selects bikes that did not send any data since a given timestamp.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  WITH trip AS (
-     * 	SELECT time_bucket(interval '1 s', time) AS second, bike_id, AVG(value) AS value FROM emg_benchmark
-     * 	WHERE value > 3.000000 AND bike_id = 'bike_10'
-     * 	GROUP BY second, bike_id
-     *  )
-     *  SELECT time_bucket(interval '300000 ms', g.time) AS half_minute, AVG(t.value), t.bike_id, st_makeline(g.value::geometry) FROM gps_benchmark g, trip t
-     *  WHERE g.bike_id = 'bike_10' AND g.time = t.second AND g.time > '2018-08-29 18:00:00.0' AND g.time < '2018-08-29 19:00:00.0'
-     *  GROUP BY half_minute, t.bike_id;
+     *  SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
+     * 	 SELECT DISTINCT(bike_id) FROM test t WHERE time > '2018-08-30 03:00:00.0'
+     *  );
      * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  select time_bucket(interval '10 s', time) as five_seconds, st_makeline(s_12::geometry)
-     *  from test t where time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-     *  group by five_seconds, bike_id having avg(s_40) > 3.000000;
-     * </code></p>
-     * @param query
-     * @return
+     * @param query The query params object.
+     * @return Status of the execution.
      */
     @Override
     public Status offlineBikes(Query query) {
         String sql = "";
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
 
-        sql = "select distinct(bike_id) from bikes where bike_id not in (\n" +
-                "\tselect distinct(bike_id) from %s t where time > '%s'\n" +
+        sql = "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n" +
+                "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n" +
                 ");";
         sql = String.format(
                 Locale.US,
@@ -563,28 +555,25 @@ public class MemSQL implements IDatabase {
     @Override
     public Status lastTimeActivelyDriven(Query query) {
         Sensor sensor = query.getSensor();
-        List<String> columns = new ArrayList<>(
-                Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName())
-        );
         String sql = "";
 
         Timestamp timestamp = new Timestamp(query.getStartTimestamp());
         sql = "WITH last_trip AS (\n" +
-                "\tSELECT date_trunc('minute', time) AS minute, bike_id FROM %s t \n" +
-                "\tWHERE time > '%s'\n" +
-                "\tGROUP BY minute, bike_id\n" +
-                "\tHAVING AVG(%s) > %f\n" +
-                "\tORDER BY minute\n" +
-                ")\n" +
-                "SELECT DISTINCT ON (l.bike_id) l.minute, l.bike_id \n" +
-                "FROM last_trip l ORDER BY l.bike_id, l.minute DESC;";
+                "SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) as minute, bike_id\n" +
+                "FROM %s t WHERE time > '%s'\n" +
+                "GROUP BY minute, bike_id\n" +
+                "HAVING AVG(%s) > %f\n" +
+                ") SELECT l.bike_id, MAX(l.minute) as last_time FROM %s t, last_trip l\n" +
+                "WHERE l.bike_id = t.bike_id\n" +
+                "GROUP BY l.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
                 tableName,
                 timestamp,
                 sensor.getName(),
-                query.getThreshold()
+                query.getThreshold(),
+                tableName
         );
         return executeQuery(sql);
     }
@@ -600,15 +589,16 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  with downsample as (
-     * 	select date_trunc('minutes', time) as minute, bike_id, avg(s_40) as value
-     * 	from test t
-     * 	where bike_id = 'bike_51'
-     * 	and time >= '2018-08-30 02:00:00.0'
-     * 	and time <= '2018-08-30 03:00:00.0'
-     * 	group by bike_id, minute
-     * ) select d.minute, b.bike_id, b.owner_name, d.value
-     * from downsample d, bikes b where b.bike_id = d.bike_id;
+     *  WITH downsample AS (
+     * 	 SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(s_27) AS value
+     * 	 FROM test t
+     * 	 WHERE bike_id = 'bike_8'
+     * 	 AND time >= '2018-08-30 02:00:00.0'
+     * 	 AND time <= '2018-08-30 03:00:00.0'
+     * 	 GROUP BY bike_id, minute
+     *  ) SELECT d.minute, b.bike_id, b.owner_name, d.value
+     *  FROM downsample d, bikes b WHERE b.bike_id = d.bike_id
+     *  ORDER BY d.minute, b.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -621,15 +611,16 @@ public class MemSQL implements IDatabase {
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
         String sql = "";
-        sql = "with downsample as (\n" +
-                "\tselect date_trunc('minutes', time) as minute, bike_id, avg(%s) as value\n" +
-                "\tfrom %s t \n" +
-                "\twhere bike_id = '%s'\n" +
-                "\tand time >= '%s'\n" +
-                "\tand time <= '%s'\n" +
-                "\tgroup by bike_id, minute\n" +
-                ") select d.minute, b.bike_id, b.owner_name, d.value \n" +
-                "from downsample d, bikes b where b.bike_id = d.bike_id;";
+        sql = "WITH downsample AS (\n" +
+                "\tSELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(%s) AS value\n" +
+                "\tFROM %s t \n" +
+                "\tWHERE bike_id = '%s'\n" +
+                "\tAND time >= '%s'\n" +
+                "\tAND time <= '%s'\n" +
+                "\tGROUP BY bike_id, minute\n" +
+                ") SELECT d.minute, b.bike_id, b.owner_name, d.value \n" +
+                "FROM downsample d, bikes b WHERE b.bike_id = d.bike_id\n" +
+                "ORDER BY d.minute, b.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -647,10 +638,10 @@ public class MemSQL implements IDatabase {
      * Creates a heat map with average air quality out of gps points.
      *
      * <p><code>
-     *  select st_x(s_12::geometry) as longitude, st_y(s_12::geometry) as latitude, avg(s_34)
-     *  from test t
-     *  where s_12 is not null and time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-     *  group by s_12;
+     *  SELECT GEOGRAPHY_LONGITUDE(s_12) as longitude, GEOGRAPHY_LATITUDE(s_12) as latitude, AVG(s_34)
+     *  FROM test t
+     *  WHERE s_12 IS NOT NULL AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+     *  GROUP BY s_12;
      * </code></p>
      * @param query The heatmap query paramters object.
      * @return The status of the execution.
@@ -661,11 +652,12 @@ public class MemSQL implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-        GeoPoint startPoint = Constants.GRID_START_POINT;
         String sql = "";
 
-        sql = "select st_x(%s::geometry) as longitude, st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
-                "where %s is not null and time >= '%s' and time <= '%s' group by %s;";
+        sql = "SELECT GEOGRAPHY_LONGITUDE(%s) as longitude, GEOGRAPHY_LATITUDE(%s) as latitude, AVG(%s) \n" +
+                "FROM %s t \n" +
+                "WHERE %s IS NOT NULL AND time >= '%s' AND time <= '%s' \n" +
+                "GROUP BY %s;";
         sql = String.format(Locale.US, sql,
                 gpsSensor.getName(),
                 gpsSensor.getName(),
@@ -678,8 +670,6 @@ public class MemSQL implements IDatabase {
         );
         return executeQuery(sql);
     }
-
-
 
     /**
      * Selects bikes whose last gps location lies in a certain area.
@@ -697,16 +687,14 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      *  <p><code>
-     *  with data as (
-     * 	 select distinct on (bike_id) bike_id, s_12 as location from test t
-     * 	 where s_12 is not null
-     * 	 group by bike_id, time, s_12
-     * 	 order by bike_id, time desc
-     *  ) select b.bike_id, b.owner_name, d.location from data d, bikes b
-     *  where b.bike_id = d.bike_id
-     *  and st_contains(st_buffer(
-     * 		st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500
-     * 	)::geometry, d.location::geometry);
+     *  select b.bike_id, b.owner_name, pos.pos from bikes b,
+     * 	(select bike_id, last_value(s_12) over (partition by bike_id order by (time)) as pos from test
+     * 	group by bike_id) as pos
+     *  where b.bike_id = pos.bike_id
+     *  and geography_contains('POLYGON((13.4406567 48.5723195,
+     *  13.4373522 48.5707861, 13.4373522 48.5662708,
+     *  13.4443045 48.5645384, 13.4489393 48.5683155,
+     *  13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);
      * </code></p>
      * @param query
      * @return
@@ -715,26 +703,19 @@ public class MemSQL implements IDatabase {
     public Status bikesInLocation(Query query) {
         String sql = "";
         Sensor gpsSensor = query.getGpsSensor();
-        sql = "with data as (\n" +
-                "\tselect distinct on (bike_id) bike_id, %s as location from %s t\n" +
-                "\twhere %s is not null\n" +
-                "\tgroup by bike_id, time, %s\n" +
-                "\torder by bike_id, time desc\n" +
-                ") select b.bike_id, b.owner_name, d.location from data d, bikes b \n" +
-                "where b.bike_id = d.bike_id\n" +
-                "and st_contains(st_buffer(\n" +
-                "\t\tst_setsrid(st_makepoint(%f, %f),4326)::geography, %d\n" +
-                "\t)::geometry, d.location::geometry);";
+        sql = "select b.bike_id, b.owner_name, pos.pos from bikes b, \n" +
+                "\t(select bike_id, last_value(%s) over (partition by bike_id order by (time)) as pos from %s \n" +
+                "\tgroup by bike_id) as pos \n" +
+                "where b.bike_id = pos.bike_id \n" +
+                "and geography_contains('POLYGON((13.4406567 48.5723195, \n" +
+                "13.4373522 48.5707861, 13.4373522 48.5662708, \n" +
+                "13.4443045 48.5645384, 13.4489393 48.5683155, \n" +
+                "13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
-                tableName,
-                gpsSensor.getName(),
-                gpsSensor.getName(),
-                Constants.SPAWN_POINT.getLongitude(),
-                Constants.SPAWN_POINT.getLatitude(),
-                config.RADIUS
+                tableName
         );
         return executeQuery(sql);
     }
@@ -768,7 +749,7 @@ public class MemSQL implements IDatabase {
      */
     private String getCreateTableSql() {
         StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("CREATE TABLE ").append(tableName).append(" (time DATETIME NOT NULL, ")
+        sqlBuilder.append("CREATE TABLE ").append(tableName).append(" (time DATETIME(6) NOT NULL, ")
                 .append("bike_id VARCHAR(20)");
         config.SENSORS.forEach(sensor -> sqlBuilder.append(", ").append(sensor.getName()).append(" ")
                 .append(sensor.getDataType()));

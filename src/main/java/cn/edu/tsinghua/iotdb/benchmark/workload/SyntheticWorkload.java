@@ -6,11 +6,13 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
+import cn.edu.tsinghua.iotdb.benchmark.function.GeoFunction;
 import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,11 +65,6 @@ public class SyntheticWorkload implements IWorkload {
     }
     batch.setBike(bike);
     return batch;
-  }
-
-  private void setBatchTimeRange(Batch batch, long loopIndex) {
-    long timeRange = config.loopTimeRange() * loopIndex;
-    batch.setTimeRange(timeRange);
   }
 
   private Batch getDistOutOfOrderBatch(Bike bike) {
@@ -203,15 +200,22 @@ public class SyntheticWorkload implements IWorkload {
     return Constants.START_TIMESTAMP + timestampOffset;
   }
 
+  private GeoPoint getRandomLocation() {
+    GeoFunction function = new GeoFunction(1234);
+    return function.get(Constants.SPAWN_POINT);
+  }
+
   public Query getQuery(String sensorType) throws WorkloadException {
     List<Bike> bikes = getQueryBikesList();
     Sensor sensor = Sensors.ofType(sensorType);
     Sensor gpsSensor = Sensors.ofType("gps");
     long startTimestamp = getQueryStartTimestamp();
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
+    GeoPoint randomLocation = getRandomLocation();
     Query query = new Query();
     query = query.setSensor(sensor).setGpsSensor(gpsSensor).setBikes(bikes).setStartTimestamp(startTimestamp)
-            .setEndTimestamp(endTimestamp).setAggrFunc(config.QUERY_AGGREGATE_FUN).setThreshold(config.QUERY_LOWER_LIMIT);
+            .setEndTimestamp(endTimestamp).setAggrFunc(config.QUERY_AGGREGATE_FUN)
+            .setThreshold(config.QUERY_LOWER_LIMIT).setLocation(randomLocation);
     return query;
   }
 
