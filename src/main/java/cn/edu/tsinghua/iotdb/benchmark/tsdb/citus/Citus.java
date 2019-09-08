@@ -595,15 +595,12 @@ public class Citus implements IDatabase {
         String sql = "";
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
 
-        sql = "select distinct(bike_id) from %s t\n" +
-                "where bike_id not in (\n" +
-                "\tselect distinct(bike_id) from %s t \n" +
-                "\twhere time > '%s'\n" +
-                ");\n";
+        sql = "select distinct(bike_id) from bikes where bike_id not in (\n" +
+                "\tselect distinct(bike_id) from %s t where time > '%s'\n" +
+                ");";
         sql = String.format(
                 Locale.US,
                 sql,
-                tableName,
                 tableName,
                 endTimestamp
         );

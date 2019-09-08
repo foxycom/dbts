@@ -696,15 +696,12 @@ public class TimescaleDB implements IDatabase {
               timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
               bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select distinct(bike_id) from %s t\n" +
-              "where bike_id not in (\n" +
-              "\tselect distinct(bike_id) from %s t \n" +
-              "\twhere time > '%s'\n" +
+      sql = "select distinct(bike_id) from bikes where bike_id not in (\n" +
+              "\tselect distinct(bike_id) from %s t where time > '%s'\n" +
               ");";
       sql = String.format(
               Locale.US,
               sql,
-              tableName,
               tableName,
               endTimestamp
       );
