@@ -140,7 +140,7 @@ public enum ConfigParser {
                         config.SENSORS.add(sensor);
                         break;
                     case GPS:
-                        sensor = new GpsSensor(name, sensorGroup, new GeoFunction(j), freq, GEO_DATA_TYPE);
+                        sensor = new GpsSensor(name, sensorGroup, new GeoFunction(j), freq, sensorGroupDataType);
                         config.SENSORS.add(sensor);
                         break;
                     default:

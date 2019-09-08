@@ -15,6 +15,7 @@
       <xs:enumeration value="InfluxDB"/>
       <xs:enumeration value="KairosDB"/>
       <xs:enumeration value="Citus"/>
+      <xs:enumeration value="MemSQL"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:complexType name="dbType">

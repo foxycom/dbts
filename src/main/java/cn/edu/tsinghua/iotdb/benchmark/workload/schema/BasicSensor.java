@@ -1,6 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.function.Function;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 
 import java.math.RoundingMode;
 import java.text.NumberFormat;
@@ -64,7 +65,7 @@ public class BasicSensor implements Sensor {
     }
 
     @Override
-    public String getValue(long currentTimestamp) {
+    public String getValue(long currentTimestamp, DB currentDb) {
         Number value = function.get(currentTimestamp);
         return nf.format(value);
     }
