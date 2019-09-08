@@ -902,6 +902,7 @@ public class TimescaleDB implements IDatabase {
       sql = "select st_x(%s::geometry) as longitude, \n" +
               "st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
               "where %s is not null\n" +
+              "and time >= '%s' and time < '%s'\n" +
               "group by %s;";
       sql = String.format(Locale.US, sql,
               gpsSensor.getName(),
@@ -909,6 +910,8 @@ public class TimescaleDB implements IDatabase {
               sensor.getName(),
               tableName,
               gpsSensor.getName(),
+              startTimestamp,
+              endTimestamp,
               gpsSensor.getName()
       );
     }
