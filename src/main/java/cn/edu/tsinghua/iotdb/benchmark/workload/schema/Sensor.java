@@ -1,6 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.function.Function;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ public interface Sensor {
 
     long getTimestamp(long stepOffset);
 
-    String getValue(long currentTimestamp);
+    String getValue(long currentTimestamp, DB currentDb);
 
     boolean hasValue(long currentTimestamp);
 

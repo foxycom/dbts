@@ -107,8 +107,6 @@ public class TimescaleDB implements IDatabase {
       String dropBikeSql = String.format(DROP_TABLE, "bikes");
       statement.addBatch(dropBikeSql);
 
-      String dropGridTable = String.format(DROP_TABLE, "grid");
-      statement.addBatch(dropGridTable);
       if (dataModel == TableMode.NARROW_TABLE) {
         String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
                 "tablename LIKE '%benchmark'";
@@ -190,10 +188,6 @@ public class TimescaleDB implements IDatabase {
       // Inserts all bikes.
       String insertBikesSql = getInsertBikesSql(schemaList);
       statement.addBatch(insertBikesSql);
-      createGridFunction();
-
-      String createGridTableSql = getCreateGridTableSql();
-      statement.addBatch(createGridTableSql);
 
       if (dataModel == TableMode.NARROW_TABLE) {
         for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
@@ -256,8 +250,6 @@ public class TimescaleDB implements IDatabase {
   private void createIndexes() {
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
-      String indexOnGridTableSql = "CREATE INDEX ON grid USING GIST(geom);";
-      statement.addBatch(indexOnGridTableSql);
       if (dataModel == TableMode.NARROW_TABLE) {
         for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
           String createIndexOnBikeSql = "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, time DESC);";
@@ -285,46 +277,6 @@ public class TimescaleDB implements IDatabase {
     } catch (SQLException e) {
       LOGGER.error("Could not create PG indexes because: {}", e.getMessage());
     }
-  }
-
-  /*
-   * Registers a function in SQL, which generates a grid for a heat map.
-   */
-  private void createGridFunction() {
-    try (Statement statement = connection.createStatement()) {
-      String sql = "CREATE OR REPLACE FUNCTION ST_CreateGrid(\n" +
-              "        nrow integer, ncol integer,\n" +
-              "        xsize float8, ysize float8,\n" +
-              "        x0 float8 DEFAULT 0, y0 float8 DEFAULT 0,\n" +
-              "        OUT \"row\" integer, OUT col integer,\n" +
-              "        OUT geom geometry)\n" +
-              "    RETURNS SETOF record AS\n" +
-              "$$\n" +
-              "SELECT i + 1 AS row, j + 1 AS col, ST_Translate(cell, j * $3 + $5, i * $4 + $6) AS geom\n" +
-              "FROM generate_series(0, $1 - 1) AS i,\n" +
-              "     generate_series(0, $2 - 1) AS j,\n" +
-              "(\n" +
-              "SELECT ('POLYGON((0 0, 0 '||$4||', '||$3||' '||$4||', '||$3||' 0,0 0))')::geometry AS cell\n" +
-              ") AS foo;\n" +
-              "$$ LANGUAGE sql IMMUTABLE STRICT;";
-      statement.executeUpdate(sql);
-    } catch (SQLException e) {
-      LOGGER.error("Could not register grid function.");
-    }
-  }
-
-  private String getCreateGridTableSql() {
-    String sql = "create table grid as \n" +
-            "select (st_dump(map.geom)).geom from (\n" +
-            "\tselect st_setsrid(st_collect(grid.geom),4326) as geom \n" +
-            "\tfrom ST_CreateGrid(40, 90, 0.0006670, 0.0006670, %f, %f) as grid\n" +
-            ") as map;";
-    sql = String.format(
-            Locale.US,
-            sql,
-            Constants.GRID_START_POINT.getLongitude(),
-            Constants.GRID_START_POINT.getLatitude());
-    return sql;
   }
 
   /**

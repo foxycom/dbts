@@ -20,7 +20,7 @@
     <devices prefix="d_">10</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::TRAFFIC_JAMS -->
-    <operationsProportion>0:0:0:1:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">

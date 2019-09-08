@@ -99,7 +99,7 @@ public class SyntheticWorkload implements IWorkload {
 
       // Different sensors may collect data with different frequencies
       if (sensor.hasValue(currentTimestamp)) {
-        String value = sensor.getValue(currentTimestamp);
+        String value = sensor.getValue(currentTimestamp, config.DB_SWITCH);
         values.add(value);
       }
     }
@@ -114,13 +114,13 @@ public class SyntheticWorkload implements IWorkload {
       long stepOffset = loopIndex * valuesNum + i;    // point step
       long timestamp = sensor.getTimestamp(stepOffset);
       if (sensor.getFields().size() == 1) {
-        String value = sensor.getValue(timestamp);
+        String value = sensor.getValue(timestamp, config.DB_SWITCH);
         values[i] = new Point(timestamp, value);
       } else {
         // TODO get value based on field
         String[] sensorValues = new String[sensor.getFields().size()];
         for (int v = 0; v < sensor.getFields().size(); v++) {
-          sensorValues[v] = sensor.getValue(timestamp);
+          sensorValues[v] = sensor.getValue(timestamp, config.DB_SWITCH);
         }
         values[i] = new Point(timestamp, sensorValues);
       }

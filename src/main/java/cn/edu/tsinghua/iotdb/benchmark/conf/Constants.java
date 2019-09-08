@@ -30,6 +30,9 @@ public class Constants {
     public static final String TIME_BUCKET_ALIAS = "time_bucket";
 
     public static final String MYSQL_DRIVENAME = "com.mysql.jdbc.Driver";
+    public static final String MYSQL_URL = "jdbc:mysql://%s:%s/%s";
+    public static final String MYSQL_USER = "root";
+    public static final String MYSQL_PASSWD = "";
 
     public static final double NANO_TO_MILLIS = 1000 * 1000d;
     public static final double NANO_TO_SECONDS = 1000 * 1000 * 1000d;

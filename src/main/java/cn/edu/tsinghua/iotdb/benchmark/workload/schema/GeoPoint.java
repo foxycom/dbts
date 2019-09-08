@@ -1,5 +1,8 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 public class GeoPoint {
     private double longitude;
     private double latitude;
@@ -25,8 +28,16 @@ public class GeoPoint {
         this.latitude = latitude;
     }
 
-    @Override
-    public String toString() {
-        return String.format("ST_SetSRID(ST_MakePoint(%s, %s),4326)", longitude, latitude);
+    public String getValue(DB currentDb) {
+        switch (currentDb) {
+            case MEMSQL:
+                return String.format("'POINT(%s %s)'", longitude, latitude);
+            case CITUS:
+            case TIMESCALEDB_WIDE:
+            case TIMESCALEDB_NARROW:
+                return String.format("ST_SetSRID(ST_MakePoint(%s, %s),4326)", longitude, latitude);
+            default:
+                throw new NotImplementedException();
+        }
     }
 }
