@@ -19,8 +19,8 @@
     <deviceGroups>3</deviceGroups>
     <devices prefix="d_">100</devices>
 
-    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
+    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::DANGEROUS_SPOTS -->
+    <operationsProportion>0:0:0:1:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -108,7 +108,7 @@
     </sensorGroups>
 
     <batch size="10000"/>
-    <loops>10</loops>
+    <loops>1</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 

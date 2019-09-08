@@ -729,29 +729,11 @@ public class Citus implements IDatabase {
     /**
      * Creates a heat map with average air quality out of gps points.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  with map as (select (st_dump(map.geom)).geom from (
-     * 	select st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, 13.410947, 48.556736) as grid
-     *  ) map)
-     *  select m.geom as cell, avg(a.value) from gps_benchmark g, map m, (
-     * 	select time_bucket(interval '1 sec', ab.time) as second, avg(value) as value, bike_id from emg_benchmark ab where ab.time > '2018-08-29 18:00:00.0' and ab.time < '2018-08-29 19:00:00.0' group by second, bike_id
-     *  ) a
-     *  where g.bike_id = a.bike_id and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  with map as (select (st_dump(map.geom)).geom from (
-     * 	select st_setsrid(st_collect(grid.geom),4326) as geom
-     * 	from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, 13.410947, 48.556736) as grid
-     *  ) map)
-     *  select avg(s_35), m.geom from test t
-     *  inner join map m on st_contains(m.geom, t.s_12::geometry)
-     *  where t.s_12 is not null
-     *  and t.time > '2018-08-29 18:00:00.0'
-     *  and t.time < '2018-08-29 19:00:00.0'
-     *  group by m.geom;
+     *  select st_x(s_12::geometry) as longitude, st_y(s_12::geometry) as latitude, avg(s_34)
+     *  from test t
+     *  where s_12 is not null and time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
+     *  group by s_12;
      * </code></p>
      * @param query The heatmap query paramters object.
      * @return The status of the execution.
@@ -765,25 +747,20 @@ public class Citus implements IDatabase {
         GeoPoint startPoint = Constants.GRID_START_POINT;
         String sql = "";
 
-        sql = "with map as (select (st_dump(map.geom)).geom from (\n" +
-                "\tselect st_setsrid(st_collect(grid.geom),4326) as geom \n" +
-                "\tfrom ST_CreateGrid(40, 90, 0.0006670, 0.0006670, %f, %f) as grid\n" +
-                ") map)\n" +
-                "select avg(%s), m.geom from %s t \n" +
-                "inner join map m on st_contains(m.geom, t.%s::geometry) \n" +
-                "where t.%s is not null \n" +
-                "and t.time > '%s' \n" +
-                "and t.time < '%s' \n" +
-                "group by m.geom;";
+        sql = "select st_x(%s::geometry) as longitude, st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
+                "where %s is not null and time >= '%s' and time <= '%s' group by %s having avg(%s) > %f;";
         sql = String.format(Locale.US, sql,
-                startPoint.getLongitude(),
-                startPoint.getLatitude(),
+                gpsSensor.getName(),
+                gpsSensor.getName(),
                 sensor.getName(),
                 tableName,
                 gpsSensor.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
-                endTimestamp);
+                endTimestamp,
+                gpsSensor.getName(),
+                sensor.getName(),
+                query.getThreshold()
+        );
         return executeQuery(sql);
     }
 
