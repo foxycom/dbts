@@ -698,10 +698,8 @@ public class TimescaleDB implements IDatabase {
     } else if (dataModel == TableMode.WIDE_TABLE) {
       sql = "select distinct(bike_id) from %s t\n" +
               "where bike_id not in (\n" +
-              "\tselect bike_id from %s t \n" +
+              "\tselect distinct(bike_id) from %s t \n" +
               "\twhere time > '%s'\n" +
-              "\tgroup by bike_id\n" +
-              "\thaving count(bike_id) > 0\n" +
               ");";
       sql = String.format(
               Locale.US,
