@@ -593,24 +593,21 @@ public class Citus implements IDatabase {
     @Override
     public Status offlineBikes(Query query) {
         String sql = "";
-        Sensor sensor = query.getSensor();
-        Sensor gpsSensor = query.getGpsSensor();
-        Bike bike = query.getBikes().get(0);
-
-        Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
 
-        sql = "select time_bucket(interval '10 s', time) as five_seconds, st_makeline(%s::geometry) \n" +
-                "from %s t where time >= '%s' and time <= '%s' group by five_seconds having avg(%s) > %f;";
+        sql = "select distinct(bike_id) from %s t\n" +
+                "where bike_id not in (\n" +
+                "\tselect bike_id from %s t \n" +
+                "\twhere time > '%s'\n" +
+                "\tgroup by bike_id\n" +
+                "\thaving count(bike_id) > 0\n" +
+                ");";
         sql = String.format(
                 Locale.US,
                 sql,
-                gpsSensor.getName(),
                 tableName,
-                startTimestamp,
-                endTimestamp,
-                sensor.getName(),
-                query.getThreshold()
+                tableName,
+                endTimestamp
         );
         return executeQuery(sql);
     }
@@ -748,7 +745,7 @@ public class Citus implements IDatabase {
         String sql = "";
 
         sql = "select st_x(%s::geometry) as longitude, st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
-                "where %s is not null and time >= '%s' and time <= '%s' group by %s having avg(%s) > %f;";
+                "where %s is not null and time >= '%s' and time <= '%s' group by %s;";
         sql = String.format(Locale.US, sql,
                 gpsSensor.getName(),
                 gpsSensor.getName(),
@@ -757,9 +754,7 @@ public class Citus implements IDatabase {
                 gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp,
-                gpsSensor.getName(),
-                sensor.getName(),
-                query.getThreshold()
+                gpsSensor.getName()
         );
         return executeQuery(sql);
     }

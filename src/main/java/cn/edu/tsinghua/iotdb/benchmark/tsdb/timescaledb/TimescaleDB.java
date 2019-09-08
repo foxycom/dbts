@@ -696,14 +696,13 @@ public class TimescaleDB implements IDatabase {
               timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
               bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select b.bike_id, b.owner_name, offline_data.time from bikes b inner join lateral (\n" +
-              "\tselect distinct on (bike_id) bike_id, time from %s t where bike_id not in (\n" +
-              "\t\tselect bike_id from %s t \n" +
-              "\t\twhere time > '%s'\n" +
-              "\t\tgroup by bike_id\n" +
-              "\t) and t.bike_id = b.bike_id group by t.bike_id, t.time\n" +
-              "\torder by bike_id, time desc\n" +
-              ") as offline_data on true;";
+      sql = "select distinct(bike_id) from %s t\n" +
+              "where bike_id not in (\n" +
+              "\tselect bike_id from %s t \n" +
+              "\twhere time > '%s'\n" +
+              "\tgroup by bike_id\n" +
+              "\thaving count(bike_id) > 0\n" +
+              ");";
       sql = String.format(
               Locale.US,
               sql,
@@ -711,7 +710,6 @@ public class TimescaleDB implements IDatabase {
               tableName,
               endTimestamp
       );
-
     }
     return executeQuery(sql);
   }
@@ -903,7 +901,7 @@ public class TimescaleDB implements IDatabase {
               "st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
               "where %s is not null\n" +
               "and time >= '%s' and time <= '%s'\n" +
-              "group by %s having avg(%s) > %f;";
+              "group by %s;";
       sql = String.format(Locale.US, sql,
               gpsSensor.getName(),
               gpsSensor.getName(),
@@ -912,9 +910,7 @@ public class TimescaleDB implements IDatabase {
               gpsSensor.getName(),
               startTimestamp,
               endTimestamp,
-              gpsSensor.getName(),
-              sensor.getName(),
-              query.getThreshold()
+              gpsSensor.getName()
       );
     }
     return executeQuery(sql);
