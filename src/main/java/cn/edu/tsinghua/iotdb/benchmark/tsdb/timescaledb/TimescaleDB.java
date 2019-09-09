@@ -703,7 +703,7 @@ public class TimescaleDB implements IDatabase {
               .bikes(query.getBikes()).and().time(query);
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      Timestamp timestamp = new Timestamp(query.getStartTimestamp());
+      Timestamp timestamp = new Timestamp(query.getEndTimestamp());
       sql = "SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (\n" +
               "\tSELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t \n" +
               "\tWHERE t.bike_id = b.bike_id AND time > '%s'\n" +

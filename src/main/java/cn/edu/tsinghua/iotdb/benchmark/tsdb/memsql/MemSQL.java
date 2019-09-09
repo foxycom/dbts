@@ -557,7 +557,7 @@ public class MemSQL implements IDatabase {
         Sensor sensor = query.getSensor();
         String sql = "";
 
-        Timestamp timestamp = new Timestamp(query.getStartTimestamp());
+        Timestamp timestamp = new Timestamp(query.getEndTimestamp());
         sql = "WITH last_trip AS (\n" +
                 "SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) as minute, bike_id\n" +
                 "FROM %s t WHERE time > '%s'\n" +

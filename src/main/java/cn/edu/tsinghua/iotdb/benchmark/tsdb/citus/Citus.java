@@ -591,7 +591,7 @@ public class Citus implements IDatabase {
         Sensor sensor = query.getSensor();
         String sql = "";
 
-        Timestamp timestamp = new Timestamp(query.getStartTimestamp());
+        Timestamp timestamp = new Timestamp(query.getEndTimestamp());
         sql = "WITH last_trip AS (\n" +
                 "\tSELECT date_trunc('minute', time) AS minute, bike_id FROM %s t \n" +
                 "\tWHERE time > '%s'\n" +
