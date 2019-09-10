@@ -267,7 +267,7 @@ public class TimescaleDB implements IDatabase {
 
         SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
         for (Sensor sensor : gpsSensorGroup.getSensors()) {
-          String createGeoIndexSql = "CREATE INDEX ON " + tableName + " USING GIST (" + sensor.getName() + ")";
+          String createGeoIndexSql = "CREATE INDEX ON " + tableName + " USING GIST (" + sensor.getName() + ");";
           statement.addBatch(createGeoIndexSql);
         }
       }

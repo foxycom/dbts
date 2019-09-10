@@ -211,7 +211,7 @@ public class Citus implements IDatabase {
                 "SELECT create_distributed_table('bikes', 'bike_id');"
         );
         statement.execute(
-                "SELECT create_distributed_table('test', 'bike_id')"
+                "SELECT create_distributed_table('test', 'bike_id');"
         );
         statement.execute(
                 "CREATE TABLE test_2018_08_00 PARTITION OF test FOR VALUES FROM ('2018-08-30') TO ('2018-08-31');"
