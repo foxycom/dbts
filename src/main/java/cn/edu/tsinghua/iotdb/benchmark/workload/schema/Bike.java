@@ -27,17 +27,21 @@ public class Bike {
   // only for synthetic data set
   private int bikeId;
 
-  public Bike(int bikeId) {
+  private String ownerName;
+
+  public Bike(int bikeId, String ownerName) {
     this.bikeId = bikeId;
     this.device = DEVICE_NAME_PREFIX + bikeId;
+    this.ownerName = ownerName;
     sensors = new ArrayList<>();
     createEvenlyAllocBikeSchema();
   }
 
-  public Bike(String group, String device, List<Sensor> sensors) {
+  public Bike(String group, String device, List<Sensor> sensors, String ownerName) {
     this.group = GROUP_NAME_PREFIX + group;
     this.device = DEVICE_NAME_PREFIX + device;
     this.sensors = sensors;
+    this.ownerName = ownerName;
   }
 
 
@@ -75,4 +79,11 @@ public class Bike {
     this.sensors = sensors;
   }
 
+  public String getOwnerName() {
+    return ownerName;
+  }
+
+  public void setOwnerName(String ownerName) {
+    this.ownerName = ownerName;
+  }
 }

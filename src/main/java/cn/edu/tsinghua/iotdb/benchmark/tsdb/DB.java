@@ -17,6 +17,8 @@ public enum DB {
     public float getSize() throws TsdbException {
         float size = 0.0f;
         switch (this) {
+            case MEMSQL:
+                break;
             case TIMESCALEDB_NARROW:
                 if (db == null) {
                     db = new TimescaleDB(TimescaleDB.TableMode.NARROW_TABLE);

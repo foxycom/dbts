@@ -6,20 +6,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import cn.edu.tsinghua.iotdb.benchmark.utils.NameGenerator;
+import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DataSchema {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DataSchema.class);
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
   private static final Map<Integer, List<Bike>> CLIENT_BIND_SCHEMA = new HashMap<>();
+  private NameGenerator nameGenerator = NameGenerator.INSTANCE;
 
   public Map<Integer, List<Bike>> getClientBindSchema() {
     return CLIENT_BIND_SCHEMA;
   }
 
-  private DataSchema(){
+  private DataSchema() {
     createClientBindSchema();
   }
 
@@ -45,10 +49,10 @@ public class DataSchema {
     for (int clientId = 0; clientId < config.CLIENTS_NUMBER; clientId++) {
       List<Bike> bikeList = new ArrayList<>();
       for (int j = 0; j < eachClientDeviceNum; j++) {
-        bikeList.add(new Bike(deviceId++));
+        bikeList.add(new Bike(deviceId++, nameGenerator.getName()));
       }
       if (clientId < mod) {
-        bikeList.add(new Bike(deviceId++));
+        bikeList.add(new Bike(deviceId++, nameGenerator.getName()));
       }
       CLIENT_BIND_SCHEMA.put(clientId, bikeList);
     }

@@ -36,7 +36,6 @@ public class TimescaleDB implements IDatabase {
   private long initialDbSize;
   private SqlBuilder sqlBuilder;
   private TableMode dataModel;
-  private Faker nameFaker;
 
   public enum  TableMode {
     NARROW_TABLE,
@@ -51,7 +50,6 @@ public class TimescaleDB implements IDatabase {
     sqlBuilder = new SqlBuilder();
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
-    nameFaker = new Faker();
   }
 
   /**
@@ -1010,7 +1008,7 @@ public class TimescaleDB implements IDatabase {
 
       Bike bike = bikesList.get(i);
       sqlBuilder.append("('").append(bike.getName()).append("', ")
-              .append("'").append(nameFaker.name().firstName()).append("')");
+              .append("'").append(bike.getOwnerName()).append("')");
     }
     sqlBuilder.append(";");
     return sqlBuilder.toString();

@@ -264,7 +264,8 @@ public class SqlBuilder {
         BIKE("bike_id"),
         SENSOR("sensor_id"),
         TIME("time"),
-        SENSOR_GROUP("sensor_group_id");
+        SENSOR_GROUP("sensor_group_id"),
+        OWNER_NAME("owner_name");
 
         private String name;
 

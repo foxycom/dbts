@@ -67,19 +67,6 @@ public class MemSQL implements IDatabase {
      * Returns the size of a given database in bytes.
      */
     private long getInitialSize() {
-        /*String sql = "";
-        long initialSize = 0;
-        try (Statement statement = connection.createStatement()) {
-            sql = "SELECT pg_database_size('%s') as initial_db_size;";
-            sql = String.format(sql, config.DB_NAME);
-            ResultSet rs = statement.executeQuery(sql);
-            if (rs.next()) {
-                initialSize = rs.getLong("initial_db_size");
-            }
-        } catch (SQLException e) {
-            LOGGER.warn("Could not query the initial DB size of TimescaleDB with: {}", sql);
-        }
-        return initialSize;*/
         return 0;
     }
 
@@ -182,20 +169,7 @@ public class MemSQL implements IDatabase {
      */
     @Override
     public float getSize() throws TsdbException {
-        float resultInGB = 0.0f;
-        try (Statement statement = connection.createStatement()) {
-            String selectSizeSql = String.format("SELECT pg_database_size('%s') as db_size;", config.DB_NAME);
-            ResultSet rs = statement.executeQuery(selectSizeSql);
-            if (rs.next()) {
-                long resultInB = rs.getLong("db_size");
-                resultInB -= initialDbSize;
-                resultInGB = (float) resultInB / B2GB;
-            }
-            return resultInGB;
-        } catch (SQLException e) {
-            LOGGER.error("Could not read the size of the data because: {}", e.getMessage());
-            throw new TsdbException(e);
-        }
+        return 0;
     }
 
 

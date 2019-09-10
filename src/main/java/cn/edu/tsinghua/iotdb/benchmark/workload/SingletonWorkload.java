@@ -4,6 +4,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
+import cn.edu.tsinghua.iotdb.benchmark.utils.NameGenerator;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import java.util.Random;
@@ -12,10 +13,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class SingletonWorkload {
 
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
   private ProbTool probTool;
   private Random poissonRandom;
   private AtomicLong insertLoop;
+  private NameGenerator nameGenerator = NameGenerator.INSTANCE;
   private ConcurrentHashMap<Integer, AtomicLong> deviceMaxTimeIndexMap;
 
   private static class SingletonWorkloadHolder {
@@ -39,7 +41,7 @@ public class SingletonWorkload {
 
   private Batch getOrderedBatch() {
     long curLoop = insertLoop.getAndIncrement();
-    Bike bike = new Bike((int) (curLoop % config.DEVICES_NUMBER));
+    Bike bike = new Bike((int) (curLoop % config.DEVICES_NUMBER), nameGenerator.getName());
     Batch batch = new Batch();
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
       long stepOffset = (curLoop / config.DEVICES_NUMBER) * config.BATCH_SIZE + batchOffset;
@@ -52,7 +54,7 @@ public class SingletonWorkload {
   private Batch getDistOutOfOrderBatch() {
     long curLoop = insertLoop.getAndIncrement();
     int deviceIndex = (int) (curLoop % config.DEVICES_NUMBER);
-    Bike bike = new Bike(deviceIndex);
+    Bike bike = new Bike(deviceIndex, nameGenerator.getName());
     Batch batch = new Batch();
     PossionDistribution possionDistribution = new PossionDistribution(poissonRandom);
     int nextDelta;

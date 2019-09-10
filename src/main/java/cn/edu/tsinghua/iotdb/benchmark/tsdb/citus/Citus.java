@@ -12,7 +12,6 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import com.github.javafaker.Faker;
@@ -31,7 +30,6 @@ public class Citus implements IDatabase {
     private static final Logger LOGGER = LoggerFactory.getLogger(Citus.class);
     private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
     private SqlBuilder sqlBuilder;
-    private Faker nameFaker;
 
     /**
      * Initializes an instance of the database controller.
@@ -40,7 +38,6 @@ public class Citus implements IDatabase {
         sqlBuilder = new SqlBuilder();
         config = ConfigParser.INSTANCE.config();
         tableName = config.DB_NAME;
-        nameFaker = new Faker();
     }
 
     /**
@@ -795,7 +792,7 @@ public class Citus implements IDatabase {
 
             Bike bike = bikesList.get(i);
             sqlBuilder.append("('").append(bike.getName()).append("', ")
-                    .append("'").append(nameFaker.name().firstName()).append("')");
+                    .append("'").append(bike.getOwnerName()).append("')");
         }
         sqlBuilder.append(";");
         return sqlBuilder.toString();

@@ -7,6 +7,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.PossionDistribution;
 import cn.edu.tsinghua.iotdb.benchmark.distribution.ProbTool;
 import cn.edu.tsinghua.iotdb.benchmark.function.GeoFunction;
+import cn.edu.tsinghua.iotdb.benchmark.utils.NameGenerator;
 import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
@@ -22,9 +23,10 @@ import java.util.*;
 public class SyntheticWorkload implements IWorkload {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SyntheticWorkload.class);
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
   private static Random timestampRandom = new Random(config.DATA_SEED);
   private ProbTool probTool;
+  private NameGenerator nameGenerator = NameGenerator.INSTANCE;
   private long maxTimestampIndex;
   private Random poissonRandom;
   private Random queryDeviceRandom;
@@ -171,7 +173,7 @@ public class SyntheticWorkload implements IWorkload {
     }
     Collections.shuffle(clientDevicesIndex, queryDeviceRandom);
     for (int m = 0; m < config.QUERY_DEVICE_NUM; m++) {
-      Bike bike = new Bike(clientDevicesIndex.get(m));
+      Bike bike = new Bike(clientDevicesIndex.get(m), nameGenerator.getName());
       List<Sensor> sensors = bike.getSensors();
       Collections.shuffle(sensors, queryDeviceRandom);
       List<Sensor> querySensors = new ArrayList<>();

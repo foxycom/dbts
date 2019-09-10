@@ -1,6 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.reader;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
+import cn.edu.tsinghua.iotdb.benchmark.utils.NameGenerator;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import java.io.BufferedReader;
@@ -9,21 +10,26 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.google.inject.internal.cglib.core.$ClassNameReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class BasicReader {
 
   private static Logger logger = LoggerFactory.getLogger(BasicReader.class);
+  private static NameGenerator nameGenerator = NameGenerator.INSTANCE;
+
   protected Config config;
-  private List<String> files;
   protected BufferedReader reader;
+  protected String currentFile;
+  protected String currentDeviceId;
   protected List<String> cachedLines;
+
+  private List<String> files;
   private boolean hasInit = false;
 
   private int currentFileIndex = 0;
-  protected String currentFile;
-  protected String currentDeviceId;
 
   public BasicReader(Config config, List<String> files) {
     this.config = config;
@@ -138,7 +144,7 @@ public abstract class BasicReader {
           if (!devices.contains(deviceId)) {
             devices.add(deviceId);
             bikeList
-                .add(new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS));
+                .add(new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS, nameGenerator.getName()));
           }
         }
         break;
@@ -149,7 +155,7 @@ public abstract class BasicReader {
           if (!devices.contains(deviceId)) {
             devices.add(deviceId);
             bikeList.add(
-                new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS));
+                new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS, nameGenerator.getName()));
           }
         }
     }

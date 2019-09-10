@@ -11,6 +11,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class InfluxDB implements IDatabase {
-  public static final int MILLIS_TO_NANO = 1000000;
+  public static final long MILLIS_TO_NANO = 1000000L;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InfluxDB.class);
   private static Config config = ConfigParser.INSTANCE.config();
@@ -114,6 +115,7 @@ public class InfluxDB implements IDatabase {
       for (Point syntheticPoint : entries.get(sensor)) {
         org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
                 .tag(SqlBuilder.Column.BIKE.getName(), bike.getName())
+                .tag(SqlBuilder.Column.OWNER_NAME.getName(), bike.getOwnerName())
                 .tag(SqlBuilder.Column.SENSOR_GROUP.getName(), sensor.getSensorGroup().getName())
                 .tag(SqlBuilder.Column.SENSOR.getName(), sensor.getName());
 
@@ -146,9 +148,40 @@ public class InfluxDB implements IDatabase {
     }
   }
 
+  private long trailingZeros(long timestamp) {
+    return timestamp * MILLIS_TO_NANO;
+  }
+
+  /**
+   *
+   * <p><code>
+   *     SELECT time, bike_id, owner_name, sensor_id, value
+   *     FROM test
+   *     WHERE bike_id = 'bike_0'
+   *     AND time = 1535587200000000000
+   *     AND sensor_id = 's_33';
+   * </code></p>
+   *
+   * @param query universal precise query condition parameters
+   * @return
+   */
   @Override
   public Status precisePoint(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
+    long timestamp = trailingZeros(query.getStartTimestamp());
+    Sensor sensor = query.getSensor();
+    Bike bike = query.getBikes().get(0);
+
+    String sql = "SELECT time, bike_id, owner_name, sensor_id, value FROM %s " +
+            "WHERE bike_id = '%s' AND time = %d AND sensor_id = '%s';";
+    sql = String.format(
+            Locale.US,
+            sql,
+            measurementName,
+            bike.getName(),
+            timestamp,
+            sensor.getName()
+    );
+    return executeQueryAndGetStatus(sql);
   }
 
   @Override
@@ -168,7 +201,21 @@ public class InfluxDB implements IDatabase {
 
   @Override
   public Status lastTimeActivelyDriven(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
+    long timestamp = trailingZeros(query.getStartTimestamp());
+    Sensor sensor = query.getSensor();
+    String sql = "SELECT LAST(\"avg\") FROM(SELECT MEAN(value) AS avg FROM %s " +
+            "WHERE time > %d AND sensor_id = '%s' " +
+            "GROUP BY time(1m), bike_id, owner_name) " +
+            "WHERE \"avg\" > %f GROUP BY bike_id, owner_name;";
+    sql = String.format(
+            Locale.US,
+            sql,
+            measurementName,
+            timestamp,
+            sensor.getName(),
+            query.getThreshold()
+    );
+    return executeQueryAndGetStatus(sql);
   }
 
   @Override
@@ -183,6 +230,10 @@ public class InfluxDB implements IDatabase {
 
   @Override
   public Status airPollutionHeatMap(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    long startTimestamp = trailingZeros(query.getStartTimestamp());
+    long endTimestamp = trailingZeros(query.getEndTimestamp());
+    Sensor sensor = query.getSensor();
+    Sensor gpsSensor = query.getGpsSensor();
     return null;
   }
 

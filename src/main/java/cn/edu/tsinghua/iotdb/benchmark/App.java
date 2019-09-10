@@ -2,8 +2,6 @@ package cn.edu.tsinghua.iotdb.benchmark;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.Client;
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
-import cn.edu.tsinghua.iotdb.benchmark.client.QueryRealDatasetClient;
-import cn.edu.tsinghua.iotdb.benchmark.client.RealDatasetClient;
 import cn.edu.tsinghua.iotdb.benchmark.client.SyntheticClient;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
@@ -51,12 +49,6 @@ public class App {
         switch (config.WORK_MODE) {
             case TEST_WITH_DEFAULT_PATH:
                 testWithDefaultPath(config);
-                break;
-            case WRITE_WITH_REAL_DATASET:
-                testWithRealDataSet(config);
-                break;
-            case QUERY_WITH_REAL_DATASET:
-                queryWithRealDataSet(config);
                 break;
             case SERVER_MODE:
                 serverMode(config);
@@ -148,91 +140,6 @@ public class App {
         finalMeasure(executorService, downLatch, measurement, threadsMeasurements, st, clients);
     }
 
-    /**
-     * 测试真实数据集
-     * @param config
-     */
-    private static void testWithRealDataSet(Config config) {
-        MySqlLog mysql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
-        mysql.initMysql(true);
-        mysql.saveTestConfig();
-
-        // BATCH_SIZE is points number in this mode
-        config.BATCH_SIZE = config.BATCH_SIZE / config.FIELDS.size();
-
-        File dirFile = new File(config.FILE_PATH);
-        if (!dirFile.exists()) {
-            LOGGER.error(config.FILE_PATH + " does not exit");
-            return;
-        }
-
-        LOGGER.info("use dataset: {}", config.DATA_SET);
-
-        List<String> files = new ArrayList<>();
-        getAllFiles(config.FILE_PATH, files);
-        LOGGER.info("total files: {}", files.size());
-
-        Collections.sort(files);
-
-        List<Bike> bikeList = BasicReader.getDeviceSchemaList(files, config);
-
-        Measurement measurement = new Measurement();
-        DBWrapper dbWrapper = new DBWrapper(measurement);
-        // register schema if needed
-        try {
-            LOGGER.info("start to init database {}", config.DB_SWITCH);
-            dbWrapper.init();
-            if(config.ERASE_DATA){
-                try {
-                    LOGGER.info("start to clean old data");
-                    dbWrapper.cleanup();
-                } catch (TsdbException e) {
-                    LOGGER.error("Cleanup {} failed because ", config.DB_SWITCH, e);
-                }
-            }
-            try {
-                // register device schema
-                LOGGER.info("start to register schema");
-                dbWrapper.registerSchema(bikeList);
-            } catch (TsdbException e) {
-                LOGGER.error("Register {} schema failed because ", config.DB_SWITCH, e);
-            }
-        } catch (TsdbException e) {
-            LOGGER.error("Initialize {} failed because ", config.DB_SWITCH, e);
-        } finally {
-            try {
-                dbWrapper.close();
-            } catch (TsdbException e) {
-                LOGGER.error("Close {} failed because ", config.DB_SWITCH, e);
-            }
-        }
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER);
-
-        List<List<String>> thread_files = new ArrayList<>();
-        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
-            thread_files.add(new ArrayList<>());
-        }
-
-        for (int i = 0; i < files.size(); i++) {
-            String filePath = files.get(i);
-            int thread = i % config.CLIENTS_NUMBER;
-            thread_files.get(thread).add(filePath);
-        }
-
-        // create CLIENT_NUMBER client threads to do the workloads
-        List<Measurement> threadsMeasurements = new ArrayList<>();
-        List<Client> clients = new ArrayList<>();
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
-        long st = System.nanoTime();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
-        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
-            Client client = new RealDatasetClient(i, downLatch, config, thread_files.get(i), barrier);
-            clients.add(client);
-            executorService.submit(client);
-        }
-        finalMeasure(executorService, downLatch, measurement, threadsMeasurements, st, clients);
-    }
-
     private static void finalMeasure(ExecutorService executorService, CountDownLatch downLatch,
             Measurement measurement, List<Measurement> threadsMeasurements, long st, List<Client> clients) {
         executorService.shutdown();
@@ -263,41 +170,6 @@ public class App {
         measurement.showMeasurements();
         measurement.showMetrics();
         measurement.save();
-    }
-
-    private static void queryGpsWithTimeRange(Config config) {
-
-    }
-
-    /**
-     * 测试真实数据集
-     * @param config
-     */
-    private static void queryWithRealDataSet(Config config) {
-        MySqlLog mysql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
-        mysql.initMysql(true);
-        mysql.saveTestConfig();
-        LOGGER.info("use dataset: {}", config.DATA_SET);
-        //check whether the parameters are legitimate
-        if(!checkParamForQueryRealDataSet(config)){
-            return;
-        }
-
-        Measurement measurement = new Measurement();
-        CyclicBarrier barrier = new CyclicBarrier(config.CLIENTS_NUMBER);
-
-        // create CLIENT_NUMBER client threads to do the workloads
-        List<Measurement> threadsMeasurements = new ArrayList<>();
-        List<Client> clients = new ArrayList<>();
-        CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
-        long st = System.nanoTime();
-        ExecutorService executorService = Executors.newFixedThreadPool(config.CLIENTS_NUMBER);
-        for (int i = 0; i < config.CLIENTS_NUMBER; i++) {
-            Client client = new QueryRealDatasetClient(i, downLatch, barrier, config);
-            clients.add(client);
-            executorService.submit(client);
-        }
-        finalMeasure(executorService, downLatch, measurement, threadsMeasurements, st, clients);
     }
 
     private static boolean checkParamForQueryRealDataSet(Config config) {
