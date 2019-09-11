@@ -130,20 +130,15 @@ public class CrateDB implements IDatabase {
     @Override
     public void registerSchema(List<Bike> schemaList) throws TsdbException {
         try (Statement statement = connection.createStatement()) {
-            connection.setAutoCommit(false);
 
             // Creates bikes' relational data table.
-            statement.addBatch(
-                    "CREATE TABLE IF NOT EXISTS bikes (bike_id TEXT, owner_name TEXT NOT NULL, " +
-                            "PRIMARY KEY (bike_id));"
-            );
+            statement.execute("CREATE TABLE IF NOT EXISTS bikes (bike_id TEXT, owner_name TEXT NOT NULL, " +
+                    "PRIMARY KEY (bike_id));");
 
             // Inserts all bikes.
-            statement.addBatch(getInsertBikesSql(schemaList));
+            statement.execute(getInsertBikesSql(schemaList));
 
-            statement.addBatch(getCreateTableSql());
-            statement.executeBatch();
-            connection.commit();
+            statement.execute(getCreateTableSql());
         } catch (SQLException e) {
             LOGGER.error("Can't create CrateDB table because: {}", e.getMessage());
             System.out.println(e.getNextException().getMessage());
