@@ -320,6 +320,7 @@ public class MySqlLog {
                 case TIMESCALEDB_NARROW:
                 case TIMESCALEDB_WIDE:
                 case MEMSQL:
+                case CRATEDB:
                 case CITUS:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'ServerIP'", "'" + config.HOST + "'");
