@@ -34,4 +34,6 @@ public interface Sensor {
 
     List<String> getFields();
 
+    void setTick(long tick);
+
 }

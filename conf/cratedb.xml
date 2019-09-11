@@ -4,15 +4,15 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>InfluxDB</type>
+        <type>CrateDB</type>
         <name>test</name>
         <host>127.0.0.1</host>
-        <port>8086</port>
+        <port>5432</port>
         <erase wait="5000">false</erase>
-        <createSchema>false</createSchema>
+        <createSchema>true</createSchema>
     </db>
     <mode>test_with_default_path</mode>
-    <mysqlLog active="false" remark="">
+    <mysqlLog active="false" remark="INGEST">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
@@ -20,7 +20,7 @@
     <devices prefix="d_">4</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>0:0:0:1:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>0:0:0:0:1:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -45,8 +45,8 @@
             <sensor frequency="50" type="basic"/>
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gps" fields="longitude, latitude" dataType="double precision">
-            <sensor frequency="1" type="basic"/>
+        <sensorGroup name="gps" dataType="geo_point">
+            <sensor frequency="1" type="gps"/>
         </sensorGroup>
         <sensorGroup name="rotaryEncoder" dataType="double precision">
             <sensor frequency="10" type="basic"/>
@@ -108,7 +108,7 @@
     </sensorGroups>
 
     <batch size="10000"/>
-    <loops>5</loops>
+    <loops>1</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
@@ -137,9 +137,9 @@
         <seed>151658</seed>
         <step>1000</step>
         <radius>500</radius>
-        <aggregateFunction>mean</aggregateFunction>
+        <aggregateFunction>avg</aggregateFunction>
         <interval>3600000</interval>
-        <lowerLimit>3</lowerLimit>
+        <lowerLimit>1000</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
         <timeBucket>300000</timeBucket>
         <limitClause>0</limitClause>

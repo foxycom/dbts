@@ -36,6 +36,7 @@ public class GeoPoint {
     public String getValue(DB currentDb) {
         switch (currentDb) {
             case MEMSQL:
+            case CRATEDB:
                 return String.format("'POINT(%s %s)'", longitude, latitude);
             case CITUS:
             case TIMESCALEDB_WIDE:

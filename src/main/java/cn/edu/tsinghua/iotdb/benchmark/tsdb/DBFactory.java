@@ -3,6 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.citus.Citus;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.cratedb.CrateDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.influxdb.InfluxDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.kairosdb.KairosDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.memsql.MemSQL;
@@ -31,6 +32,8 @@ public class DBFactory {
         return new Citus();
       case MEMSQL:
         return new MemSQL();
+      case CRATEDB:
+        return new CrateDB();
       default:
         LOGGER.error("unsupported database {}", config.DB_SWITCH);
         throw new SQLException("unsupported database " + config.DB_SWITCH);

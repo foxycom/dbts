@@ -33,6 +33,10 @@ public class Constants {
     public static final String MYSQL_USER = "root";
     public static final String MYSQL_PASSWD = "";
 
+    public static final String CRATE_URL = "jdbc:crate://%s:%s/";
+    public static final String CRATE_USER = "crate";
+    public static final String CRATE_PASSWD = "";
+
     public static final double NANO_TO_MILLIS = 1000 * 1000d;
     public static final double NANO_TO_SECONDS = 1000 * 1000 * 1000d;
     public static final double MILLIS_TO_SECONDS = 1000d;

@@ -17,9 +17,9 @@
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">10</devices>
+    <devices prefix="d_">4</devices>
 
-    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::TRAFFIC_JAMS -->
+    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
     <operationsProportion>1:0:0:0:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
@@ -108,11 +108,11 @@
     </sensorGroups>
 
     <batch size="10000"/>
-    <loops>1</loops>
+    <loops>10</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="false">
+    <serverMonitor active="true">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>
@@ -139,7 +139,7 @@
         <radius>500</radius>
         <aggregateFunction>avg</aggregateFunction>
         <interval>3600000</interval>
-        <lowerLimit>3</lowerLimit>
+        <lowerLimit>1000</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
         <timeBucket>300000</timeBucket>
         <limitClause>0</limitClause>

@@ -13,6 +13,7 @@
       <xs:enumeration value="TimescaleDB_Wide"/>
       <xs:enumeration value="TimescaleDB_Narrow"/>
       <xs:enumeration value="InfluxDB"/>
+      <xs:enumeration value="CrateDB"/>
       <xs:enumeration value="KairosDB"/>
       <xs:enumeration value="Citus"/>
       <xs:enumeration value="MemSQL"/>

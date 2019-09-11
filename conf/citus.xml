@@ -8,8 +8,8 @@
         <name>test</name>
         <host>127.0.0.1</host>
         <port>9700</port>
-        <erase wait="5000">true</erase>
-        <createSchema>true</createSchema>
+        <erase wait="5000">false</erase>
+        <createSchema>false</createSchema>
     </db>
     <mode>test_with_default_path</mode>
     <mysqlLog active="false" remark="INGEST">
@@ -20,7 +20,7 @@
     <devices prefix="d_">100</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>0:1:0:0:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -112,7 +112,7 @@
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
-    <serverMonitor active="true">
+    <serverMonitor active="false">
         <drive>sdb</drive>
         <iface>enp0s25</iface>
         <port>56565</port>

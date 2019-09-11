@@ -14,6 +14,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
+import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,18 +106,34 @@ public class SyntheticWorkload implements IWorkload {
     batch.add(currentTimestamp, values);
   }
 
+  /**
+   * TODO assumption that GPS sensor is always slower than the fastest sensor
+   * @param sensor
+   * @param batch
+   * @param loopIndex
+   */
   static void addSensorData(Sensor sensor, Batch batch, long loopIndex) {
-    long valuesNum = batch.getTimeRange() / sensor.getInterval();
+    long valuesNum;
+    Sensor minIntervalSensor = Sensors.minInterval(config.SENSORS);
+    if (sensor instanceof GpsSensor) {
+      valuesNum = batch.getTimeRange() / minIntervalSensor.getInterval();
+    } else {
+      valuesNum = batch.getTimeRange() / sensor.getInterval();
+    }
     Integer valNum = Math.toIntExact(valuesNum);
     Point[] values = new Point[valNum];
     for (int i = 0; i < valuesNum; i++) {
       long stepOffset = loopIndex * valuesNum + i;    // point step
-      long timestamp = sensor.getTimestamp(stepOffset);
+      long timestamp;
+      if (sensor instanceof GpsSensor) {
+        timestamp = minIntervalSensor.getTimestamp(stepOffset);
+      } else {
+        timestamp = sensor.getTimestamp(stepOffset);
+      }
       if (sensor.getFields().size() == 1) {
         String value = sensor.getValue(timestamp, config.DB_SWITCH);
         values[i] = new Point(timestamp, value);
       } else {
-        // TODO get value based on field
         String[] sensorValues = new String[sensor.getFields().size()];
         for (int v = 0; v < sensor.getFields().size(); v++) {
           sensorValues[v] = sensor.getValue(timestamp, config.DB_SWITCH);

@@ -16,12 +16,17 @@ public class BasicSensor implements Sensor {
 
     private String name;
     private SensorGroup sensorGroup;
-    private long interval;
+    long interval;
     private String dataType;
     private List<String> fields;
 
-    public BasicSensor(String name, Function function) {
-        // TODO remove
+    public BasicSensor(BasicSensor other) {
+        this.function = other.function;
+        this.sensorGroup = other.sensorGroup;
+        this.interval = other.interval;
+        this.dataType = other.dataType;
+        this.fields = new ArrayList<>(other.fields.size());
+        this.fields.addAll(other.fields);
     }
 
     public BasicSensor(String name, SensorGroup sensorGroup, Function function, int freq, String dataType,
@@ -122,6 +127,11 @@ public class BasicSensor implements Sensor {
 
     public List<String> getFields() {
         return fields;
+    }
+
+    @Override
+    public void setTick(long tick) {
+        // do nothing
     }
 
     @Override

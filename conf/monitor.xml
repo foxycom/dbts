@@ -4,15 +4,15 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>Citus</type>
+        <type>MemSQL</type>
         <name>test</name>
         <host>127.0.0.1</host>
-        <port>9700</port>
+        <port>3306</port>
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>
     <mode>server_mode</mode>
-    <mysqlLog active="true">
+    <mysqlLog active="false">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
@@ -103,7 +103,6 @@
             <sensor frequency="500" type="basic"/>
         </sensorGroup>
     </sensorGroups>
-
 
     <batch size="50000"/>
     <loops>3</loops>

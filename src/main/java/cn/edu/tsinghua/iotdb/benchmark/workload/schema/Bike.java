@@ -40,7 +40,14 @@ public class Bike {
   public Bike(String group, String device, List<Sensor> sensors, String ownerName) {
     this.group = GROUP_NAME_PREFIX + group;
     this.device = DEVICE_NAME_PREFIX + device;
-    this.sensors = sensors;
+    this.sensors = new ArrayList<>(sensors.size());
+    for (Sensor sensor : sensors) {
+      if (sensor instanceof GpsSensor) {
+        this.sensors.add(new GpsSensor((GpsSensor) sensor));
+      } else {
+        this.sensors.add(new BasicSensor((BasicSensor) sensor));
+      }
+    }
     this.ownerName = ownerName;
   }
 

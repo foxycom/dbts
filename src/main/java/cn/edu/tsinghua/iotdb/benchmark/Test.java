@@ -1,18 +1,20 @@
 package cn.edu.tsinghua.iotdb.benchmark;
 
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.CpuUsage;
-import cn.edu.tsinghua.iotdb.benchmark.sersyslog.MemUsage;
-
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.Date;
+import java.sql.*;
+import java.util.Locale;
 
 public class Test {
-    public static void main(String[] args) {
-        Instant instant = Timestamp.valueOf("2018-08-30 01:06:39.98").toInstant();
-        System.out.println(instant.toEpochMilli());
+    public static void main(String[] args) throws SQLException {
+        Connection conn;
+        try {
+            conn = DriverManager.getConnection(
+                    String.format(Locale.ENGLISH, "jdbc:crate://%s:%d/", "127.0.0.1", 5432), "crate", ""
+            );
+        } catch (SQLException e) {
+            throw new SQLException("Cannot connect to the database", e);
+        }
+        try (Statement statement = conn.createStatement()) {
+            statement.execute("CREATE TABLE executedFromJava (id int, name text);");
+        }
     }
 }

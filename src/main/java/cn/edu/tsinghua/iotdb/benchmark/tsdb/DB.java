@@ -8,6 +8,7 @@ public enum DB {
     INFLUXDB,
     CITUS,
     MEMSQL,
+    CRATEDB,
     KAIROSDB,
     TIMESCALEDB_NARROW,
     TIMESCALEDB_WIDE;
@@ -18,6 +19,7 @@ public enum DB {
         float size = 0.0f;
         switch (this) {
             case MEMSQL:
+            case CRATEDB:
                 break;
             case TIMESCALEDB_NARROW:
                 if (db == null) {

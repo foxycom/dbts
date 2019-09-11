@@ -6,15 +6,33 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
 
 public class GpsSensor extends BasicSensor {
     private GeoFunction function;
+    private GeoPoint lastLocation;
+    private long tick = -1;
 
     public GpsSensor(String name, SensorGroup sensorGroup, GeoFunction function, int freq, String dataType) {
         super(name, sensorGroup, null, freq, dataType);
         this.function = function;
     }
 
+    public GpsSensor(GpsSensor other) {
+        super(other);
+        this.function = other.function;
+        this.lastLocation = other.lastLocation;
+    }
+
     @Override
     public String getValue(long currentTimestamp, DB currentDb) {
-        GeoPoint location = function.get(Constants.SPAWN_POINT);
-        return location.getValue(currentDb);
+        if (tick < 0 || currentTimestamp - tick >= interval) {
+            tick = currentTimestamp;
+            lastLocation = function.get(Constants.SPAWN_POINT);
+            return lastLocation.getValue(currentDb);
+        } else {
+            return lastLocation.getValue(currentDb);
+        }
+    }
+
+    @Override
+    public void setTick(long tick) {
+        this.tick = tick;
     }
 }
