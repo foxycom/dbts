@@ -281,7 +281,6 @@ public class MemSQL implements IDatabase {
      *  SELECT s_12 AS location, t.bike_id, b.owner_name FROM test t, bikes b
      * 	WHERE b.bike_id = t.bike_id
      * 	AND t.bike_id = 'bike_5'
-     * 	AND s_12 IS NOT NULL
      * 	AND time >= '2018-08-30 02:00:00.0'
      * 	AND time <= '2018-08-30 03:00:00.0';
      * </code></p>
@@ -300,7 +299,6 @@ public class MemSQL implements IDatabase {
         sql = "SELECT %s AS location, t.bike_id, b.owner_name FROM %s t, bikes b\n" +
                 "\tWHERE b.bike_id = t.bike_id\n" +
                 "\tAND t.bike_id = '%s' \n" +
-                "\tAND %s IS NOT NULL\n" +
                 "\tAND time >= '%s' \n" +
                 "\tAND time <= '%s';\n";
         sql = String.format(
@@ -309,7 +307,6 @@ public class MemSQL implements IDatabase {
                 gpsSensor.getName(),
                 tableName,
                 bike.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp
         );
@@ -319,24 +316,12 @@ public class MemSQL implements IDatabase {
     /**
      * Identifies active trips, when current value is above a threshold.
      *
-     * NARROW_TABLE:
-     * <p><code>
-     *  WITH trip (second, current_value) AS (
-     *   SELECT time_bucket('1 second', time) AS second, value(AVG)
-     *   FROM emg_benchmark WHERE bike_id = 'bike_0' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'
-     *   GROUP BY second HAVING AVG(value) > 3.000000
-     *  ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
-     *  WHERE g.bike_id = 'bike_0';
-     * </code></p>
-     *
-     * WIDE_TABLE:
      * <p><code>
      *  WITH data AS (
      * 	 SELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS SECOND,
      * 	 bike_id, s_12
      * 	 FROM test t
      * 	 WHERE bike_id = 'bike_8'
-     * 	 AND s_12 IS NOT NULL
      * 	 AND time >= '2018-08-30 02:00:00.0'
      * 	 AND time < '2018-08-30 03:00:00.0'
      * 	 GROUP BY second, bike_id, s_12
@@ -364,7 +349,6 @@ public class MemSQL implements IDatabase {
                 "\tbike_id, %s\n" +
                 "\tFROM %s t \n" +
                 "\tWHERE bike_id = '%s'\n" +
-                "\tAND %s IS NOT NULL \n" +
                 "\tAND time >= '%s' \n" +
                 "\tAND time < '%s'\n" +
                 "\tGROUP BY second, bike_id, %s\n" +
@@ -379,7 +363,6 @@ public class MemSQL implements IDatabase {
                 gpsSensor.getName(),
                 tableName,
                 bike.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp,
                 gpsSensor.getName(),

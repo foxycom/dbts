@@ -75,6 +75,15 @@ public class BasicSensor implements Sensor {
         return nf.format(value);
     }
 
+    @Override
+    public String[] getValues(long currentTimestamp, DB currentDb) {
+        String[] values = new String[fields.size()];
+        for (int i = 0; i < fields.size(); i++) {
+            values[i] = nf.format(function.get(currentTimestamp));
+        }
+        return values;
+    }
+
     public boolean hasValue(long currentTimestamp) {
         // TODO implement
         return true;

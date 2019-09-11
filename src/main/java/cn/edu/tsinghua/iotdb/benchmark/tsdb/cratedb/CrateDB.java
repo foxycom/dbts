@@ -211,17 +211,12 @@ public class CrateDB implements IDatabase {
     /**
      * Selects the last known GPS position of bikes.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  SELECT value, bike_id, time, sensor_id FROM gps_benchmark WHERE (bike_id = 'bike_5') ORDER BY time DESC LIMIT 1;
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  SELECT LAST_VALUE(t.s_12) OVER(PARTITION BY t.bike_id ORDER BY (time)),
-     *  MAX(time), t.bike_id, b.owner_name FROM test t, bikes b
-     *  WHERE t.s_12 IS NOT NULL AND t.bike_id = b.bike_id
-     *  GROUP BY t.bike_id;
+     *  SELECT b.owner_name, l.bike_id, last_timestamp, t.s_12 FROM (
+     *  SELECT MAX("time") OVER (PARTITION BY bike_id) AS last_timestamp, bike_id FROM test
+     *   ) AS l, test t, bikes b
+     *   WHERE l.bike_id = t.bike_id AND l.last_timestamp = t."time" AND b.bike_id = t.bike_id
+     *  GROUP BY l.bike_id, b.owner_name, l.last_timestamp, t.s_12;
      * </code></p>
      *
      * @param query The query parameters query.
@@ -232,14 +227,16 @@ public class CrateDB implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         String sql = "";
 
-        sql = "SELECT LAST_VALUE(t.%s) OVER(PARTITION BY t.bike_id ORDER BY (time)), \n" +
-                "MAX(time), t.bike_id, b.owner_name FROM %s t, bikes b\n" +
-                "WHERE t.%s IS NOT NULL AND t.bike_id = b.bike_id\n" +
-                "GROUP BY t.bike_id;";
+        sql = "SELECT b.owner_name, l.bike_id, last_timestamp, t.%s FROM (\n" +
+                "SELECT MAX(\"time\") OVER (PARTITION BY bike_id) AS last_timestamp, bike_id FROM %s\n" +
+                "  ) AS l, %s t, bikes b\n" +
+                "  WHERE l.bike_id = t.bike_id AND l.last_timestamp = t.\"time\" AND b.bike_id = t.bike_id\n" +
+                "GROUP BY l.bike_id, b.owner_name, l.last_timestamp, t.%s;";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
+                tableName,
                 tableName,
                 gpsSensor.getName()
         );
@@ -250,20 +247,17 @@ public class CrateDB implements IDatabase {
     /**
      * Performs a scan of gps data points in a given time range for specified number of bikes.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  SELECT time, bike_id, value FROM gps_benchmark WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
-     *  AND time <= '2018-08-29 19:00:00.0');
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  SELECT s_12 AS location, t.bike_id, b.owner_name FROM test t, bikes b
-     * 	WHERE b.bike_id = t.bike_id
-     * 	AND t.bike_id = 'bike_5'
-     * 	AND s_12 IS NOT NULL
-     * 	AND time >= '2018-08-30 02:00:00.0'
-     * 	AND time <= '2018-08-30 03:00:00.0';
+     *  SELECT date_trunc('second', "time") as second,
+     *  longitude(s_12) as longitude, latitude(s_12) as latitude,
+     *  t.bike_id, b.owner_name
+     *  FROM test t, bikes b
+     *  WHERE b.bike_id = t.bike_id
+     *  AND t.bike_id = 'bike_2'
+     *  AND time >= '2018-08-30 02:00:00.0'
+     *  AND time <= '2018-08-30 03:00:00.0'
+     *  group by b.owner_name, t.bike_id, longitude, latitude, second
+     *  ORDER BY second;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -277,19 +271,23 @@ public class CrateDB implements IDatabase {
         Bike bike = query.getBikes().get(0);
         String sql = "";
 
-        sql = "SELECT %s AS location, t.bike_id, b.owner_name FROM %s t, bikes b\n" +
-                "\tWHERE b.bike_id = t.bike_id\n" +
-                "\tAND t.bike_id = '%s' \n" +
-                "\tAND %s IS NOT NULL\n" +
-                "\tAND time >= '%s' \n" +
-                "\tAND time <= '%s';\n";
+        sql = "SELECT date_trunc('second', \"time\") as second, \n" +
+                "longitude(%s) as longitude, latitude(%s) as latitude, \n" +
+                "t.bike_id, b.owner_name \n" +
+                "FROM %s t, bikes b\n" +
+                "WHERE b.bike_id = t.bike_id\n" +
+                "AND t.bike_id = '%s'\n" +
+                "AND time >= '%s' \n" +
+                "AND time <= '%s'\n" +
+                "group by b.owner_name, t.bike_id, longitude, latitude, second\n" +
+                "ORDER BY second;";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
+                gpsSensor.getName(),
                 tableName,
                 bike.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp
         );
@@ -299,32 +297,20 @@ public class CrateDB implements IDatabase {
     /**
      * Identifies active trips, when current value is above a threshold.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  WITH trip (second, current_value) AS (
-     *   SELECT time_bucket('1 second', time) AS second, value(AVG)
-     *   FROM emg_benchmark WHERE bike_id = 'bike_0' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'
-     *   GROUP BY second HAVING AVG(value) > 3.000000
-     *  ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
-     *  WHERE g.bike_id = 'bike_0';
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  WITH data AS (
-     * 	 SELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS SECOND,
-     * 	 bike_id, s_12
+     *  SELECT d.second, d.bike_id, b.owner_name, longitude, latitude
+     *  FROM bikes b, (
+     *   SELECT date_trunc('second', "time") AS SECOND,
+     * 	 bike_id, longitude(s_12) as longitude, latitude(s_12) as latitude
      * 	 FROM test t
-     * 	 WHERE bike_id = 'bike_8'
-     * 	 AND s_12 IS NOT NULL
+     * 	 WHERE bike_id = 'bike_2'
      * 	 AND time >= '2018-08-30 02:00:00.0'
      * 	 AND time < '2018-08-30 03:00:00.0'
-     * 	 GROUP BY second, bike_id, s_12
+     * 	 GROUP BY second, bike_id, longitude(s_12), latitude(s_12)
      * 	 HAVING AVG(s_17) >= 1000.000000
-     * )
-     * SELECT d.second, d.bike_id, b.owner_name, d.s_12 FROM bikes b, data d
-     * WHERE d.bike_id = b.bike_id
-     * ORDER BY d.second ASC, d.bike_id;
+     *  ) d
+     *  WHERE d.bike_id = b.bike_id
+     *  ORDER BY d.second ASC, d.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -339,33 +325,32 @@ public class CrateDB implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         String sql = "";
 
-        sql = "WITH data AS (\n" +
-                "\tSELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS SECOND, \n" +
-                "\tbike_id, %s\n" +
+        sql = "SELECT d.second, d.bike_id, b.owner_name, longitude, latitude\n" +
+                "FROM bikes b, (\n" +
+                "  SELECT date_trunc('second', \"time\") AS SECOND, \n" +
+                "\tbike_id, longitude(%s) as longitude, latitude(%s) as latitude\n" +
                 "\tFROM %s t \n" +
                 "\tWHERE bike_id = '%s'\n" +
-                "\tAND %s IS NOT NULL \n" +
                 "\tAND time >= '%s' \n" +
                 "\tAND time < '%s'\n" +
-                "\tGROUP BY second, bike_id, %s\n" +
+                "\tGROUP BY second, bike_id, longitude(%s), latitude(%s)\n" +
                 "\tHAVING AVG(%s) >= %f\n" +
-                ")\n" +
-                "SELECT d.second, d.bike_id, b.owner_name, d.%s FROM bikes b, data d\n" +
+                ") d\n" +
                 "WHERE d.bike_id = b.bike_id\n" +
                 "ORDER BY d.second ASC, d.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
+                gpsSensor.getName(),
                 tableName,
                 bike.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp,
                 gpsSensor.getName(),
+                gpsSensor.getName(),
                 sensor.getName(),
-                query.getThreshold(),
-                gpsSensor.getName()
+                query.getThreshold()
         );
 
         return executeQuery(sql);
@@ -374,19 +359,7 @@ public class CrateDB implements IDatabase {
     /**
      * Computes the distance driven by a bike in the given time range identified by start and end timestamps where current
      * exceeds some value.
-     *
-     * NARROW_TABLE:
-     * <p><code>
-     *  with trip_begin as (
-     * 	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'group by second, bike_id order by second asc limit 1
-     *  ), trip_end as (
-     *  	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0'and time < '2018-08-29 19:00:00.0' group by second, bike_id order by second desc limit 1
-     *  )
-     *  select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = 'bike_10'
-     *  and g.time > b.second and g.time < e.second group by g.bike_id;
-     * </code></p>
-     *
-     * WIDE_TABLE:
+
      * <p><code>
      *  with data as (
      * 	 select from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, s_12
@@ -417,37 +390,7 @@ public class CrateDB implements IDatabase {
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
 
-        sql = "with data as (\n" +
-                "\tselect from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, %s \n" +
-                "\tfrom %s t\n" +
-                "\twhere bike_id = '%s' \n" +
-                "\tand time >= '%s' and time <= '%s'\n" +
-                "\tgroup by second, bike_id, %s\n" +
-                "\thaving avg(%s) > %s and %s is not null\n" +
-                "\torder by second\n" +
-                ")\n" +
-                "select d.bike_id, b.owner_name, \n" +
-                "geography_length(\n" +
-                "    concat('LINESTRING(', group_concat(concat(geography_longitude(%s), ' ', geography_latitude(%s))), ')')\n" +
-                ") from data d, bikes b\n" +
-                "where d.bike_id = b.bike_id\n" +
-                "group by d.bike_id;";
-        sql = String.format(
-                Locale.US,
-                sql,
-                gpsSensor.getName(),
-                tableName,
-                bike.getName(),
-                startTimestamp,
-                endTimestamp,
-                gpsSensor.getName(),
-                sensor.getName(),
-                query.getThreshold(),
-                gpsSensor.getName(),
-                gpsSensor.getName(),
-                gpsSensor.getName()
-        );
-        return executeQuery(sql);
+        return new Status(false, 0);
     }
 
     /**
@@ -491,7 +434,7 @@ public class CrateDB implements IDatabase {
      *   HAVING AVG(s_17) > 1000.000000
      *  ) as l
      *  WHERE l.bike_id = t.bike_id
-     *  GROUP BY l.bike_id limit 100;
+     *  GROUP BY l.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -510,7 +453,7 @@ public class CrateDB implements IDatabase {
                 "HAVING AVG(%s) > %f  \n" +
                 ") as l\n" +
                 "WHERE l.bike_id = t.bike_id\n" +
-                "GROUP BY l.bike_id limit 100;";
+                "GROUP BY l.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -526,23 +469,16 @@ public class CrateDB implements IDatabase {
     /**
      * Groups entries within a time range in time buckets and by bikes and aggregates values in each time bucket.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(value), bike_id FROM emg_benchmark
-     *  WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     * <p><code>
-     *  WITH downsample AS (
-     * 	 SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(s_27) AS value
+     *  SELECT d.minute, b.bike_id, b.owner_name, d.value
+     *  FROM (
+     *  SELECT date_trunc('minute', "time") AS minute, bike_id, AVG(s_27) AS value
      * 	 FROM test t
-     * 	 WHERE bike_id = 'bike_8'
+     * 	 WHERE bike_id = 'bike_2'
      * 	 AND time >= '2018-08-30 02:00:00.0'
      * 	 AND time <= '2018-08-30 03:00:00.0'
      * 	 GROUP BY bike_id, minute
-     *  ) SELECT d.minute, b.bike_id, b.owner_name, d.value
-     *  FROM downsample d, bikes b WHERE b.bike_id = d.bike_id
+     *  ) d, bikes b WHERE b.bike_id = d.bike_id
      *  ORDER BY d.minute, b.bike_id;
      * </code></p>
      *
@@ -556,15 +492,15 @@ public class CrateDB implements IDatabase {
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
         String sql = "";
-        sql = "WITH downsample AS (\n" +
-                "\tSELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(%s) AS value\n" +
+        sql = "SELECT d.minute, b.bike_id, b.owner_name, d.value \n" +
+                "FROM (\n" +
+                "SELECT date_trunc('minute', \"time\") AS minute, bike_id, AVG(%s) AS value\n" +
                 "\tFROM %s t \n" +
                 "\tWHERE bike_id = '%s'\n" +
                 "\tAND time >= '%s'\n" +
                 "\tAND time <= '%s'\n" +
                 "\tGROUP BY bike_id, minute\n" +
-                ") SELECT d.minute, b.bike_id, b.owner_name, d.value \n" +
-                "FROM downsample d, bikes b WHERE b.bike_id = d.bike_id\n" +
+                ") d, bikes b WHERE b.bike_id = d.bike_id\n" +
                 "ORDER BY d.minute, b.bike_id;";
         sql = String.format(
                 Locale.US,
@@ -583,10 +519,10 @@ public class CrateDB implements IDatabase {
      * Creates a heat map with average air quality out of gps points.
      *
      * <p><code>
-     *  SELECT GEOGRAPHY_LONGITUDE(s_12) as longitude, GEOGRAPHY_LATITUDE(s_12) as latitude, AVG(s_34)
+     *  SELECT longitude(s_12) as longitude, latitude(s_12) as latitude, AVG(s_34)
      *  FROM test t
-     *  WHERE s_12 IS NOT NULL AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
-     *  GROUP BY s_12;
+     *  WHERE time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+     *  GROUP BY longitude, latitude order by longitude, latitude;
      * </code></p>
      * @param query The heatmap query paramters object.
      * @return The status of the execution.
@@ -617,27 +553,21 @@ public class CrateDB implements IDatabase {
     /**
      * Selects bikes whose last gps location lies in a certain area.
      *
-     * NARROW_TABLE:
-     * <p><code>
-     *  with last_location as (
-     * 	select bike_id, last(value, time) as location from gps_benchmark group by bike_id
-     *  ) select * from last_location l
-     *  where st_contains(
-     *    st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry,
-     *    l.location::geometry
-     *  );
-     * </code></p>
-     *
-     * WIDE_TABLE:
      *  <p><code>
-     *  select b.bike_id, b.owner_name, pos.pos from bikes b,
-     * 	(select bike_id, last_value(s_12) over (partition by bike_id order by (time)) as pos from test
-     * 	group by bike_id) as pos
-     *  where b.bike_id = pos.bike_id
-     *  and geography_contains('POLYGON((13.4406567 48.5723195,
+     *  SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b,
+     * 	(
+     *     SELECT t.bike_id, t.s_12 AS pos FROM (
+     *       SELECT MAX("time") OVER (PARTITION BY bike_id) AS last_timestamp, bike_id
+     *       FROM test
+     *     ) l, test t
+     *     WHERE l.bike_id = t.bike_id
+     *     AND l.last_timestamp = t."time"
+     *   ) pos
+     *  WHERE b.bike_id = pos.bike_id
+     *  AND within(pos.pos, 'POLYGON((13.4406567 48.5723195,
      *  13.4373522 48.5707861, 13.4373522 48.5662708,
      *  13.4443045 48.5645384, 13.4489393 48.5683155,
-     *  13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);
+     *  13.4492826 48.5710701, 13.4406567 48.5723195))');
      * </code></p>
      * @param query
      * @return
@@ -646,18 +576,25 @@ public class CrateDB implements IDatabase {
     public Status bikesInLocation(Query query) {
         String sql = "";
         Sensor gpsSensor = query.getGpsSensor();
-        sql = "select b.bike_id, b.owner_name, pos.pos from bikes b, \n" +
-                "\t(select bike_id, last_value(%s) over (partition by bike_id order by (time)) as pos from %s \n" +
-                "\tgroup by bike_id) as pos \n" +
-                "where b.bike_id = pos.bike_id \n" +
-                "and geography_contains('POLYGON((13.4406567 48.5723195, \n" +
+        sql = "SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b, \n" +
+                "\t(\n" +
+                "SELECT t.bike_id, t.%s AS pos FROM (\n" +
+                "SELECT MAX(\"time\") OVER (PARTITION BY bike_id) AS last_timestamp, bike_id\n" +
+                "FROM %s\n" +
+                ") l, %s t \n" +
+                "WHERE l.bike_id = t.bike_id\n" +
+                "AND l.last_timestamp = t.\"time\"\n" +
+                ") pos \n" +
+                "WHERE b.bike_id = pos.bike_id \n" +
+                "AND within(pos.pos, 'POLYGON((13.4406567 48.5723195, \n" +
                 "13.4373522 48.5707861, 13.4373522 48.5662708, \n" +
                 "13.4443045 48.5645384, 13.4489393 48.5683155, \n" +
-                "13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);";
+                "13.4492826 48.5710701, 13.4406567 48.5723195))');";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
+                tableName,
                 tableName
         );
         return executeQuery(sql);

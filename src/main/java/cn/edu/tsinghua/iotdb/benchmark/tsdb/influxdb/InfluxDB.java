@@ -25,6 +25,8 @@ import org.influxdb.dto.QueryResult.Series;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.parsers.DocumentBuilder;
+
 public class InfluxDB implements IDatabase {
   public static final long MILLIS_TO_NANO = 1000000L;
 
@@ -107,32 +109,20 @@ public class InfluxDB implements IDatabase {
     BatchPoints.Builder batchBuilder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
     Map<Sensor, Point[]> entries = batch.getEntries();
     Bike bike = batch.getBike();
-    for (Sensor sensor : bike.getSensors()) {
-      if (entries.get(sensor).length == 0) {
-        continue;
-      }
 
-      for (Point syntheticPoint : entries.get(sensor)) {
-        org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
-                .tag(SqlBuilder.Column.BIKE.getName(), bike.getName())
-                .tag(SqlBuilder.Column.OWNER_NAME.getName(), bike.getOwnerName())
-                .tag(SqlBuilder.Column.SENSOR_GROUP.getName(), sensor.getSensorGroup().getName())
-                .tag(SqlBuilder.Column.SENSOR.getName(), sensor.getName());
+    Map<Long, Map<String, String>> rows = transformBatch(batch);
 
-        List<String> fields = sensor.getFields();
-        if (fields.size() > 1) {
-          String[] values = syntheticPoint.getValues();
-          for (int i = 0; i < fields.size(); i++) {
-            pointBuilder.addField(fields.get(i), Double.parseDouble(values[i]));
-          }
-        } else {
-          double value = Double.parseDouble(syntheticPoint.getValue());
-          pointBuilder.addField("value", value);
-        }
-        org.influxdb.dto.Point influxPoint = pointBuilder.time(syntheticPoint.getTimestamp(), TimeUnit.MILLISECONDS)
-                .build();
-        batchBuilder.point(influxPoint);
+    for (long timestamp : rows.keySet()) {
+      org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
+              .tag(SqlBuilder.Column.BIKE.getName(), bike.getName())
+              .tag(SqlBuilder.Column.OWNER_NAME.getName(), bike.getOwnerName());
+
+      Map<String, String> fields = rows.get(timestamp);
+      for (String field : fields.keySet()) {
+        pointBuilder.addField(field, Double.parseDouble(fields.get(field)));
       }
+      org.influxdb.dto.Point influxPoint = pointBuilder.time(timestamp, TimeUnit.MILLISECONDS).build();
+      batchBuilder.point(influxPoint);
     }
     BatchPoints batchPoints = batchBuilder.build();
 
@@ -155,11 +145,7 @@ public class InfluxDB implements IDatabase {
   /**
    *
    * <p><code>
-   *     SELECT time, bike_id, owner_name, sensor_id, value
-   *     FROM test
-   *     WHERE bike_id = 'bike_0'
-   *     AND time = 1535587200000000000
-   *     AND sensor_id = 's_33';
+   *     SELECT * FROM test WHERE bike_id = 'bike_2' AND time = 1535587200000000000;
    * </code></p>
    *
    * @param query universal precise query condition parameters
@@ -168,73 +154,199 @@ public class InfluxDB implements IDatabase {
   @Override
   public Status precisePoint(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     long timestamp = trailingZeros(query.getStartTimestamp());
-    Sensor sensor = query.getSensor();
     Bike bike = query.getBikes().get(0);
 
-    String sql = "SELECT time, bike_id, owner_name, sensor_id, value FROM %s " +
-            "WHERE bike_id = '%s' AND time = %d AND sensor_id = '%s';";
+    String sql = "SELECT * FROM %s WHERE bike_id = '%s' AND time = %d;";
     sql = String.format(
             Locale.US,
             sql,
             measurementName,
             bike.getName(),
-            timestamp,
-            sensor.getName()
+            timestamp
     );
     return executeQueryAndGetStatus(sql);
   }
 
+  /**
+   *
+   * <p><code>
+   *     SELECT longitude, latitude FROM test
+   *     WHERE bike_id = 'bike_0' AND time > 1535587200000000000 and time < 1535590800000000000;
+   * </code></p>
+   *
+   * @param query
+   * @return
+   */
   @Override
   public Status gpsPathScan(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
-  }
-
-  @Override
-  public Status identifyTrips(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
-  }
-
-  @Override
-  public Status offlineBikes(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
-  }
-
-  @Override
-  public Status lastTimeActivelyDriven(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    long timestamp = trailingZeros(query.getStartTimestamp());
-    Sensor sensor = query.getSensor();
-    String sql = "SELECT LAST(\"avg\") FROM(SELECT MEAN(value) AS avg FROM %s " +
-            "WHERE time > %d AND sensor_id = '%s' " +
-            "GROUP BY time(1m), bike_id, owner_name) " +
-            "WHERE \"avg\" > %f GROUP BY bike_id, owner_name;";
+    Bike bike = query.getBikes().get(0);
+    long startTimestamp = trailingZeros(query.getStartTimestamp());
+    long endTimestamp = trailingZeros(query.getEndTimestamp());
+    String sql = "SELECT longitude, latitude FROM %s WHERE bike_id = '%s' AND time > %d and time < %d;";
     sql = String.format(
             Locale.US,
             sql,
             measurementName,
-            timestamp,
+            bike.getName(),
+            startTimestamp,
+            endTimestamp
+    );
+    return executeQueryAndGetStatus(sql);
+  }
+
+  /**
+   *
+   * <p><code>
+   *     SELECT * FROM (
+   *        SELECT MEAN(s_17) AS avg, FIRST(longitude) as longitude, LAST(latitude) AS latitude
+   *        FROM test WHERE bike_id = 'bike_2' AND time >= 1535587200000000000 AND time <= 1535590800000000000
+   *        GROUP BY time(1s)
+   *     ) WHERE avg > 1000.000000;
+   * </code></p>
+   *
+   * @param query
+   * @return
+   */
+  @Override
+  public Status identifyTrips(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    Sensor sensor = query.getSensor();
+    Bike bike = query.getBikes().get(0);
+    long startTimestamp = trailingZeros(query.getStartTimestamp());
+    long endTimestamp = trailingZeros(query.getEndTimestamp());
+    String sql = "SELECT * FROM(SELECT MEAN(%s) AS avg, FIRST(longitude) as longitude, LAST(latitude) AS latitude " +
+            "FROM %s WHERE bike_id = '%s' AND time >= %d AND time <= %d GROUP BY time(1s)) WHERE avg > %f;";
+    sql = String.format(
+            Locale.US,
+            sql,
             sensor.getName(),
+            measurementName,
+            bike.getName(),
+            startTimestamp,
+            endTimestamp,
             query.getThreshold()
     );
     return executeQueryAndGetStatus(sql);
   }
 
+  /**
+   *
+   * <p><code>
+   *     SELECT bike_id FROM (SELECT LAST(s_0) FROM test GROUP BY bike_id) WHERE time < 1535590800000000000;
+   * </code></p>
+   *
+   * @param query
+   * @return
+   */
+  @Override
+  public Status offlineBikes(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    long timestamp = trailingZeros(query.getEndTimestamp());
+    Sensor sensor = query.getSensor();
+    String sql = "SELECT bike_id FROM (SELECT LAST(%s) FROM %s GROUP BY bike_id) WHERE time < %d;";
+    sql = String.format(
+            Locale.US,
+            sql,
+            sensor.getName(),
+            measurementName,
+            timestamp
+    );
+    return executeQueryAndGetStatus(sql);
+  }
+
+  /**
+   * <p><code>
+   *     SELECT LAST("avg") FROM (SELECT MEAN(s_17) AS avg FROM test WHERE time > 1535587200000000000
+   *     GROUP BY time(1m), bike_id, owner_name) WHERE "avg" > 3.000000 GROUP BY bike_id, owner_name;
+   * </code></p>
+   * @param query contains universal range query with value filter parameters
+   * @return
+   */
+  @Override
+  public Status lastTimeActivelyDriven(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+    long timestamp = trailingZeros(query.getStartTimestamp());
+    Sensor sensor = query.getSensor();
+    String sql = "SELECT LAST(\"avg\") FROM (SELECT MEAN(%s) AS avg FROM %s WHERE time > %d " +
+            "GROUP BY time(1m), bike_id, owner_name) WHERE \"avg\" > %f GROUP BY bike_id, owner_name;";
+    sql = String.format(
+            Locale.US,
+            sql,
+            sensor.getName(),
+            measurementName,
+            timestamp,
+            query.getThreshold()
+    );
+    return executeQueryAndGetStatus(sql);
+  }
+
+  /**
+   *
+   * <p><code>
+   *     SELECT MEAN(s_27) FROM test
+   *     WHERE bike_id = 'bike_2' AND time > 1535587200000000000 AND time < 1535590800000000000
+   *     GROUP BY time(1m) fill(none);
+   * </code></p>
+   *
+   * @param query contains universal group by query condition parameters
+   * @return
+   */
   @Override
   public Status downsample(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
+    Bike bike = query.getBikes().get(0);
+    Sensor sensor = query.getSensor();
+    long startTimestamp = trailingZeros(query.getStartTimestamp());
+    long endTimestamp = trailingZeros(query.getEndTimestamp());
+
+    String sql = "SELECT MEAN(%s) FROM %s WHERE bike_id = '%s' AND time > %d AND time < %d GROUP BY time(1m) fill(none);";
+    sql = String.format(
+            Locale.US,
+            sql,
+            sensor.getName(),
+            measurementName,
+            bike.getName(),
+            startTimestamp,
+            endTimestamp
+    );
+    return executeQueryAndGetStatus(sql);
   }
 
   @Override
   public Status lastKnownPosition(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    return null;
+    String sql = "SELECT LAST(longitude) AS longitude, LAST(latitude) AS latitude FROM %s " +
+            "GROUP BY bike_id, bike_owner;";
+    sql = String.format(
+            Locale.US,
+            sql,
+            measurementName
+    );
+    return executeQueryAndGetStatus(sql);
   }
 
+  /***
+   *
+   * <p><code>
+   *     SELECT FIRST(longitude), FIRST(latitude), MEAN(s_34) FROM test
+   *     WHERE time >= 1535587200000000000 and time <= 1535590800000000000
+   *     GROUP BY time(1s);
+   * </code></p>
+   *
+   * @param query
+   * @return
+   */
   @Override
   public Status airPollutionHeatMap(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     long startTimestamp = trailingZeros(query.getStartTimestamp());
     long endTimestamp = trailingZeros(query.getEndTimestamp());
     Sensor sensor = query.getSensor();
-    Sensor gpsSensor = query.getGpsSensor();
-    return null;
+    String sql = "SELECT FIRST(longitude), FIRST(latitude), MEAN(%s) FROM %s WHERE time >= %d and time <= %d " +
+            "GROUP BY time(1s);";
+    sql = String.format(
+            Locale.US,
+            sql,
+            sensor.getName(),
+            measurementName,
+            startTimestamp,
+            endTimestamp
+    );
+    return executeQueryAndGetStatus(sql);
   }
 
   @Override
@@ -271,31 +383,25 @@ public class InfluxDB implements IDatabase {
     return new Status(true, endTimeStamp - startTimeStamp, cnt);
   }
 
-  /**
-   * generate from and where clause for specified devices.
-   *
-   * @param devices schema list of query devices
-   * @return from and where clause
-   */
-  private static String generateConstrainForDevices(List<Bike> devices) {
-    StringBuilder builder = new StringBuilder();
-    Set<String> groups = new HashSet<>();
-    for (Bike d : devices) {
-      groups.add(d.getGroup());
+  private Map<Long, Map<String, String>> transformBatch(Batch batch) {
+    Map<Long, Map<String, String>> rows = new HashMap<>();
+    Bike bike = batch.getBike();
+    Map<Sensor, Point[]> entries = batch.getEntries();
+    for (Sensor sensor : bike.getSensors()) {
+      Point[] points = entries.get(sensor);
+      for (Point point : points) {
+        rows.computeIfAbsent(point.getTimestamp(), k -> new HashMap<>());
+        if (point.hasMultipleValues()) {
+         List<String> fields = sensor.getFields();
+         String[] values = point.getValues();
+         for (int i = 0; i < fields.size(); i++) {
+           rows.get(point.getTimestamp()).put(fields.get(i), values[i]);
+         }
+        } else {
+          rows.get(point.getTimestamp()).put(sensor.getName(), point.getValue());
+        }
+      }
     }
-    builder.append(" FROM ");
-    for (String g : groups) {
-      builder.append(g).append(" , ");
-    }
-    builder.deleteCharAt(builder.lastIndexOf(","));
-    builder.append("WHERE (");
-    for (Bike d : devices) {
-      builder.append(" device = '" + d.getName() + "' OR");
-    }
-    builder.delete(builder.lastIndexOf("OR"), builder.length());
-    builder.append(")");
-
-    return builder.toString();
+    return rows;
   }
-
 }

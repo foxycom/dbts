@@ -20,7 +20,7 @@
     <devices prefix="d_">4</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>0:0:0:1:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -46,7 +46,7 @@
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
         <sensorGroup name="gps" fields="longitude, latitude" dataType="double precision">
-            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="gps"/>
         </sensorGroup>
         <sensorGroup name="rotaryEncoder" dataType="double precision">
             <sensor frequency="10" type="basic"/>
@@ -108,7 +108,7 @@
     </sensorGroups>
 
     <batch size="10000"/>
-    <loops>5</loops>
+    <loops>10</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 

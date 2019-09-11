@@ -43,7 +43,8 @@ public class Bike {
     this.sensors = new ArrayList<>(sensors.size());
     for (Sensor sensor : sensors) {
       if (sensor instanceof GpsSensor) {
-        this.sensors.add(new GpsSensor((GpsSensor) sensor));
+
+        this.sensors.add(new GpsSensor((GpsSensor) sensor, bikeId));
       } else {
         this.sensors.add(new BasicSensor((BasicSensor) sensor));
       }

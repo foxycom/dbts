@@ -25,4 +25,8 @@ public class Point {
     public String[] getValues() {
         return values;
     }
+
+    public boolean hasMultipleValues() {
+        return values.length > 1;
+    }
 }

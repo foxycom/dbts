@@ -12,6 +12,8 @@ public interface Sensor {
 
     String getValue(long currentTimestamp, DB currentDb);
 
+    String[] getValues(long currentTimestamp, DB currentDb);
+
     boolean hasValue(long currentTimestamp);
 
     long getInterval();

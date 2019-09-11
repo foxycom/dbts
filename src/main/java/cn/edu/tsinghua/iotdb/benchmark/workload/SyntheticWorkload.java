@@ -134,10 +134,7 @@ public class SyntheticWorkload implements IWorkload {
         String value = sensor.getValue(timestamp, config.DB_SWITCH);
         values[i] = new Point(timestamp, value);
       } else {
-        String[] sensorValues = new String[sensor.getFields().size()];
-        for (int v = 0; v < sensor.getFields().size(); v++) {
-          sensorValues[v] = sensor.getValue(timestamp, config.DB_SWITCH);
-        }
+        String[] sensorValues = sensor.getValues(timestamp, config.DB_SWITCH);
         values[i] = new Point(timestamp, sensorValues);
       }
     }
