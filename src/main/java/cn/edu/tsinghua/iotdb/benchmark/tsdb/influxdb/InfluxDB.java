@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import okhttp3.OkHttpClient;
 import org.influxdb.BatchOptions;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Query;
@@ -55,7 +56,12 @@ public class InfluxDB implements IDatabase {
   @Override
   public void init() throws TsdbException {
     try {
-      influxDbInstance = org.influxdb.InfluxDBFactory.connect(influxUrl)
+      OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+      clientBuilder.connectTimeout(1, TimeUnit.MINUTES)
+              .readTimeout(1, TimeUnit.MINUTES)
+              .writeTimeout(1, TimeUnit.MINUTES)
+              .retryOnConnectionFailure(true);
+      influxDbInstance = org.influxdb.InfluxDBFactory.connect(influxUrl, clientBuilder)
               .setDatabase(influxDbName)
               .setRetentionPolicy(defaultRp)
               .setConsistency(org.influxdb.InfluxDB.ConsistencyLevel.ALL)
