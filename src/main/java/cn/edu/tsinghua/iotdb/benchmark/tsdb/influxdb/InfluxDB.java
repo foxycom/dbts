@@ -57,9 +57,9 @@ public class InfluxDB implements IDatabase {
   public void init() throws TsdbException {
     try {
       OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
-      clientBuilder.connectTimeout(1, TimeUnit.MINUTES)
-              .readTimeout(1, TimeUnit.MINUTES)
-              .writeTimeout(1, TimeUnit.MINUTES)
+      clientBuilder.connectTimeout(20, TimeUnit.MINUTES)
+              .readTimeout(20, TimeUnit.MINUTES)
+              .writeTimeout(20, TimeUnit.MINUTES)
               .retryOnConnectionFailure(true);
       influxDbInstance = org.influxdb.InfluxDBFactory.connect(influxUrl, clientBuilder)
               .setDatabase(influxDbName)
