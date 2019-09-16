@@ -803,16 +803,10 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  with map as (select (st_dump(map.geom)).geom from (
-   * 	select st_setsrid(st_collect(grid.geom),4326) as geom
-   * 	from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, 13.410947, 48.556736) as grid
-   *  ) map)
-   *  select avg(s_35), m.geom from test t
-   *  inner join map m on st_contains(m.geom, t.s_12::geometry)
-   *  where t.s_12 is not null
-   *  and t.time > '2018-08-29 18:00:00.0'
-   *  and t.time < '2018-08-29 19:00:00.0'
-   *  group by m.geom;
+   *  SELECT ST_X(s_12::geometry) AS longitude,
+   *  ST_Y(s_12::geometry) AS latitude, AVG(s_34) FROM test t
+   *  WHERE time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+   *  GROUP BY longitude, latitude;
    * </code></p>
    * @param query The heatmap query paramters object.
    * @return The status of the execution.
@@ -842,20 +836,17 @@ public class TimescaleDB implements IDatabase {
               gpsSensor.getTableName(), timeColumn, valueColumn, bikeColumn, sensor.getTableName(), timeColumn,
               startTimestamp, timeColumn, endTimestamp, bikeColumn, bikeColumn, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select st_x(%s::geometry) as longitude, \n" +
-              "st_y(%s::geometry) as latitude, avg(%s) from %s t \n" +
-              "where %s is not null\n" +
-              "and time >= '%s' and time <= '%s'\n" +
-              "group by %s;";
+      sql = "SELECT ST_X(%s::geometry) AS longitude, \n" +
+              "ST_Y(%s::geometry) AS latitude, AVG(%s) FROM %s t\n" +
+              "WHERE time >= '%s' AND time <= '%s'\n" +
+              "GROUP BY longitude, latitude;";
       sql = String.format(Locale.US, sql,
               gpsSensor.getName(),
               gpsSensor.getName(),
               sensor.getName(),
               tableName,
-              gpsSensor.getName(),
               startTimestamp,
-              endTimestamp,
-              gpsSensor.getName()
+              endTimestamp
       );
     }
     return executeQuery(sql);
