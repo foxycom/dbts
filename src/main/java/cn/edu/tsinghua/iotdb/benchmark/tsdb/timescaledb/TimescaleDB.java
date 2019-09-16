@@ -377,10 +377,10 @@ public class TimescaleDB implements IDatabase {
               .orderBy(SqlBuilder.Column.TIME.getName(), SqlBuilder.Order.DESC).limit(1);
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select data.time, data.bike_id, b.owner_name, data.%s from bikes b inner join lateral (\n" +
-              "\tselect * from %s t where t.bike_id = b.bike_id and %s is not null\n" +
-              "\torder by time desc limit 1\n" +
-              ") as data on true;";
+      sql = "SELECT data.time, data.bike_id, b.owner_name, data.%s FROM bikes b INNER JOIN LATERAL (\n" +
+              "\tSELECT * FROM %s t WHERE t.bike_id = b.bike_id\n" +
+              "\tORDER BY time DESC LIMIT 1\n" +
+              ") AS data ON true;";
       sql = String.format(
               Locale.US,
               sql,
@@ -404,14 +404,13 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  select data.bike_id, b.owner_name, data.location from bikes b inner join lateral (
-   * 	select s_12 as location, bike_id from test t
-   * 	where t.bike_id = b.bike_id
-   * 	and bike_id = 'bike_0'
-   * 	and s_12 is not null
-   * 	and time >= '2018-08-29 18:00:00.0'
-   * 	and time <= '2018-08-29 19:00:00.0'
-   *  ) as data on true;
+   *  SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
+   * 	SELECT s_12 AS location, bike_id FROM test t
+   * 	WHERE t.bike_id = b.bike_id
+   * 	AND bike_id = 'bike_8'
+   * 	AND time >= '2018-08-30 02:00:00.0'
+   * 	AND time <= '2018-08-30 03:00:00.0'
+   *  ) AS data ON true;
    * </code></p>
    *
    * @param query The query parameters object.
@@ -432,20 +431,18 @@ public class TimescaleDB implements IDatabase {
               .where().bikes(query.getBikes()).and().time(query);
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select data.bike_id, b.owner_name, data.location from bikes b inner join lateral (\n" +
-              "\tselect %s as location, bike_id from test t\n" +
-              "\twhere t.bike_id = b.bike_id \n" +
-              "\tand bike_id = '%s' \n" +
-              "\tand %s is not null\n" +
-              "\tand time >= '%s' \n" +
-              "\tand time <= '%s'\n" +
-              ") as data on true;";
+      sql = "SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n" +
+              "\tSELECT %s AS location, bike_id FROM test t\n" +
+              "\tWHERE t.bike_id = b.bike_id \n" +
+              "\tAND bike_id = '%s' \n" +
+              "\tAND time >= '%s' \n" +
+              "\tAND time <= '%s'\n" +
+              ") AS data ON true;";
       sql = String.format(
               Locale.US,
               sql,
               gpsSensor.getName(),
               bike.getName(),
-              gpsSensor.getName(),
               startTimestamp,
               endTimestamp
       );
@@ -468,18 +465,17 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  select data.second, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
-   * 	select time_bucket(interval '1 s', time) as second, bike_id, s_12
-   * 	from test t
-   * 	where t.bike_id = b.bike_id
-   * 	and t.bike_id = 'bike_2'
-   * 	and s_12 is not null
-   * 	and time >= '2018-08-29 18:00:00.0'
-   * 	and time < '2018-08-29 19:00:00.0'
-   * 	group by second, bike_id, s_12
-   * 	having avg(s_40) >= 3.000000
-   *  ) as data on true
-   *  order by data.second asc, data.bike_id;
+   *  SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (
+   * 	SELECT time_bucket(interval '1 s', time) AS second, bike_id, s_12
+   * 	FROM test t
+   * 	WHERE t.bike_id = b.bike_id
+   * 	AND t.bike_id = 'bike_7'
+   * 	AND time >= '2018-08-30 02:00:00.0'
+   * 	AND time < '2018-08-30 03:00:00.0'
+   * 	GROUP BY second, bike_id, s_12
+   * 	HAVING AVG(s_17) >= 3.000000
+   *  ) AS data ON true
+   *  ORDER BY data.second ASC, data.bike_id;
    * </code></p>
    *
    * @param query The query parameters object.
@@ -506,24 +502,22 @@ public class TimescaleDB implements IDatabase {
               timeColumn, endTimestamp, config.QUERY_AGGREGATE_FUN, valueColumn, query.getThreshold(),
               timeColumn, valueColumn, gpsSensor.getTableName(), timeColumn, bikeColumn, bike.getName());
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select data.second, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (\n" +
-              "\tselect time_bucket(interval '1 s', time) as second, bike_id, %s\n" +
-              "\tfrom test t \n" +
-              "\twhere t.bike_id = b.bike_id \n" +
-              "\tand t.bike_id = '%s'\n" +
-              "\tand %s is not null \n" +
-              "\tand time >= '%s' \n" +
-              "\tand time < '%s'\n" +
-              "\tgroup by second, bike_id, %s\n" +
-              "\thaving avg(%s) >= %f\n" +
-              ") as data on true\n" +
-              "order by data.second asc, data.bike_id;";
+      sql = "SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (\n" +
+              "\tSELECT time_bucket(interval '1 s', time) AS second, bike_id, %s\n" +
+              "\tFROM test t \n" +
+              "\tWHERE t.bike_id = b.bike_id \n" +
+              "\tAND t.bike_id = '%s'\n" +
+              "\tAND time >= '%s' \n" +
+              "\tAND time < '%s'\n" +
+              "\tGROUP BY second, bike_id, %s\n" +
+              "\tHAVING AVG(%s) >= %f\n" +
+              ") AS data ON true\n" +
+              "ORDER BY data.second ASC, data.bike_id;";
       sql = String.format(
               Locale.US,
               sql,
               gpsSensor.getName(),
               bike.getName(),
-              gpsSensor.getName(),
               startTimestamp,
               endTimestamp,
               gpsSensor.getName(),
@@ -552,13 +546,13 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  select b.bike_id, b.owner_name, st_length(st_makeline(s_12::geometry)::geography, false)
-   *  from bikes b inner join lateral (
-   * 	select time_bucket(interval '1 s', time) as second, s_12 from test t
-   * 	where t.bike_id = b.bike_id and time >= '2018-08-29 18:00:00.0' and time <= '2018-08-29 19:00:00.0'
-   * 	group by second, s_12 having avg(s_40) > 3.000000
-   *  ) as data on true
-   *  group by b.bike_id, b.owner_name;
+   *  SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(s_12::geometry)::geography, false)
+   *  FROM bikes b INNER JOIN LATERAL (
+   * 	SELECT time_bucket(interval '1 s', time) AS second, s_12 FROM test t
+   * 	WHERE t.bike_id = b.bike_id AND bike_id = 'bike_8' AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+   * 	GROUP BY second, s_12 HAVING AVG(s_17) > 3.000000
+   *  ) AS data ON true
+   *  GROUP BY b.bike_id, b.owner_name;
    * </code></p>
    *
    * @param query The query parameters object.
@@ -590,13 +584,13 @@ public class TimescaleDB implements IDatabase {
               timeColumn, endTimestamp, bikeColumn, valueColumn, sensor.getTableName(), bikeColumn,
               bike.getName());
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select b.bike_id, b.owner_name, st_length(st_makeline(%s::geometry)::geography, false) \n" +
-              "from bikes b inner join lateral (\n" +
-              "\tselect time_bucket(interval '1 s', time) as second, %s from %s t \n" +
-              "\twhere t.bike_id = b.bike_id and bike_id = '%s' and time >= '%s' and time <= '%s'\n" +
-              "\tgroup by second, %s having avg(%s) > %f\n" +
-              ") as data on true\n" +
-              "group by b.bike_id, b.owner_name;";
+      sql = "SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(%s::geometry)::geography, false) \n" +
+              "FROM bikes b INNER JOIN LATERAL (\n" +
+              "\tSELECT time_bucket(interval '1 s', time) AS second, %s FROM %s t \n" +
+              "\tWHERE t.bike_id = b.bike_id AND bike_id = '%s' AND time >= '%s' AND time <= '%s'\n" +
+              "\tGROUP BY second, %s HAVING AVG(%s) > %f\n" +
+              ") AS data ON true\n" +
+              "GROUP BY b.bike_id, b.owner_name;";
       sql = String.format(
               Locale.US,
               sql,
@@ -616,7 +610,11 @@ public class TimescaleDB implements IDatabase {
 
   /**
    *
-   *
+   * <p><code>
+   *  SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
+   * 	SELECT DISTINCT(bike_id) FROM test t WHERE time > '2018-08-30 03:00:00.0'
+   *  );
+   * </code></p>
    * @param query
    * @return
    */
@@ -646,8 +644,8 @@ public class TimescaleDB implements IDatabase {
               timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
               bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select distinct(bike_id) from bikes where bike_id not in (\n" +
-              "\tselect distinct(bike_id) from %s t where time > '%s'\n" +
+      sql = "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n" +
+              "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n" +
               ");";
       sql = String.format(
               Locale.US,
@@ -735,15 +733,15 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    * <p><code>
-   *  select data.minute, b.bike_id, b.owner_name, data.value from bikes b inner join lateral (
-   * 	select time_bucket(interval '1 min', time) as minute, avg(s_40) as value
-   * 	from test t where t.bike_id = b.bike_id
-   * 	and bike_id = 'bike_2'
-   * 	and time >= '2018-08-29 18:00:00.0'
-   * 	and time <= '2018-08-29 19:00:00.0'
-   * 	group by minute
-   *  ) as data on true
-   *  order by data.minute asc, b.bike_id;
+   *  SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (
+   * 	SELECT time_bucket(interval '1 min', time) AS minute, AVG(s_27) AS value
+   * 	FROM test t WHERE t.bike_id = b.bike_id
+   * 	AND bike_id = 'bike_7'
+   * 	AND time >= '2018-08-30 02:00:00.0'
+   * 	AND time <= '2018-08-30 03:00:00.0'
+   * 	GROUP BY minute
+   *  ) AS data ON true
+   *  ORDER BY data.minute ASC, b.bike_id;
    * </code></p>
    *
    * @param query The query parameters object.
@@ -764,15 +762,15 @@ public class TimescaleDB implements IDatabase {
               .groupBy(Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select data.minute, b.bike_id, b.owner_name, data.value from bikes b inner join lateral (\n" +
-              "\tselect time_bucket(interval '1 min', time) as minute, avg(%s) as value\n" +
-              "\tfrom test t where t.bike_id = b.bike_id\n" +
-              "\tand bike_id = '%s'\n" +
-              "\tand time >= '%s'\n" +
-              "\tand time <= '%s'\n" +
-              "\tgroup by minute\n" +
-              ") as data on true\n" +
-              "order by data.minute asc, b.bike_id;";
+      sql = "SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (\n" +
+              "\tSELECT time_bucket(interval '1 min', time) AS minute, AVG(%s) AS value\n" +
+              "\tFROM test t WHERE t.bike_id = b.bike_id\n" +
+              "\tAND bike_id = '%s'\n" +
+              "\tAND time >= '%s'\n" +
+              "\tAND time <= '%s'\n" +
+              "\tGROUP BY minute\n" +
+              ") AS data ON true\n" +
+              "ORDER BY data.minute ASC, b.bike_id;";
       sql = String.format(
               Locale.US,
               sql,
@@ -870,13 +868,12 @@ public class TimescaleDB implements IDatabase {
    *
    * WIDE_TABLE:
    *  <p><code>
-   *  select b.bike_id, b.owner_name, data.location from bikes b inner join lateral (
-   * 	select s_12 as location from test t where t.bike_id = b.bike_id
-   * 	and s_12 is not null
-   * 	order by time desc limit 1
-   *  ) as data on true
-   *  where st_contains(
-   * 	st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500
+   *  SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
+   * 	SELECT s_12 AS location FROM test t WHERE t.bike_id = b.bike_id
+   * 	ORDER BY time DESC LIMIT 1
+   *  ) AS data ON true
+   *  WHERE ST_CONTAINS(
+   * 	ST_BUFFER(ST_SETSRID(ST_MAKEPOINT(13.431947, 48.566736),4326)::geography, 500
    * 			 )::geometry, data.location::geometry);
    * </code></p>
    * @param query
@@ -895,19 +892,18 @@ public class TimescaleDB implements IDatabase {
               SqlBuilder.Column.TIME.getName(), gpsSensor.getTableName(), SqlBuilder.Column.BIKE.getName(),
               Constants.SPAWN_POINT.getLongitude(), Constants.SPAWN_POINT.getLatitude(), config.RADIUS);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "select b.bike_id, b.owner_name, data.location from bikes b inner join lateral (\n" +
-              "\tselect %s as location from test t where t.bike_id = b.bike_id\n" +
-              "\tand %s is not null\n" +
-              "\torder by time desc limit 1\n" +
-              ") as data on true\n" +
-              "where st_contains(\n" +
-              "\tst_buffer(st_setsrid(st_makepoint(%f, %f),4326)::geography, %d\n" +
+      sql = "SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n" +
+              "\tSELECT %s AS location FROM %s t WHERE t.bike_id = b.bike_id\n" +
+              "\tORDER BY time DESC LIMIT 1\n" +
+              ") AS data ON true\n" +
+              "WHERE ST_CONTAINS(\n" +
+              "\tST_BUFFER(ST_SETSRID(ST_MAKEPOINT(%f, %f),4326)::geography, %d\n" +
               "\t\t\t )::geometry, data.location::geometry);";
       sql = String.format(
               Locale.US,
               sql,
               gpsSensor.getName(),
-              gpsSensor.getName(),
+              tableName,
               Constants.SPAWN_POINT.getLongitude(),
               Constants.SPAWN_POINT.getLatitude(),
               config.RADIUS
