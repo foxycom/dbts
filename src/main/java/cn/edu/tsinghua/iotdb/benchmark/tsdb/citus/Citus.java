@@ -339,7 +339,6 @@ public class Citus implements IDatabase {
         sql = "WITH location AS (\n" +
                 "\tSELECT DISTINCT ON(bike_id) bike_id, %s, time \n" +
                 "\tFROM %s t\n" +
-                "\tWHERE %s IS NOT NULL\n" +
                 "\tGROUP BY bike_id, time, %s\n" +
                 "\tORDER BY bike_id, time desc\n" +
                 ") SELECT l.time, b.bike_id, b.owner_name, l.%s \n" +
@@ -349,7 +348,6 @@ public class Citus implements IDatabase {
                 sql,
                 gpsSensor.getName(),
                 tableName,
-                gpsSensor.getName(),
                 gpsSensor.getName(),
                 gpsSensor.getName()
         );
@@ -365,7 +363,6 @@ public class Citus implements IDatabase {
      * 	 SELECT s_12 AS location, bike_id FROM test t
      * 	 WHERE t.bike_id = b.bike_id
      * 	 AND bike_id = 'bike_67'
-     * 	 AND s_12 IS NOT NULL
      * 	 AND time >= '2018-08-30 02:00:00.0'
      * 	 AND time <= '2018-08-30 03:00:00.0'
      *  ) AS data ON true;
@@ -387,7 +384,6 @@ public class Citus implements IDatabase {
                 "\tSELECT %s AS location, bike_id FROM test t\n" +
                 "\tWHERE t.bike_id = b.bike_id \n" +
                 "\tAND bike_id = '%s' \n" +
-                "\tAND %s IS NOT NULL\n" +
                 "\tAND time >= '%s' \n" +
                 "\tAND time <= '%s'\n" +
                 ") AS data ON true;";
@@ -396,7 +392,6 @@ public class Citus implements IDatabase {
                 sql,
                 gpsSensor.getName(),
                 bike.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp
         );
@@ -438,7 +433,6 @@ public class Citus implements IDatabase {
                 "\tFROM test t \n" +
                 "\tWHERE t.bike_id = b.bike_id \n" +
                 "\tAND t.bike_id = '%s'\n" +
-                "\tAND %s IS NOT NULL \n" +
                 "\tAND time >= '%s' \n" +
                 "\tAND time < '%s'\n" +
                 "\tGROUP BY second, bike_id, %s\n" +
@@ -451,7 +445,6 @@ public class Citus implements IDatabase {
                 gpsSensor.getName(),
                 gpsSensor.getName(),
                 bike.getName(),
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp,
                 gpsSensor.getName(),
@@ -499,7 +492,7 @@ public class Citus implements IDatabase {
                 "\tWHERE bike_id = '%s' \n" +
                 "\tAND time >= '%s' AND time <= '%s'\n" +
                 "\tGROUP BY second, bike_id, %s\n" +
-                "\tHAVING AVG(%s) > %f AND %s IS NOT NULL\n" +
+                "\tHAVING AVG(%s) > %f\n" +
                 "\tORDER BY second\n" +
                 ")\n" +
                 "SELECT d.bike_id, ST_LENGTH(ST_MAKELINE(d.%s::geometry)::geography) \n" +
@@ -516,7 +509,6 @@ public class Citus implements IDatabase {
                 gpsSensor.getName(),
                 sensor.getName(),
                 query.getThreshold(),
-                gpsSensor.getName(),
                 gpsSensor.getName()
         );
         return executeQuery(sql);
@@ -664,7 +656,8 @@ public class Citus implements IDatabase {
      *
      * <p><code>
      *  SELECT ST_X(s_12::geometry) AS longitude, ST_Y(s_12::geometry) AS latitude, AVG(s_34) FROM test t
-     *  WHERE s_12 IS NOT NULL AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0' GROUP BY s_12;
+     *  WHERE time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+     *  GROUP BY longitude, latitude;
      * </code></p>
      * @param query The heatmap query paramters object.
      * @return The status of the execution.
@@ -678,16 +671,14 @@ public class Citus implements IDatabase {
         String sql = "";
 
         sql = "SELECT ST_X(%s::geometry) AS longitude, ST_Y(%s::geometry) AS latitude, AVG(%s) FROM %s t \n" +
-                "WHERE %s IS NOT NULL AND time >= '%s' AND time <= '%s' GROUP BY %s;";
+                "WHERE time >= '%s' AND time <= '%s' GROUP BY longitude, latitude;";
         sql = String.format(Locale.US, sql,
                 gpsSensor.getName(),
                 gpsSensor.getName(),
                 sensor.getName(),
                 tableName,
-                gpsSensor.getName(),
                 startTimestamp,
-                endTimestamp,
-                gpsSensor.getName()
+                endTimestamp
         );
         return executeQuery(sql);
     }
@@ -698,7 +689,6 @@ public class Citus implements IDatabase {
      *  <p><code>
      *  WITH data AS (
      * 	 SELECT DISTINCT ON (bike_id) bike_id, s_12 AS location FROM test t
-     * 	 WHERE s_12 IS NOT NULL
      * 	 GROUP BY bike_id, time, s_12
      * 	 ORDER BY bike_id, time DESC
      *  ) SELECT b.bike_id, b.owner_name, d.location from data d, bikes b
@@ -716,7 +706,6 @@ public class Citus implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         sql = "WITH data AS (\n" +
                 "\tSELECT DISTINCT ON (bike_id) bike_id, %s AS location FROM %s t\n" +
-                "\tWHERE %s IS NOT NULL\n" +
                 "\tGROUP BY bike_id, time, %s\n" +
                 "\tORDER BY bike_id, time DESC\n" +
                 ") SELECT b.bike_id, b.owner_name, d.location from data d, bikes b \n" +
@@ -729,7 +718,6 @@ public class Citus implements IDatabase {
                 sql,
                 gpsSensor.getName(),
                 tableName,
-                gpsSensor.getName(),
                 gpsSensor.getName(),
                 Constants.SPAWN_POINT.getLongitude(),
                 Constants.SPAWN_POINT.getLatitude(),
