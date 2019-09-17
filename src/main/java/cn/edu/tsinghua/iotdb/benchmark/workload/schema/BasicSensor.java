@@ -150,8 +150,7 @@ public class BasicSensor implements Sensor {
         if (o == null || getClass() != o.getClass()) return false;
         Sensor sensor = (Sensor) o;
         return interval == sensor.getInterval() &&
-                name.equals(sensor.getName()) &&
-                function.equals(sensor.getFunction());
+                name.equals(sensor.getName());
     }
 
     @Override
