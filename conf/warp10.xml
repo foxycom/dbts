@@ -4,10 +4,10 @@
         xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
-        <type>TimescaleDB_Wide</type>
+        <type>Warp10</type>
         <name>test</name>
         <host>127.0.0.1</host>
-        <port>5432</port>
+        <port>8080</port>
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>
@@ -17,7 +17,7 @@
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">10</devices>
+    <devices prefix="d_">12</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
     <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
@@ -45,7 +45,7 @@
             <sensor frequency="50" type="basic"/>
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gps" dataType="geography">
+        <sensorGroup name="gps" fields="longitude, latitude" dataType="double precision">
             <sensor frequency="1" type="gps"/>
         </sensorGroup>
         <sensorGroup name="rotaryEncoder" dataType="double precision">
@@ -107,7 +107,7 @@
         </sensorGroup>
     </sensorGroups>
 
-    <batch size="10000"/>
+    <batch size="2000"/>
     <loops>1</loops>
     <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
@@ -139,7 +139,7 @@
         <radius>500</radius>
         <aggregateFunction>avg</aggregateFunction>
         <interval>3600000</interval>
-        <lowerLimit>3</lowerLimit>
+        <lowerLimit>1000</lowerLimit>
         <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
         <timeBucket>300000</timeBucket>
         <limitClause>0</limitClause>

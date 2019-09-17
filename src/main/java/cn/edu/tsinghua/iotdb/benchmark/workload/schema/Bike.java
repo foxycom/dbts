@@ -40,23 +40,14 @@ public class Bike {
   public Bike(String group, String device, List<Sensor> sensors, String ownerName) {
     this.group = GROUP_NAME_PREFIX + group;
     this.device = DEVICE_NAME_PREFIX + device;
-    this.sensors = new ArrayList<>(sensors.size());
-    for (Sensor sensor : sensors) {
-      if (sensor instanceof GpsSensor) {
-
-        this.sensors.add(new GpsSensor((GpsSensor) sensor, bikeId));
-      } else {
-        this.sensors.add(new BasicSensor((BasicSensor) sensor));
-      }
-    }
     this.ownerName = ownerName;
+    setSensors(sensors);
   }
-
 
   private void createEvenlyAllocBikeSchema() {
     int thisDeviceGroupIndex = calGroupId(bikeId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
     group = GROUP_NAME_PREFIX + thisDeviceGroupIndex;
-    sensors.addAll(config.SENSORS);
+    setSensors(config.SENSORS);
   }
 
   static int calGroupId(int bikeId, int deviceNum, int groupNum) {
@@ -84,7 +75,15 @@ public class Bike {
   }
 
   public void setSensors(List<Sensor> sensors) {
-    this.sensors = sensors;
+    this.sensors = new ArrayList<>(sensors.size());
+    for (Sensor sensor : sensors) {
+      if (sensor instanceof GpsSensor) {
+
+        this.sensors.add(new GpsSensor((GpsSensor) sensor, bikeId));
+      } else {
+        this.sensors.add(new BasicSensor((BasicSensor) sensor));
+      }
+    }
   }
 
   public String getOwnerName() {

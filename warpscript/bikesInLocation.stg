@@ -1,0 +1,25 @@
+script(readToken, class, sensor, end, start) ::= <<
+'<readToken>'
+'read_token' STORE
+'POLYGON ((13.4406567 48.5723195, 13.4373522 48.5707861, 13.4373522 48.5662708, 13.4443045 48.5645384, 13.4489393 48.5683155, 13.4492826 48.5710701, 13.4406567 48.5723195))' 0.1 false GEO.WKT 'area' STORE
+
+[
+  $read_token
+  '<class>'
+  { 'sensor_id' '<sensor>' }
+  '<end>'
+  '<start>'
+] FETCH
+
+[
+  SWAP
+  mapper.last
+  MAXLONG MAXLONG 1
+] MAP
+
+[
+  SWAP
+  $area mapper.geo.within
+  0 0 0
+] MAP NONEMPTY
+>>

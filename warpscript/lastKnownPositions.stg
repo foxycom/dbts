@@ -1,0 +1,17 @@
+script(readToken, class, sensor) ::= <<
+'<readToken>'
+'read_token' STORE
+
+[
+  $read_token
+  '<class>'
+  { 'sensor_id' '<sensor>' }
+  MAXLONG
+  MINLONG
+] FETCH
+[
+  SWAP
+  mapper.last
+  MAXLONG MAXLONG 1
+] MAP
+>>

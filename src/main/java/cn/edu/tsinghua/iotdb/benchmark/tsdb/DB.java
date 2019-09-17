@@ -2,7 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.citus.Citus;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.commons.lang.NotImplementedException;
 
 public enum DB {
     INFLUXDB,
@@ -10,6 +10,7 @@ public enum DB {
     MEMSQL,
     CRATEDB,
     KAIROSDB,
+    WARP10,
     TIMESCALEDB_NARROW,
     TIMESCALEDB_WIDE;
 
@@ -20,6 +21,7 @@ public enum DB {
         switch (this) {
             case MEMSQL:
             case CRATEDB:
+            case WARP10:
                 break;
             case TIMESCALEDB_NARROW:
                 if (db == null) {

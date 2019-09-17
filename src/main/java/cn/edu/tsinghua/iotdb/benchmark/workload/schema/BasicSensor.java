@@ -21,6 +21,7 @@ public class BasicSensor implements Sensor {
     private List<String> fields;
 
     public BasicSensor(BasicSensor other) {
+        this.name = other.name;
         this.function = other.function;
         this.sensorGroup = other.sensorGroup;
         this.interval = other.interval;

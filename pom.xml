@@ -2,18 +2,18 @@
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>cn.edu.tsinghua</groupId>
-	<artifactId>iotdb-benchmark</artifactId>
-	<version>0.0.1</version>
+	<groupId>de.uni-passau</groupId>
+	<artifactId>dbts</artifactId>
+	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>iotdb-benchmark</name>
+	<name>dbts</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
-		<compile.version>1.8</compile.version>
-		<targetJavaVersion>1.8</targetJavaVersion>
-		<maven.compiler.source>1.8</maven.compiler.source>
+		<compile.version>1.13</compile.version>
+		<targetJavaVersion>1.13</targetJavaVersion>
+		<maven.compiler.source>1.13</maven.compiler.source>
 		<maven.compiler.target>${targetJavaVersion}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<junit.version>4.12</junit.version>
@@ -111,9 +111,22 @@
 		</dependency>
 
 		<dependency>
+			<groupId>io.mikael</groupId>
+			<artifactId>urlbuilder</artifactId>
+			<version>2.0.9</version>
+		</dependency>
+
+		<dependency>
 			<groupId>com.github.javafaker</groupId>
 			<artifactId>javafaker</artifactId>
 			<version>1.0.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.antlr</groupId>
+			<artifactId>ST4</artifactId>
+			<version>4.1</version>
+			<scope>compile</scope>
 		</dependency>
 
 	</dependencies>
@@ -133,8 +146,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
-					<source>${compile.version}</source>
-					<target>${compile.version}</target>
+					<source>12</source>
+					<target>12</target>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>

@@ -115,52 +115,11 @@ public abstract class BasicReader {
    */
   abstract public Batch nextBatch();
 
-
   /**
    * initialize when start reading a file maybe skip the first lines maybe init the
    * tagValue(deviceId) from file name
    */
   public abstract void init() throws Exception;
-
-
-  /**
-   * get device schema based on file name and data set type
-   *
-   * @param files absolute file paths to read
-   * @return device schema list to register
-   */
-  public static List<Bike> getDeviceSchemaList(List<String> files, Config config) {
-    List<Bike> bikeList = new ArrayList<>();
-
-    // remove duplicated devices
-    Set<String> devices = new HashSet<>();
-    int groupNum = config.DEVICE_GROUPS_NUMBER;
-    switch (config.DATA_SET) {
-      case REDD:
-      case TDRIVE:
-        for (String currentFile : files) {
-          String[] items = currentFile.split("/");
-          String deviceId = items[items.length - 1];
-          if (!devices.contains(deviceId)) {
-            devices.add(deviceId);
-            bikeList
-                .add(new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS, nameGenerator.getName()));
-          }
-        }
-        break;
-      case GEOLIFE:
-        for (String currentFile : files) {
-          String deviceId = currentFile.split(config.FILE_PATH)[1].
-              split("/Trajectory")[0].replace("/", "");
-          if (!devices.contains(deviceId)) {
-            devices.add(deviceId);
-            bikeList.add(
-                new Bike(calGroupIdStr(deviceId, groupNum), deviceId, config.FIELDS, nameGenerator.getName()));
-          }
-        }
-    }
-    return bikeList;
-  }
 
   protected static String calGroupIdStr(String deviceId, int groupNum) {
     return String.valueOf(deviceId.hashCode() % groupNum);

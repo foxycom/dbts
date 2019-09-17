@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -28,9 +27,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class App {
 
@@ -65,7 +65,6 @@ public class App {
             case EXECUTE_SQL_FROM_FILE:
                 break;
             case CLIENT_SYSTEM_INFO:
-                //clientSystemInfo(config);
                 throw new NotImplementedException();
             default:
                 throw new SQLException("unsupported mode " + config.WORK_MODE);

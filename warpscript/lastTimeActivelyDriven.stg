@@ -1,0 +1,30 @@
+script(readToken, class, end, start, threshold) ::= <<
+'<readToken>'
+'read_token' STORE
+
+[
+  [
+    [
+      $read_token
+      '<class>'
+      {}
+      '<end>'
+      '<start>'
+    ] FETCH
+    bucketizer.mean
+    0 1 s 0
+  ] BUCKETIZE NONEMPTY
+  <threshold>
+  mapper.gt
+  0 0 0
+] MAP RSORT
+\<%
+  DROP 'gts' STORE
+  [] 'list' STORE
+  $list $gts LABELS 'bike_id' GET +! DROP
+  $list $gts LASTTICK +! DROP
+  $list
+%>
+LMAP
+>>
+

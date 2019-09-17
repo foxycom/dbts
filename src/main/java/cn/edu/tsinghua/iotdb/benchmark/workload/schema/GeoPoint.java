@@ -1,7 +1,7 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.schema;
 
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DB;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import org.apache.commons.lang.NotImplementedException;
 
 import java.util.Locale;
 
@@ -46,6 +46,8 @@ public class GeoPoint {
                 return String.format("ST_SetSRID(ST_MakePoint(%s, %s),4326)", longitude, latitude);
             case INFLUXDB:
                 return String.format(Locale.US, "%f,%f", longitude, latitude);
+            case WARP10:
+                return String.format(Locale.US, "%f,%f", latitude, longitude);
             default:
                 throw new NotImplementedException();
         }
