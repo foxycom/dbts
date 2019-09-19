@@ -322,6 +322,8 @@ public class MySqlLog {
                 case MEMSQL:
                 case CRATEDB:
                 case CITUS:
+                case WARP10:
+                case VERTICA:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",
                             "'ServerIP'", "'" + config.HOST + "'");
                     stat.addBatch(sql);

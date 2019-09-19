@@ -40,6 +40,8 @@ public class GeoPoint {
             case MEMSQL:
             case CRATEDB:
                 return String.format("'POINT(%s %s)'", longitude, latitude);
+            case VERTICA:
+                return String.format("POINT(%s %s)", longitude, latitude);
             case CITUS:
             case TIMESCALEDB_WIDE:
             case TIMESCALEDB_NARROW:

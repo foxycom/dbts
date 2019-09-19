@@ -33,6 +33,10 @@ public class Constants {
     public static final String MYSQL_USER = "root";
     public static final String MYSQL_PASSWD = "";
 
+    public static final String VERTICA_URL = "jdbc:vertica://%s:%s/%s";
+    public static final String VERTICA_USER = "dbadmin";
+    public static final String VERTICA_PASSWD = "";
+
     public static final String CRATE_URL = "jdbc:crate://%s:%s/";
     public static final String CRATE_USER = "crate";
     public static final String CRATE_PASSWD = "";

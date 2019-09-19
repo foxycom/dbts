@@ -231,12 +231,6 @@ public class MemSQL implements IDatabase {
     /**
      * Selects the last known GPS position of bikes.
      *
-     * NARROW_TABLE:
-     * <p><code>
-     *  SELECT value, bike_id, time, sensor_id FROM gps_benchmark WHERE (bike_id = 'bike_5') ORDER BY time DESC LIMIT 1;
-     * </code></p>
-     *
-     * WIDE_TABLE:
      * <p><code>
      *  SELECT LAST_VALUE(t.s_12) OVER(PARTITION BY t.bike_id ORDER BY (time)),
      *  MAX(time), t.bike_id, b.owner_name FROM test t, bikes b
@@ -378,18 +372,6 @@ public class MemSQL implements IDatabase {
      * Computes the distance driven by a bike in the given time range identified by start and end timestamps where current
      * exceeds some value.
      *
-     * NARROW_TABLE:
-     * <p><code>
-     *  with trip_begin as (
-     * 	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'group by second, bike_id order by second asc limit 1
-     *  ), trip_end as (
-     *  	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0'and time < '2018-08-29 19:00:00.0' group by second, bike_id order by second desc limit 1
-     *  )
-     *  select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = 'bike_10'
-     *  and g.time > b.second and g.time < e.second group by g.bike_id;
-     * </code></p>
-     *
-     * WIDE_TABLE:
      * <p><code>
      *  with data as (
      * 	 select from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, s_12
@@ -631,19 +613,7 @@ public class MemSQL implements IDatabase {
     /**
      * Selects bikes whose last gps location lies in a certain area.
      *
-     * NARROW_TABLE:
      * <p><code>
-     *  with last_location as (
-     * 	select bike_id, last(value, time) as location from gps_benchmark group by bike_id
-     *  ) select * from last_location l
-     *  where st_contains(
-     *    st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry,
-     *    l.location::geometry
-     *  );
-     * </code></p>
-     *
-     * WIDE_TABLE:
-     *  <p><code>
      *  select b.bike_id, b.owner_name, pos.pos from bikes b,
      * 	(select bike_id, last_value(s_12) over (partition by bike_id order by (time)) as pos from test
      * 	group by bike_id) as pos

@@ -67,7 +67,7 @@ public class TimescaleDB implements IDatabase {
           Constants.POSTGRESQL_PASSWD
       );
     } catch (Exception e) {
-      LOGGER.error("Initialize TimescaleDB failed because ", e);
+      LOGGER.error("Initialization of TimescaleDB failed because ", e);
       throw new TsdbException(e);
     }
   }
@@ -850,8 +850,6 @@ public class TimescaleDB implements IDatabase {
     return executeQuery(sql);
   }
 
-
-
   /**
    * Selects bikes whose last gps location lies in a certain area.
    *
@@ -882,7 +880,6 @@ public class TimescaleDB implements IDatabase {
   @Override
   public Status bikesInLocation(Query query) {
     String sql = "";
-    Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
     if (dataModel == TableMode.NARROW_TABLE) {
       sql = "with last_location as (\n" +

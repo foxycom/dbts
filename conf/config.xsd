@@ -18,6 +18,7 @@
       <xs:enumeration value="Citus"/>
       <xs:enumeration value="MemSQL"/>
       <xs:enumeration value="Warp10"/>
+      <xs:enumeration value="Vertica"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:complexType name="dbType">

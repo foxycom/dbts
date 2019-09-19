@@ -10,6 +10,7 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.memsql.MemSQL;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
 import java.sql.SQLException;
 
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.vertica.Vertica;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.warp10.Warp10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,8 @@ public class DBFactory {
         return new CrateDB();
       case WARP10:
         return new Warp10();
+      case VERTICA:
+        return new Vertica();
       default:
         LOGGER.error("unsupported database {}", config.DB_SWITCH);
         throw new SQLException("unsupported database " + config.DB_SWITCH);

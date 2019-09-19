@@ -11,6 +11,7 @@ public enum DB {
     CRATEDB,
     KAIROSDB,
     WARP10,
+    VERTICA,
     TIMESCALEDB_NARROW,
     TIMESCALEDB_WIDE;
 
@@ -21,6 +22,9 @@ public enum DB {
         switch (this) {
             case MEMSQL:
             case CRATEDB:
+            case VERTICA:
+            case INFLUXDB:
+            case KAIROSDB:
             case WARP10:
                 break;
             case TIMESCALEDB_NARROW:
