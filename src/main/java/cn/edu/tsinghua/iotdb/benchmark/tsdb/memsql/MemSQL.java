@@ -232,10 +232,10 @@ public class MemSQL implements IDatabase {
      * Selects the last known GPS position of bikes.
      *
      * <p><code>
-     *  SELECT LAST_VALUE(t.s_12) OVER(PARTITION BY t.bike_id ORDER BY (time)),
-     *  MAX(time), t.bike_id, b.owner_name FROM test t, bikes b
-     *  WHERE t.s_12 IS NOT NULL AND t.bike_id = b.bike_id
-     *  GROUP BY t.bike_id;
+     * SELECT LAST_VALUE(t.s_12) OVER(PARTITION BY t.bike_id ORDER BY (time)),
+     * MAX(time), t.bike_id, b.owner_name FROM test t, bikes b
+     * WHERE t.bike_id = b.bike_id
+     * GROUP BY t.bike_id;
      * </code></p>
      *
      * @param query The query parameters query.
@@ -248,14 +248,13 @@ public class MemSQL implements IDatabase {
 
         sql = "SELECT LAST_VALUE(t.%s) OVER(PARTITION BY t.bike_id ORDER BY (time)), \n" +
                 "MAX(time), t.bike_id, b.owner_name FROM %s t, bikes b\n" +
-                "WHERE t.%s IS NOT NULL AND t.bike_id = b.bike_id\n" +
+                "WHERE t.bike_id = b.bike_id\n" +
                 "GROUP BY t.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
                 gpsSensor.getName(),
-                tableName,
-                gpsSensor.getName()
+                tableName
         );
 
         return executeQuery(sql);
@@ -373,21 +372,21 @@ public class MemSQL implements IDatabase {
      * exceeds some value.
      *
      * <p><code>
-     *  with data as (
-     * 	 select from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, s_12
-     * 	 from test t
-     * 	 where bike_id = 'bike_5'
-     * 	 and time >= '2018-08-30 02:00:00.0' and time <= '2018-08-30 03:00:00.0'
-     * 	 group by second, bike_id, s_12
-     * 	 having avg(s_17) > 1000.0 and s_12 is not null
-     * 	 order by second
-     *  )
-     *  select d.bike_id, b.owner_name,
-     *  geography_length(
-     *     concat('LINESTRING(', group_concat(concat(geography_longitude(s_12), ' ', geography_latitude(s_12))), ')')
-     *  ) from data d, bikes b
-     *  where d.bike_id = b.bike_id
-     *  group by d.bike_id;
+     * WITH data AS (
+     * 	SELECT FROM_unixtime(unix_timestamp(time) DIV 1 * 1) AS second, bike_id, s_12
+     * 	FROM test t
+     * 	WHERE bike_id = 'bike_2'
+     * 	AND time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
+     * 	GROUP BY second, bike_id, s_12
+     * 	HAVING AVG(s_17) > 1000.0
+     * 	ORDER BY second
+     * )
+     * SELECT d.bike_id, b.owner_name,
+     * GEOGRAPHY_LENGTH(
+     *     CONCAT('LINESTRING(', GROUP_CONCAT(CONCAT(GEOGRAPHY_LONGITUDE(s_12), ' ', GEOGRAPHY_LATITUDE(s_12))), ')')
+     * ) FROM data d, bikes b
+     * WHERE d.bike_id = b.bike_id
+     * GROUP BY d.bike_id;
      * </code></p>
      *
      * @param query The query parameters object.
@@ -402,21 +401,21 @@ public class MemSQL implements IDatabase {
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
 
-        sql = "with data as (\n" +
-                "\tselect from_unixtime(unix_timestamp(time) DIV 1 * 1) as second, bike_id, %s \n" +
-                "\tfrom %s t\n" +
-                "\twhere bike_id = '%s' \n" +
-                "\tand time >= '%s' and time <= '%s'\n" +
-                "\tgroup by second, bike_id, %s\n" +
-                "\thaving avg(%s) > %s and %s is not null\n" +
-                "\torder by second\n" +
+        sql = "WITH data AS (\n" +
+                "\tSELECT FROM_unixtime(unix_timestamp(time) DIV 1 * 1) AS second, bike_id, %s \n" +
+                "\tFROM %s t\n" +
+                "\tWHERE bike_id = '%s' \n" +
+                "\tAND time >= '%s' AND time <= '%s'\n" +
+                "\tGROUP BY second, bike_id, %s\n" +
+                "\tHAVING AVG(%s) > %s\n" +
+                "\tORDER BY second\n" +
                 ")\n" +
-                "select d.bike_id, b.owner_name, \n" +
-                "geography_length(\n" +
-                "    concat('LINESTRING(', group_concat(concat(geography_longitude(%s), ' ', geography_latitude(%s))), ')')\n" +
-                ") from data d, bikes b\n" +
-                "where d.bike_id = b.bike_id\n" +
-                "group by d.bike_id;";
+                "SELECT d.bike_id, b.owner_name, \n" +
+                "GEOGRAPHY_LENGTH(\n" +
+                "    CONCAT('LINESTRING(', GROUP_CONCAT(CONCAT(GEOGRAPHY_LONGITUDE(%s), ' ', GEOGRAPHY_LATITUDE(%s))), ')')\n" +
+                ") FROM data d, bikes b\n" +
+                "WHERE d.bike_id = b.bike_id\n" +
+                "GROUP BY d.bike_id;";
         sql = String.format(
                 Locale.US,
                 sql,
@@ -428,7 +427,6 @@ public class MemSQL implements IDatabase {
                 gpsSensor.getName(),
                 sensor.getName(),
                 query.getThreshold(),
-                gpsSensor.getName(),
                 gpsSensor.getName(),
                 gpsSensor.getName()
         );
@@ -520,13 +518,6 @@ public class MemSQL implements IDatabase {
     /**
      * Groups entries within a time range in time buckets and by bikes and aggregates values in each time bucket.
      *
-     * NARROW_TABLE:
-     * <p><code>
-     *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(value), bike_id FROM emg_benchmark
-     *  WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
-     * </code></p>
-     *
-     * WIDE_TABLE:
      * <p><code>
      *  WITH downsample AS (
      * 	 SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(s_27) AS value
@@ -595,14 +586,13 @@ public class MemSQL implements IDatabase {
 
         sql = "SELECT GEOGRAPHY_LONGITUDE(%s) as longitude, GEOGRAPHY_LATITUDE(%s) as latitude, AVG(%s) \n" +
                 "FROM %s t \n" +
-                "WHERE %s IS NOT NULL AND time >= '%s' AND time <= '%s' \n" +
+                "WHERE time >= '%s' AND time <= '%s' \n" +
                 "GROUP BY %s;";
         sql = String.format(Locale.US, sql,
                 gpsSensor.getName(),
                 gpsSensor.getName(),
                 sensor.getName(),
                 tableName,
-                gpsSensor.getName(),
                 startTimestamp,
                 endTimestamp,
                 gpsSensor.getName()
@@ -614,14 +604,14 @@ public class MemSQL implements IDatabase {
      * Selects bikes whose last gps location lies in a certain area.
      *
      * <p><code>
-     *  select b.bike_id, b.owner_name, pos.pos from bikes b,
-     * 	(select bike_id, last_value(s_12) over (partition by bike_id order by (time)) as pos from test
-     * 	group by bike_id) as pos
-     *  where b.bike_id = pos.bike_id
-     *  and geography_contains('POLYGON((13.4406567 48.5723195,
-     *  13.4373522 48.5707861, 13.4373522 48.5662708,
-     *  13.4443045 48.5645384, 13.4489393 48.5683155,
-     *  13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);
+     * SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b,
+     * 	(SELECT bike_id, LAST_VALUE(s_12) OVER (PARTITION BY bike_id ORDER BY (time)) AS pos FROM test
+     * 	GROUP BY bike_id) AS pos
+     * WHERE b.bike_id = pos.bike_id
+     * AND GEOGRAPHY_CONTAINS('POLYGON((13.4406567 48.5723195,
+     * 13.4373522 48.5707861, 13.4373522 48.5662708,
+     * 13.4443045 48.5645384, 13.4489393 48.5683155,
+     * 13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);
      * </code></p>
      * @param query
      * @return
@@ -630,11 +620,11 @@ public class MemSQL implements IDatabase {
     public Status bikesInLocation(Query query) {
         String sql = "";
         Sensor gpsSensor = query.getGpsSensor();
-        sql = "select b.bike_id, b.owner_name, pos.pos from bikes b, \n" +
-                "\t(select bike_id, last_value(%s) over (partition by bike_id order by (time)) as pos from %s \n" +
-                "\tgroup by bike_id) as pos \n" +
-                "where b.bike_id = pos.bike_id \n" +
-                "and geography_contains('POLYGON((13.4406567 48.5723195, \n" +
+        sql = "SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b, \n" +
+                "\t(SELECT bike_id, LAST_VALUE(%s) OVER (PARTITION BY bike_id ORDER BY (time)) AS pos FROM %s \n" +
+                "\tGROUP BY bike_id) AS pos \n" +
+                "WHERE b.bike_id = pos.bike_id \n" +
+                "AND GEOGRAPHY_CONTAINS('POLYGON((13.4406567 48.5723195, \n" +
                 "13.4373522 48.5707861, 13.4373522 48.5662708, \n" +
                 "13.4443045 48.5645384, 13.4489393 48.5683155, \n" +
                 "13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);";
