@@ -47,6 +47,7 @@ public class GeoPoint {
             case TIMESCALEDB_NARROW:
                 return String.format("ST_SetSRID(ST_MakePoint(%s, %s),4326)", longitude, latitude);
             case INFLUXDB:
+            case CLICKHOUSE:
                 return String.format(Locale.US, "%f,%f", longitude, latitude);
             case WARP10:
                 return String.format(Locale.US, "%f,%f", latitude, longitude);

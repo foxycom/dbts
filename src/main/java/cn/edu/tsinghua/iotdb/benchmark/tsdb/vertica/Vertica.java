@@ -151,7 +151,7 @@ public class Vertica implements IDatabase {
         try (PreparedStatement statement = connection.prepareStatement(preparedSql)) {
             connection.setAutoCommit(false);
 
-            Map<Long, List<String>> b = transformBatch(batch);
+            Map<Long, List<String>> b = batch.transform();
             for (Long timestamp : b.keySet()) {
                 statement.setTimestamp(1, new Timestamp(timestamp));
                 statement.setString(2, bike.getName());
@@ -160,7 +160,6 @@ public class Vertica implements IDatabase {
                     int pos = i + 3;
                     Sensor sensor = sensors.get(i);
                     if (sensor instanceof GpsSensor) {
-                        String value = values.get(i);
                         statement.setString(pos, values.get(i));
                     } else {
                         String value = values.get(i);
@@ -471,32 +470,6 @@ public class Vertica implements IDatabase {
                 .append(sensor.getDataType()));
         sqlBuilder.append(");");
         return sqlBuilder.toString();
-    }
-
-    /*
-     * Transforms a batch from column-oriented format (each column represents readings of one sensor group) to
-     * row-oriented format.
-     */
-    private Map<Long, List<String>> transformBatch(Batch batch) {
-        Map<Sensor, Point[]> entries = batch.getEntries();
-        Map<Long, List<String>> rows = new TreeMap<>();
-
-        List<String> emptyRow = new ArrayList<>(config.SENSORS.size());
-        for (Sensor sensor : config.SENSORS) {
-            emptyRow.add("NULL");
-        }
-
-        Sensor mostFrequentSensor = Sensors.minInterval(config.SENSORS);
-        for (Point point : entries.get(mostFrequentSensor)) {
-            rows.computeIfAbsent(point.getTimestamp(), k -> new ArrayList<>(emptyRow));
-        }
-
-        for (int i = 0; i < config.SENSORS.size(); i++) {
-            for (Point point : entries.get(config.SENSORS.get(i))) {
-                rows.get(point.getTimestamp()).set(i, point.getValue());
-            }
-        }
-        return rows;
     }
 
     private String getPreparedSql(Batch batch) {

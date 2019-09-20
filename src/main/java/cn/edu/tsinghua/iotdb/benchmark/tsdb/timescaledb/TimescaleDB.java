@@ -1046,7 +1046,7 @@ public class TimescaleDB implements IDatabase {
    * Returns an SQL statement, which inserts a batch of points into single wide table.
    */
   private String getInsertOneWideBatchSql(Batch batch) {
-    Map<Long, List<String>> rows = transformBatch(batch);
+    Map<Long, List<String>> rows = batch.transform();
     StringBuilder sqlBuilder = new StringBuilder();
     Bike bike = batch.getBike();
     sqlBuilder.append("INSERT INTO ").append(tableName).append(" VALUES ");
@@ -1064,31 +1064,5 @@ public class TimescaleDB implements IDatabase {
       sqlBuilder.append(")");
     }
     return sqlBuilder.toString();
-  }
-
-  /*
-   * Transforms a batch from column-oriented format (each column represents readings of one sensor group) to
-   * row-oriented format.
-   */
-  private Map<Long, List<String>> transformBatch(Batch batch) {
-    Map<Sensor, Point[]> entries = batch.getEntries();
-    Map<Long, List<String>> rows = new TreeMap<>();
-
-    List<String> emptyRow = new ArrayList<>(config.SENSORS.size());
-    for (Sensor sensor : config.SENSORS) {
-      emptyRow.add("NULL");
-    }
-
-    Sensor mostFrequentSensor = Sensors.minInterval(config.SENSORS);
-    for (Point point : entries.get(mostFrequentSensor)) {
-      rows.computeIfAbsent(point.getTimestamp(), k -> new ArrayList<>(emptyRow));
-    }
-
-    for (int i = 0; i < config.SENSORS.size(); i++) {
-      for (Point point : entries.get(config.SENSORS.get(i))) {
-        rows.get(point.getTimestamp()).set(i, point.getValue());
-      }
-    }
-    return rows;
   }
 }

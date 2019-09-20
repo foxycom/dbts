@@ -1,12 +1,10 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload.ingestion;
 
+import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Batch {
 
@@ -67,5 +65,42 @@ public class Batch {
 
   public Map<Sensor, Point[]> getEntries() {
     return entries;
+  }
+
+  /**
+   * Transforms the from column-oriented format (each column represents readings of one sensor group) to
+   * row-oriented format.
+   *
+   * @return Transformed batch.
+   */
+  public Map<Long, List<String>> transform() {
+    Map<Long, List<String>> rows = new TreeMap<>();
+    List<Sensor> sensors = bike.getSensors();
+    int columns = sensors.stream().mapToInt(sensor -> sensor.getFields().size()).sum();
+
+    List<String> emptyRow = new ArrayList<>(columns);
+    for (int column = 0; column < columns; column++) {
+      emptyRow.add("NULL");
+    }
+
+    Sensor mostFrequentSensor = Sensors.minInterval(sensors);
+    for (Point point : entries.get(mostFrequentSensor)) {
+      rows.computeIfAbsent(point.getTimestamp(), k -> new ArrayList<>(emptyRow));
+    }
+
+    int column = 0;
+    for (Sensor sensor : sensors) {
+      for (Point point : entries.get(sensor)) {
+        String[] values = point.getValues();
+        int valueOffset = 0;
+        for (String value : values) {
+          rows.get(point.getTimestamp()).set(column + valueOffset, value);
+          valueOffset++;
+        }
+        //rows.get(point.getTimestamp()).set(i, point.getValue());
+      }
+      column += sensor.getFields().size();
+    }
+    return rows;
   }
 }

@@ -1,0 +1,96 @@
+lastTimeActivelyDriven(tableName, time, sensor, threshold) ::= <<
+WITH last_trip AS (
+SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) as minute, bike_id
+FROM <tableName> t WHERE time > '<time>'
+GROUP BY minute, bike_id
+HAVING AVG(<sensor>) > <threshold>
+) SELECT l.bike_id, MAX(l.minute) as last_time FROM <tableName> t, last_trip l
+WHERE l.bike_id = t.bike_id
+GROUP BY l.bike_id;
+>>
+
+airPollutionHeatMap(tableName, gpsSensor, sensor, start, end) ::= <<
+SELECT GEOGRAPHY_LONGITUDE(<gpsSensor>) as longitude, GEOGRAPHY_LATITUDE(<gpsSensor>) as latitude, AVG(<sensor>)
+FROM <tableName> t
+WHERE time > '<start>' AND time \< '<end>'
+GROUP BY longitude, latitude;
+>>
+
+distanceDriven(tableName, gpsSensor, sensor, threshold, bike, start, end) ::= <<
+WITH data AS (
+	SELECT FROM_unixtime(unix_timestamp(time) DIV 1 * 1) AS second, bike_id, <gpsSensor>
+	FROM <tableName> t
+	WHERE bike_id = '<bike>'
+	AND time > '<start>' AND time \< '<end>'
+	GROUP BY second, bike_id, <gpsSensor>
+	HAVING AVG(<sensor>) > <threshold>
+	ORDER BY second
+)
+SELECT d.bike_id, b.owner_name,
+GEOGRAPHY_LENGTH(
+    CONCAT('LINESTRING(', GROUP_CONCAT(CONCAT(GEOGRAPHY_LONGITUDE(<gpsSensor>), ' ', GEOGRAPHY_LATITUDE(<gpsSensor>))), ')')
+) FROM data d, bikes b
+WHERE d.bike_id = b.bike_id
+GROUP BY d.bike_id;
+>>
+
+lastKnownPosition(tableName, gpsSensor) ::= <<
+SELECT LAST_VALUE(t.<gpsSensor>) OVER(PARTITION BY t.bike_id ORDER BY (time)),
+MAX(time), t.bike_id, b.owner_name FROM <tableName> t, bikes b
+WHERE t.bike_id = b.bike_id
+GROUP BY t.bike_id;
+>>
+
+identifyTrips(tableName, gpsSensor, sensor, threshold, start, end, bike) ::= <<
+WITH data AS (
+	SELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS second,
+	bike_id, <gpsSensor>
+	FROM <tableName> t
+	WHERE bike_id = '<bike>'
+	AND time > '<start>'
+	AND time \< '<end>'
+	GROUP BY second, bike_id, <gpsSensor>
+	HAVING AVG(<sensor>) >= <threshold>
+)
+SELECT d.second, d.bike_id, b.owner_name, d.<gpsSensor> FROM bikes b, data d
+WHERE d.bike_id = b.bike_id
+ORDER BY d.second ASC, d.bike_id;
+>>
+
+bikesInLocation(tableName, gpsSensor) ::= <<
+SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b,
+	(SELECT bike_id, LAST_VALUE(<gpsSensor>) OVER (PARTITION BY bike_id ORDER BY (time)) AS pos FROM <tableName>
+	GROUP BY bike_id) AS pos
+WHERE b.bike_id = pos.bike_id
+AND GEOGRAPHY_CONTAINS('POLYGON((13.4406567 48.5723195,
+13.4373522 48.5707861, 13.4373522 48.5662708,
+13.4443045 48.5645384, 13.4489393 48.5683155,
+13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);
+>>
+
+gpsPathScan(tableName, gpsSensor, bike, start, end) ::= <<
+SELECT <gpsSensor> AS location, t.bike_id, b.owner_name FROM <tableName> t, bikes b
+WHERE b.bike_id = t.bike_id
+AND t.bike_id = '<bike>'
+AND time > '<start>'
+AND time \< '<end>';
+>>
+
+downsample(tableName, sensor, start, end, bike) ::= <<
+WITH downsample AS (
+	SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(<sensor>) AS value
+	FROM <tableName> t
+	WHERE bike_id = '<bike>'
+	AND time > '<start>'
+	AND time \< '<end>'
+	GROUP BY bike_id, minute
+) SELECT d.minute, b.bike_id, b.owner_name, d.value
+FROM downsample d, bikes b WHERE b.bike_id = d.bike_id
+ORDER BY d.minute, b.bike_id;
+>>
+
+offlineBikes(tableName, time) ::= <<
+SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
+	SELECT DISTINCT(bike_id) FROM <tableName> t WHERE time > '<time>'
+);
+>>

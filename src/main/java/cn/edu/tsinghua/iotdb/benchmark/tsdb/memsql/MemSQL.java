@@ -17,6 +17,8 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroupFile;
 
 import java.sql.*;
 import java.util.*;
@@ -32,6 +34,7 @@ public class MemSQL implements IDatabase {
     private long initialDbSize;
     private SqlBuilder sqlBuilder;
     private Faker nameFaker;
+    private STGroupFile templatesFile;
 
     /**
      * Initializes an instance of the database controller.
@@ -41,6 +44,7 @@ public class MemSQL implements IDatabase {
         config = ConfigParser.INSTANCE.config();
         tableName = config.DB_NAME;
         nameFaker = new Faker();
+        templatesFile = new STGroupFile("memsql/scenarios.stg");
     }
 
     /**
@@ -77,7 +81,6 @@ public class MemSQL implements IDatabase {
      */
     @Override
     public void cleanup() throws TsdbException {
-        //delete old data
         try (Statement statement = connection.createStatement()) {
             connection.setAutoCommit(false);
             statement.addBatch(String.format(DROP_TABLE, "bikes"));
@@ -244,20 +247,9 @@ public class MemSQL implements IDatabase {
     @Override
     public Status lastKnownPosition(Query query) {
         Sensor gpsSensor = query.getGpsSensor();
-        String sql = "";
-
-        sql = "SELECT LAST_VALUE(t.%s) OVER(PARTITION BY t.bike_id ORDER BY (time)), \n" +
-                "MAX(time), t.bike_id, b.owner_name FROM %s t, bikes b\n" +
-                "WHERE t.bike_id = b.bike_id\n" +
-                "GROUP BY t.bike_id;";
-        sql = String.format(
-                Locale.US,
-                sql,
-                gpsSensor.getName(),
-                tableName
-        );
-
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("lastKnownPosition");
+        template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName());
+        return executeQuery(template.render());
     }
 
     /**
@@ -287,23 +279,10 @@ public class MemSQL implements IDatabase {
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
         Sensor gpsSensor = query.getGpsSensor();
         Bike bike = query.getBikes().get(0);
-        String sql = "";
-
-        sql = "SELECT %s AS location, t.bike_id, b.owner_name FROM %s t, bikes b\n" +
-                "\tWHERE b.bike_id = t.bike_id\n" +
-                "\tAND t.bike_id = '%s' \n" +
-                "\tAND time >= '%s' \n" +
-                "\tAND time <= '%s';\n";
-        sql = String.format(
-                Locale.US,
-                sql,
-                gpsSensor.getName(),
-                tableName,
-                bike.getName(),
-                startTimestamp,
-                endTimestamp
-        );
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("gpsPathScan");
+        template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+                .add("bike", bike.getName()).add("start", startTimestamp).add("end", endTimestamp);
+        return executeQuery(template.render());
     }
 
     /**
@@ -335,36 +314,12 @@ public class MemSQL implements IDatabase {
         Timestamp endTimestamp = new Timestamp(Constants.START_TIMESTAMP + config.QUERY_INTERVAL);
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
-        String sql = "";
-
-        sql = "WITH data AS (\n" +
-                "\tSELECT from_unixtime(unix_timestamp(time) DIV 1 * 1) AS SECOND, \n" +
-                "\tbike_id, %s\n" +
-                "\tFROM %s t \n" +
-                "\tWHERE bike_id = '%s'\n" +
-                "\tAND time >= '%s' \n" +
-                "\tAND time < '%s'\n" +
-                "\tGROUP BY second, bike_id, %s\n" +
-                "\tHAVING AVG(%s) >= %f\n" +
-                ")\n" +
-                "SELECT d.second, d.bike_id, b.owner_name, d.%s FROM bikes b, data d\n" +
-                "WHERE d.bike_id = b.bike_id\n" +
-                "ORDER BY d.second ASC, d.bike_id;";
-        sql = String.format(
-                Locale.US,
-                sql,
-                gpsSensor.getName(),
-                tableName,
-                bike.getName(),
-                startTimestamp,
-                endTimestamp,
-                gpsSensor.getName(),
-                sensor.getName(),
-                query.getThreshold(),
-                gpsSensor.getName()
-        );
-
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("identifyTrips");
+        template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+                .add("sensor", sensor.getName()).add("threshold", query.getThreshold())
+                .add("start", startTimestamp).add("end", endTimestamp)
+                .add("bike", bike.getName());
+        return executeQuery(template.render());
     }
 
     /**
@@ -396,41 +351,14 @@ public class MemSQL implements IDatabase {
     public Status distanceDriven(Query query) {
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-        String sql = "";
         Bike bike = query.getBikes().get(0);
         Sensor sensor = query.getSensor();
         Sensor gpsSensor = query.getGpsSensor();
-
-        sql = "WITH data AS (\n" +
-                "\tSELECT FROM_unixtime(unix_timestamp(time) DIV 1 * 1) AS second, bike_id, %s \n" +
-                "\tFROM %s t\n" +
-                "\tWHERE bike_id = '%s' \n" +
-                "\tAND time >= '%s' AND time <= '%s'\n" +
-                "\tGROUP BY second, bike_id, %s\n" +
-                "\tHAVING AVG(%s) > %s\n" +
-                "\tORDER BY second\n" +
-                ")\n" +
-                "SELECT d.bike_id, b.owner_name, \n" +
-                "GEOGRAPHY_LENGTH(\n" +
-                "    CONCAT('LINESTRING(', GROUP_CONCAT(CONCAT(GEOGRAPHY_LONGITUDE(%s), ' ', GEOGRAPHY_LATITUDE(%s))), ')')\n" +
-                ") FROM data d, bikes b\n" +
-                "WHERE d.bike_id = b.bike_id\n" +
-                "GROUP BY d.bike_id;";
-        sql = String.format(
-                Locale.US,
-                sql,
-                gpsSensor.getName(),
-                tableName,
-                bike.getName(),
-                startTimestamp,
-                endTimestamp,
-                gpsSensor.getName(),
-                sensor.getName(),
-                query.getThreshold(),
-                gpsSensor.getName(),
-                gpsSensor.getName()
-        );
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("distanceDriven");
+        template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+                .add("sensor", sensor.getName()).add("threshold", query.getThreshold())
+                .add("bike", bike.getName()).add("start", startTimestamp).add("end", endTimestamp);
+        return executeQuery(template.render());
     }
 
     /**
@@ -446,19 +374,11 @@ public class MemSQL implements IDatabase {
      */
     @Override
     public Status offlineBikes(Query query) {
-        String sql = "";
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-
-        sql = "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n" +
-                "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n" +
-                ");";
-        sql = String.format(
-                Locale.US,
-                sql,
-                tableName,
-                endTimestamp
-        );
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("offlineBikes");
+        template.add("tableName", tableName).add("time", endTimestamp);
+        String debug = template.render();
+        return executeQuery(debug);
     }
 
     /**
@@ -474,7 +394,7 @@ public class MemSQL implements IDatabase {
      *
      * WIDE_TABLE:
      * <p><code>
-     *  SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (
+     * SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (
      * 	SELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t
      * 	WHERE t.bike_id = b.bike_id AND time > '2018-08-29 18:00:00.0'
      * 	AND s_17 IS NOT NULL
@@ -492,27 +412,12 @@ public class MemSQL implements IDatabase {
     @Override
     public Status lastTimeActivelyDriven(Query query) {
         Sensor sensor = query.getSensor();
-        String sql = "";
-
         Timestamp timestamp = new Timestamp(query.getEndTimestamp());
-        sql = "WITH last_trip AS (\n" +
-                "SELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) as minute, bike_id\n" +
-                "FROM %s t WHERE time > '%s'\n" +
-                "GROUP BY minute, bike_id\n" +
-                "HAVING AVG(%s) > %f\n" +
-                ") SELECT l.bike_id, MAX(l.minute) as last_time FROM %s t, last_trip l\n" +
-                "WHERE l.bike_id = t.bike_id\n" +
-                "GROUP BY l.bike_id;";
-        sql = String.format(
-                Locale.US,
-                sql,
-                tableName,
-                timestamp,
-                sensor.getName(),
-                query.getThreshold(),
-                tableName
-        );
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("lastTimeActivelyDriven");
+        template.add("tableName", tableName).add("time", timestamp).add("sensor", sensor.getName())
+                .add("threshold", query.getThreshold());
+
+        return executeQuery(template.render());
     }
 
     /**
@@ -540,28 +445,10 @@ public class MemSQL implements IDatabase {
         Bike bike = query.getBikes().get(0);
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-        String sql = "";
-        sql = "WITH downsample AS (\n" +
-                "\tSELECT from_unixtime(unix_timestamp(time) DIV 60 * 60) AS minute, bike_id, AVG(%s) AS value\n" +
-                "\tFROM %s t \n" +
-                "\tWHERE bike_id = '%s'\n" +
-                "\tAND time >= '%s'\n" +
-                "\tAND time <= '%s'\n" +
-                "\tGROUP BY bike_id, minute\n" +
-                ") SELECT d.minute, b.bike_id, b.owner_name, d.value \n" +
-                "FROM downsample d, bikes b WHERE b.bike_id = d.bike_id\n" +
-                "ORDER BY d.minute, b.bike_id;";
-        sql = String.format(
-                Locale.US,
-                sql,
-                sensor.getName(),
-                tableName,
-                bike.getName(),
-                startTimestamp,
-                endTimestamp
-        );
-
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("downsample");
+        template.add("tableName", tableName).add("sensor", sensor.getName())
+                .add("start", startTimestamp).add("end", endTimestamp).add("bike", bike.getName());
+        return executeQuery(template.render());
     }
 
     /**
@@ -582,22 +469,11 @@ public class MemSQL implements IDatabase {
         Sensor gpsSensor = query.getGpsSensor();
         Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
         Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-        String sql = "";
-
-        sql = "SELECT GEOGRAPHY_LONGITUDE(%s) as longitude, GEOGRAPHY_LATITUDE(%s) as latitude, AVG(%s) \n" +
-                "FROM %s t \n" +
-                "WHERE time >= '%s' AND time <= '%s' \n" +
-                "GROUP BY %s;";
-        sql = String.format(Locale.US, sql,
-                gpsSensor.getName(),
-                gpsSensor.getName(),
-                sensor.getName(),
-                tableName,
-                startTimestamp,
-                endTimestamp,
-                gpsSensor.getName()
-        );
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("airPollutionHeatMap");
+        template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+                .add("sensor", sensor.getName()).add("start", startTimestamp)
+                .add("end", endTimestamp);
+        return executeQuery(template.render());
     }
 
     /**
@@ -618,23 +494,10 @@ public class MemSQL implements IDatabase {
      */
     @Override
     public Status bikesInLocation(Query query) {
-        String sql = "";
         Sensor gpsSensor = query.getGpsSensor();
-        sql = "SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b, \n" +
-                "\t(SELECT bike_id, LAST_VALUE(%s) OVER (PARTITION BY bike_id ORDER BY (time)) AS pos FROM %s \n" +
-                "\tGROUP BY bike_id) AS pos \n" +
-                "WHERE b.bike_id = pos.bike_id \n" +
-                "AND GEOGRAPHY_CONTAINS('POLYGON((13.4406567 48.5723195, \n" +
-                "13.4373522 48.5707861, 13.4373522 48.5662708, \n" +
-                "13.4443045 48.5645384, 13.4489393 48.5683155, \n" +
-                "13.4492826 48.5710701, 13.4406567 48.5723195))', pos.pos);";
-        sql = String.format(
-                Locale.US,
-                sql,
-                gpsSensor.getName(),
-                tableName
-        );
-        return executeQuery(sql);
+        ST template = templatesFile.getInstanceOf("bikesInLocation");
+        template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName());
+        return executeQuery(template.render());
     }
 
     /*
@@ -701,7 +564,7 @@ public class MemSQL implements IDatabase {
      * Returns an SQL statement, which inserts a batch of points into single wide table.
      */
     private String getInsertOneWideBatchSql(Batch batch) {
-        Map<Long, List<String>> rows = transformBatch(batch);
+        Map<Long, List<String>> rows = batch.transform();
         StringBuilder sqlBuilder = new StringBuilder();
         Bike bike = batch.getBike();
         sqlBuilder.append("INSERT INTO ").append(tableName).append(" VALUES ");
@@ -719,31 +582,5 @@ public class MemSQL implements IDatabase {
             sqlBuilder.append(")");
         }
         return sqlBuilder.toString();
-    }
-
-    /*
-     * Transforms a batch from column-oriented format (each column represents readings of one sensor group) to
-     * row-oriented format.
-     */
-    private Map<Long, List<String>> transformBatch(Batch batch) {
-        Map<Sensor, Point[]> entries = batch.getEntries();
-        Map<Long, List<String>> rows = new TreeMap<>();
-
-        List<String> emptyRow = new ArrayList<>(config.SENSORS.size());
-        for (Sensor sensor : config.SENSORS) {
-            emptyRow.add("NULL");
-        }
-
-        Sensor mostFrequentSensor = Sensors.minInterval(config.SENSORS);
-        for (Point point : entries.get(mostFrequentSensor)) {
-            rows.computeIfAbsent(point.getTimestamp(), k -> new ArrayList<>(emptyRow));
-        }
-
-        for (int i = 0; i < config.SENSORS.size(); i++) {
-            for (Point point : entries.get(config.SENSORS.get(i))) {
-                rows.get(point.getTimestamp()).set(i, point.getValue());
-            }
-        }
-        return rows;
     }
 }

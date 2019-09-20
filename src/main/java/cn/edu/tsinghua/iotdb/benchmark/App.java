@@ -12,7 +12,6 @@ import cn.edu.tsinghua.iotdb.benchmark.monitor.ClientMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.monitor.ServerMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.DBWrapper;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
-import cn.edu.tsinghua.iotdb.benchmark.workload.reader.BasicReader;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
 
@@ -33,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class App {
-
+    static { System.setProperty("logback.configurationFile", "conf/logback.xml");}
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
     private static final double unitTransfer = 1000000.0;
     private static ClientMonitoring clientMonitoring;
