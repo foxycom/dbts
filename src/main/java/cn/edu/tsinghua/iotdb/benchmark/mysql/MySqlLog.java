@@ -321,7 +321,9 @@ public class MySqlLog {
                 case TIMESCALEDB_WIDE:
                 case MEMSQL:
                 case CRATEDB:
+                case GRIDDB:
                 case CITUS:
+                case CLICKHOUSE:
                 case WARP10:
                 case VERTICA:
                     sql = String.format(SAVE_CONFIG, "'" + projectID + "'",

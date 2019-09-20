@@ -7,12 +7,12 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
-import com.toshiba.mwcloud.gs.GSException;
-import com.toshiba.mwcloud.gs.GridStore;
-import com.toshiba.mwcloud.gs.GridStoreFactory;
+import com.toshiba.mwcloud.gs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -20,6 +20,15 @@ public class GridDB implements IDatabase {
     private static final Logger LOGGER = LoggerFactory.getLogger(GridDB.class);
 
     private GridStore store;
+    private TimeSeries<Entry> ts;
+
+    private class Entry {
+        @RowKey
+        private Date time;
+        private String bike_id;
+        private double s_0;
+        private Geometry s_12;
+    }
 
     @Override
     public void init() throws TsdbException {
@@ -49,7 +58,15 @@ public class GridDB implements IDatabase {
 
     @Override
     public void registerSchema(List<Bike> schemaList) throws TsdbException {
-
+        try {
+            ts = store.putTimeSeries("test", Entry.class);
+            ts.createIndex("bike_id");
+            ts.createIndex("s_12", IndexType.SPATIAL);
+            ts.close();
+        } catch (GSException e) {
+            LOGGER.debug("Could not register CrateDB schema because: {}", e.getMessage());
+            throw new TsdbException(e);
+        }
     }
 
     @Override
@@ -59,7 +76,23 @@ public class GridDB implements IDatabase {
 
     @Override
     public Status insertOneBatch(Batch batch) {
-        return null;
+        long st;
+        long en;
+        try {
+            TimeSeries<Entry> rows = store.getTimeSeries("test", Entry.class);
+            Entry entry = new Entry();
+            Date d = new Date();
+            entry.time = d;
+            entry.bike_id = "bike_2";
+            st = System.nanoTime();
+            rows.put(entry);
+            en = System.nanoTime();
+        } catch (GSException e) {
+            LOGGER.debug("Could not retrieve GridDB ts rows because: {}", e.getMessage());
+            return new Status(false, 0, e, e.getMessage());
+        }
+
+        return new Status(true, en - st);
     }
 
     @Override

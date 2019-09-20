@@ -11,6 +11,7 @@ public enum DB {
     CRATEDB,
     KAIROSDB,
     WARP10,
+    GRIDDB,
     CLICKHOUSE,
     VERTICA,
     TIMESCALEDB_NARROW,
@@ -24,6 +25,7 @@ public enum DB {
             case MEMSQL:
             case CRATEDB:
             case VERTICA:
+            case GRIDDB:
             case INFLUXDB:
             case CLICKHOUSE:
             case KAIROSDB:

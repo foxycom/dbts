@@ -6,13 +6,10 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
-import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import com.github.javafaker.Faker;
 import org.slf4j.Logger;
@@ -190,7 +187,7 @@ public class MemSQL implements IDatabase {
         try (Statement statement = connection.createStatement()) {
             connection.setAutoCommit(false);
 
-            String insertBatchSql = getInsertOneWideBatchSql(batch);
+            String insertBatchSql = getInsertOneBatchSql(batch);
             statement.addBatch(insertBatchSql);
             startTime = System.nanoTime();
             statement.executeBatch();
@@ -563,7 +560,7 @@ public class MemSQL implements IDatabase {
     /*
      * Returns an SQL statement, which inserts a batch of points into single wide table.
      */
-    private String getInsertOneWideBatchSql(Batch batch) {
+    private String getInsertOneBatchSql(Batch batch) {
         Map<Long, List<String>> rows = batch.transform();
         StringBuilder sqlBuilder = new StringBuilder();
         Bike bike = batch.getBike();
