@@ -3,6 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.citus.Citus;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.clickhouse.Clickhouse;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.cratedb.CrateDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.influxdb.InfluxDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.kairosdb.KairosDB;
@@ -41,6 +42,8 @@ public class DBFactory {
         return new Warp10();
       case VERTICA:
         return new Vertica();
+      case CLICKHOUSE:
+        return new Clickhouse();
       default:
         LOGGER.error("unsupported database {}", config.DB_SWITCH);
         throw new SQLException("unsupported database " + config.DB_SWITCH);

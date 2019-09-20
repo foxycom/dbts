@@ -93,9 +93,8 @@
 		</filter>
 	</appender>
 
-	<logger name="org.apache.commons.beanutils" level="ERROR"/>
-
-
+	<logger name="org.apache.commons.beanutils" level="OFF"/>
+	<logger name="ch.qos.logback" level="OFF"/>
 
 	<root level="INFO">
 		<appender-ref ref="FILEDEBUG" />
@@ -104,4 +103,5 @@
 		<appender-ref ref="FILEERROR" />
 		<appender-ref ref="stdout" />
 	</root>
+
 </configuration>

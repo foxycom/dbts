@@ -11,6 +11,7 @@ public enum DB {
     CRATEDB,
     KAIROSDB,
     WARP10,
+    CLICKHOUSE,
     VERTICA,
     TIMESCALEDB_NARROW,
     TIMESCALEDB_WIDE;
@@ -24,6 +25,7 @@ public enum DB {
             case CRATEDB:
             case VERTICA:
             case INFLUXDB:
+            case CLICKHOUSE:
             case KAIROSDB:
             case WARP10:
                 break;

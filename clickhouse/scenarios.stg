@@ -1,0 +1,78 @@
+precisePoint(tableName, time, bike, sensor) ::= <<
+SELECT time, bike_id, <sensor> FROM <tableName> WHERE time = <time> AND bike_id = '<bike>';
+>>
+
+lastTimeActivelyDriven(tableName, time, sensor, threshold) ::= <<
+SELECT MAX(minute) as last_time, bike_id from (
+    SELECT toStartOfMinute(toDateTime(toInt64(time/1000))) AS minute, bike_id
+    FROM test
+    WHERE time > 1535587201000
+    GROUP BY minute, bike_id HAVING AVG(s_32) > 1000.0
+) GROUP BY bike_id;
+>>
+
+airPollutionHeatMap(tableName, sensor, start, end) ::= <<
+SELECT longitude, latitude, AVG(<sensor>)
+FROM <tableName> t
+WHERE time > <start> AND time \< <end>
+GROUP BY longitude, latitude;
+>>
+
+lastKnownPosition(tableName) ::= <<
+SELECT bike_id, last_time, longitude, latitude FROM (
+    SELECT max(time) AS last_time, bike_id
+    FROM <tableName> GROUP BY bike_id
+) AS d, test AS t
+WHERE t.time = d.last_time AND t.bike_id = d.bike_id;
+>>
+
+identifyTrips(tableName, bike, start, end, sensor, threshold) ::= <<
+SELECT d.second, d.bike_id, b.owner_name, longitude, latitude FROM bikes as b, (
+	SELECT toUInt64(time/1000) AS second,
+	bike_id, longitude, latitude
+	FROM <tableName> t
+	WHERE bike_id = '<bike>'
+	AND time > <start>
+	AND time \< <end>
+	GROUP BY second, bike_id, longitude, latitude
+	HAVING AVG(<sensor>) >= <threshold>
+) as d
+WHERE d.bike_id = b.bike_id
+ORDER BY d.second ASC, d.bike_id;
+>>
+
+bikesInLocation(tableName) ::= <<
+SELECT bike_id, owner_name, longitude, latitude FROM (
+   SELECT max(time) AS last_time, bike_id FROM <tableName> GROUP BY bike_id
+) AS l, test AS t, bikes AS b
+WHERE t.time = l.last_time AND t.bike_id = l.bike_id AND b.bike_id = t.bike_id
+AND pointInPolygon((longitude, latitude), [(13.4406567, 48.5723195), (13.4373522, 48.5707861), (13.4373522, 48.5662708),
+(13.4443045, 48.5645384), (13.4489393, 48.5683155), (13.4492826, 48.5710701), (13.4406567, 48.5723195)]);
+>>
+
+gpsPathScan(tableName, bike, start, end) ::= <<
+SELECT longitude, latitude, t.bike_id, b.owner_name FROM <tableName> AS t, bikes AS b
+WHERE b.bike_id = t.bike_id
+AND t.bike_id = '<bike>'
+AND time > <start>
+AND time \< <end>;
+>>
+
+downsample(tableName, sensor, bike, start, end) ::= <<
+SELECT d.minute, b.bike_id, b.owner_name, d.value
+FROM (
+    SELECT toStartOfMinute(toDateTime(time/1000)) AS minute, bike_id, AVG(<sensor>) AS value
+	FROM <tableName> AS t
+	WHERE bike_id = '<bike>'
+	AND time > <start>
+	AND time \< <end>
+	GROUP BY bike_id, minute
+) AS d, bikes AS b WHERE b.bike_id = d.bike_id
+ORDER BY d.minute, b.bike_id;
+>>
+
+offlineBikes(tableName, time) ::= <<
+SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
+	SELECT DISTINCT(bike_id) FROM <tableName> WHERE time > <time>
+);
+>>

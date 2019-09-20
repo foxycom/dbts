@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<config xmlns="https://uni-passau.de"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://uni-passau.de  config.xsd">
+    <version>0.4.0</version>
+    <db>
+        <type>Clickhouse</type>
+        <name>test</name>
+        <host>127.0.0.1</host>
+        <port>8123</port>
+        <erase wait="5000">false</erase>
+        <createSchema>false</createSchema>
+    </db>
+    <mode>test_with_default_path</mode>
+    <mysqlLog active="false" remark="INGEST">
+        jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
+    </mysqlLog>
+    <clients bindToDevices="true">4</clients>
+    <deviceGroups>3</deviceGroups>
+    <devices prefix="d_">4</devices>
+
+    <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
+    <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
+
+    <sensorGroups prefix="s_">
+        <sensorGroup name="accelerometer" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="gyroscope" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="magneticField" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="incline" dataType="Float64">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="force" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="gps" fields="longitude, latitude" dataType="Float64">
+            <sensor frequency="1" type="gps"/>
+        </sensorGroup>
+        <sensorGroup name="rotaryEncoder" dataType="Float64">
+            <sensor frequency="10" type="basic"/>
+            <sensor frequency="10" type="basic"/>
+            <sensor frequency="10" type="basic"/>
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="current" dataType="Float64">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="temperature" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="distance" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="oximeter" dataType="Float64">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="pulse" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="skinConductance" dataType="Float64">
+            <sensor frequency="10" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="humidity" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="pressure" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="sound" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="light" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="particles" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="airQuality" dataType="Float64">
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+            <sensor frequency="1" type="basic"/>
+        </sensorGroup>
+        <sensorGroup name="emg" dataType="Float64">
+            <sensor frequency="50" type="basic"/>
+            <sensor frequency="50" type="basic"/>
+        </sensorGroup>
+    </sensorGroups>
+
+    <batch size="10000"/>
+    <loops>1</loops>
+    <pointStep>1</pointStep>
+    <encoding>gorilla</encoding>
+
+    <serverMonitor active="false">
+        <drive>sdb</drive>
+        <iface>enp0s25</iface>
+        <port>56565</port>
+    </serverMonitor>
+
+    <mulDevBatch>false</mulDevBatch>
+    <overflow active="false">
+        <ratio>0.5</ratio>
+        <lamda>2200.0</lamda>
+        <maxK>170000</maxK>
+    </overflow>
+
+    <timestamp>
+        <startIndex>20</startIndex>
+        <seed>666</seed>
+    </timestamp>
+
+    <query>
+        <type>7</type>
+        <sensorNum>1</sensorNum>
+        <deviceNum>1</deviceNum>
+        <seed>151658</seed>
+        <step>1000</step>
+        <radius>500</radius>
+        <aggregateFunction>avg</aggregateFunction>
+        <interval>100000</interval>
+        <lowerLimit>1000</lowerLimit>
+        <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
+        <timeBucket>300000</timeBucket>
+        <limitClause>0</limitClause>
+        <limitN>5</limitN>
+        <limitOffset>5</limitOffset>
+        <sLimitN>5</sLimitN>
+        <sLimitOffset>5</sLimitOffset>
+    </query>
+
+</config>

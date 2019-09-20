@@ -41,6 +41,11 @@ public class Constants {
     public static final String CRATE_USER = "crate";
     public static final String CRATE_PASSWD = "";
 
+    public static final String CLICKHOUSE_DRIVER = "cc.blynk.clickhouse.ClickHouseDriver";
+    public static final String CLICKHOUSE_URL = "jdbc:clickhouse://%s:%s/%s";
+    public static final String CLICKHOUSE_USER = "default";
+    public static final String CLICKHOUSE_PASSWD = "MyStrongPassword";
+
     public static final double NANO_TO_MILLIS = 1000 * 1000d;
     public static final double NANO_TO_SECONDS = 1000 * 1000 * 1000d;
     public static final double MILLIS_TO_SECONDS = 1000d;
