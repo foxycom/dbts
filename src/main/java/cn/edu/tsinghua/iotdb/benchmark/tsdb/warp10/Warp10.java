@@ -337,6 +337,9 @@ public class Warp10 implements IDatabase {
         } catch (IOException | InterruptedException e) {
             return new Status(false, 0, e , e.getMessage());
         }
+        if (res.statusCode() != 200) {
+            return new Status(false, 0, new TsdbException(), res.body());
+        }
         long endTimestamp = System.nanoTime();
         Map<String, List<String>> headers = res.headers().map();
         int fetchedPoints = Integer.parseInt(headers.get("x-warp10-fetched").get(0));
@@ -360,6 +363,9 @@ public class Warp10 implements IDatabase {
         } catch (IOException | InterruptedException e) {
             return new Status(false, 0, e, e.getMessage());
         }
+        if (res.statusCode() != 200) {
+            return new Status(false, 0, new TsdbException(), res.body());
+        }
         long endTimestamp = System.nanoTime();
         Map<String, List<String>> headers = res.headers().map();
         int fetchedPoints = Integer.parseInt(headers.get("x-warp10-fetched").get(0));
@@ -381,6 +387,9 @@ public class Warp10 implements IDatabase {
             res = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             return new Status(false, 0, e, e.getMessage());
+        }
+        if (res.statusCode() != 200) {
+            return new Status(false, 0, new TsdbException(), res.body());
         }
         long endTimestamp = System.nanoTime();
         System.out.println(res.body());
