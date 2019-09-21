@@ -324,31 +324,17 @@ public class Warp10 implements IDatabase {
     }
 
     private Status exec(String warpScript) {
-        long startTimestamp = System.nanoTime();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(execUri))
                 .timeout(Duration.ofMinutes(10))
                 .header("Content-Type", "text/plain")
                 .POST(HttpRequest.BodyPublishers.ofString(warpScript))
                 .build();
-        HttpResponse<String> res;
-        try {
-             res = client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            return new Status(false, 0, e , e.getMessage());
-        }
-        if (res.statusCode() != 200) {
-            return new Status(false, 0, new TsdbException(), res.body());
-        }
-        long endTimestamp = System.nanoTime();
-        Map<String, List<String>> headers = res.headers().map();
-        int fetchedPoints = Integer.parseInt(headers.get("x-warp10-fetched").get(0));
-        return new Status(true, endTimestamp - startTimestamp, fetchedPoints);
+        return send(request);
     }
 
     private Status fetch(URI uri) {
         LOGGER.debug("{} fetches data", Thread.currentThread().getName());
-        long startTimestamp = System.nanoTime();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
                 .timeout(Duration.ofMinutes(10))
@@ -357,23 +343,10 @@ public class Warp10 implements IDatabase {
                 .GET()
                 .build();
 
-        HttpResponse<String> res;
-        try {
-            res = client.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (IOException | InterruptedException e) {
-            return new Status(false, 0, e, e.getMessage());
-        }
-        if (res.statusCode() != 200) {
-            return new Status(false, 0, new TsdbException(), res.body());
-        }
-        long endTimestamp = System.nanoTime();
-        Map<String, List<String>> headers = res.headers().map();
-        int fetchedPoints = Integer.parseInt(headers.get("x-warp10-fetched").get(0));
-        return new Status(true, endTimestamp - startTimestamp, fetchedPoints);
+        return send(request);
     }
 
     private Status write(String body) {
-        long startTimestamp = System.nanoTime();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(writeUri))
                 .timeout(Duration.ofMinutes(10))
@@ -382,18 +355,28 @@ public class Warp10 implements IDatabase {
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
+        return send(request);
+    }
+
+    private Status send(HttpRequest request) {
         HttpResponse<String> res;
+        long startTimestamp = System.nanoTime();
         try {
             res = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException | InterruptedException e) {
             return new Status(false, 0, e, e.getMessage());
         }
         if (res.statusCode() != 200) {
+            LOGGER.debug("Could not process request with code {} because {}", res.statusCode(), res.body());
             return new Status(false, 0, new TsdbException(), res.body());
         }
         long endTimestamp = System.nanoTime();
-        System.out.println(res.body());
-        return new Status(true, endTimestamp - startTimestamp, 0);
+        Map<String, List<String>> headers = res.headers().map();
+        int fetchedPoints = 0;
+        if (headers.get("x-warp10-fetched") != null) {
+            fetchedPoints = Integer.parseInt(headers.get("x-warp10-fetched").get(0));
+        }
+        return new Status(true, endTimestamp - startTimestamp, fetchedPoints);
     }
 
     private class Reading {
