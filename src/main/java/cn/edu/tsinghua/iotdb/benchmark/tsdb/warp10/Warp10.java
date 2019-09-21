@@ -147,7 +147,7 @@ public class Warp10 implements IDatabase {
         Bike bike = query.getBikes().get(0);
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
-        STGroupFile templateFile = new STGroupFile("warpscript/gpsPath.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/gpsPath.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("sensor", sensor.getName()).add("bike", bike.getName())
@@ -163,7 +163,7 @@ public class Warp10 implements IDatabase {
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
         Bike bike = query.getBikes().get(0);
-        STGroupFile templateFile = new STGroupFile("warpscript/identifyTrips.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/identifyTrips.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("bike", bike.getName()).add("sensor", sensor.getName())
@@ -179,7 +179,7 @@ public class Warp10 implements IDatabase {
         SensorGroup sensorGroup = sensor.getSensorGroup();
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
-        STGroupFile templateFile = new STGroupFile("warpscript/offlineBikes.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/offlineBikes.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("bikesNum", config.DEVICES_NUMBER)
                 .add("class", sensorGroup.getName()).add("sensor", sensor.getName())
@@ -194,7 +194,7 @@ public class Warp10 implements IDatabase {
         SensorGroup sensorGroup = sensor.getSensorGroup();
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
-        STGroupFile templateFile = new STGroupFile("warpscript/lastTimeActivelyDriven.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/lastTimeActivelyDriven.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("end", endTimestamp).add("start", startTimestamp)
@@ -210,7 +210,7 @@ public class Warp10 implements IDatabase {
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
         Bike bike = query.getBikes().get(0);
-        STGroupFile templateFile = new STGroupFile("warpscript/downsample.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/downsample.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("sensor", sensor.getName()).add("bike", bike.getName())
@@ -223,7 +223,7 @@ public class Warp10 implements IDatabase {
     public Status lastKnownPosition(Query query) {
         Sensor sensor = query.getSensor();
         SensorGroup sensorGroup = sensor.getSensorGroup();
-        STGroupFile templateFile = new STGroupFile("warpscript/lastKnownPositions.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/lastKnownPositions.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("sensor", sensor.getName());
@@ -237,7 +237,7 @@ public class Warp10 implements IDatabase {
         SensorGroup sensorGroup = sensor.getSensorGroup();
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
-        STGroupFile templateFile = new STGroupFile("warpscript/heatmap.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/heatmap.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("sensor", sensor.getName()).add("start", startTimestamp)
@@ -253,7 +253,7 @@ public class Warp10 implements IDatabase {
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
         Bike bike = query.getBikes().get(0);
-        STGroupFile templateFile = new STGroupFile("warpscript/distanceDriven.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/distanceDriven.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("bike", bike.getName()).add("sensor", sensor.getName())
@@ -269,7 +269,7 @@ public class Warp10 implements IDatabase {
         SensorGroup sensorGroup = sensor.getSensorGroup();
         String endTimestamp = parseTimestamp(query.getEndTimestamp());
         String startTimestamp = parseTimestamp(query.getStartTimestamp());
-        STGroupFile templateFile = new STGroupFile("warpscript/bikesInLocation.stg");
+        STGroupFile templateFile = new STGroupFile("../warpscript/bikesInLocation.stg");
         ST template = templateFile.getInstanceOf("script");
         template.add("readToken", config.READ_TOKEN).add("class", sensorGroup.getName())
                 .add("sensor", sensor.getName()).add("end", endTimestamp)
