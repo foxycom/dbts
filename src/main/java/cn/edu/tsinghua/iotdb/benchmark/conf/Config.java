@@ -18,6 +18,9 @@ public class Config {
 	public String HOST ="127.0.0.1";
 	public String PORT ="6667";
 
+	public String READ_TOKEN = "";
+	public String WRITE_TOKEN = "";
+
 	/** The number of working devices. */
 	public int DEVICES_NUMBER = 2;
 

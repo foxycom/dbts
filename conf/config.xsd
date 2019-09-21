@@ -32,6 +32,12 @@
       <xs:element type="xs:boolean" name="createSchema"/>
     </xs:sequence>
   </xs:complexType>
+  <xs:complexType name="warp10Type">
+    <xs:sequence>
+      <xs:element type="xs:string" name="readToken"/>
+      <xs:element type="xs:string" name="writeToken"/>
+    </xs:sequence>
+  </xs:complexType>
   <xs:complexType name="mysqlLogType">
     <xs:simpleContent>
       <xs:extension base="xs:string">
@@ -188,6 +194,7 @@
     <xs:sequence>
       <xs:element type="xs:string" name="version"/>
       <xs:element type="uni:dbType" name="db" xmlns:uni="https://uni-passau.de"/>
+      <xs:element type="uni:warp10Type" name="warp10" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="uni:modeType" name="mode" xmlns:uni="https://uni-passau.de"/>
       <xs:element type="uni:mysqlLogType" name="mysqlLog" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="uni:clientsType" name="clients" xmlns:uni="https://uni-passau.de" minOccurs="0"/>

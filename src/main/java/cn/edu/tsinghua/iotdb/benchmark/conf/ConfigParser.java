@@ -53,6 +53,9 @@ public enum ConfigParser {
         config.ERASE_WAIT_TIME = xml.getLong("db.erase[@wait]", config.ERASE_WAIT_TIME);
         config.CREATE_SCHEMA = xml.getBoolean("db.createSchema", config.CREATE_SCHEMA);
 
+        config.READ_TOKEN = xml.getString("warp10.readToken", config.READ_TOKEN);
+        config.WRITE_TOKEN = xml.getString("warp10.writeToken", config.WRITE_TOKEN);
+
         config.WORK_MODE = Mode.valueOf(xml.getString("mode", config.WORK_MODE.name()).toUpperCase());
         config.MYSQL_URL = xml.getString("mysqlLog", config.MYSQL_URL);
         config.USE_MYSQL = xml.getBoolean("mysqlLog[@active]", config.USE_MYSQL);
