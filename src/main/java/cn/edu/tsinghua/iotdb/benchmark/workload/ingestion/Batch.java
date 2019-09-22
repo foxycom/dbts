@@ -9,17 +9,11 @@ import java.util.*;
 public class Batch {
 
   private Bike bike;
-  private List<Record> records;
   private long timeRange;
   private Map<Sensor, Point[]> entries = new HashMap<>();
 
-  public Batch() {
-    records = new ArrayList<>();
-  }
-
-  public Batch(Bike bike, List<Record> records) {
+  public Batch(Bike bike) {
     this.bike = bike;
-    this.records = records;
   }
 
   public Bike getBike() {
@@ -28,14 +22,6 @@ public class Batch {
 
   public void setBike(Bike bike) {
     this.bike = bike;
-  }
-
-  public List<Record> getRecords() {
-    return records;
-  }
-
-  public void add(long timestamp, List<String> values) {
-    records.add(new Record(timestamp, values));
   }
 
   public void add(Sensor sensor, Point[] values) {
@@ -68,8 +54,8 @@ public class Batch {
   }
 
   /**
-   * Transforms the from column-oriented format (each column represents readings of one sensor group) to
-   * row-oriented format.
+   * Transforms the from column-oriented format (each column represents readings of one sensor
+   * group) to row-oriented format.
    *
    * @return Transformed batch.
    */
@@ -97,7 +83,6 @@ public class Batch {
           rows.get(point.getTimestamp()).set(column + valueOffset, value);
           valueOffset++;
         }
-        //rows.get(point.getTimestamp()).set(i, point.getValue());
       }
       column += sensor.getFields().size();
     }

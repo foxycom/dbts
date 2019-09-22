@@ -11,7 +11,7 @@
         <erase wait="5000">true</erase>
         <createSchema>true</createSchema>
     </db>
-    <mode>test_with_default_path</mode>
+    <mode>synthetic_benchmark</mode>
     <mysqlLog active="false" remark="INGEST">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>

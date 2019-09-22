@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 public class Measurement {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Measurement.class);
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
   private static final double[] MID_AVG_RANGE = {0.1, 0.9};
   private Map<Operation, List<Double>> operationLatencies;
 
@@ -33,7 +33,6 @@ public class Measurement {
   private Map<Operation, Long> failOperationNumMap;
   private Map<Operation, Long> okPointNumMap;
   private Map<Operation, Long> failPointNumMap;
-
 
   public Measurement() {
     mysql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
@@ -125,7 +124,7 @@ public class Measurement {
     operationLatencies.get(operation).add(latency);
     okPointNumMap.put(operation, okPointNumMap.get(operation) + okPointNum);
 
-    double rate = okPointNum / (latency / 1000);  // Points/s
+    double rate = okPointNum / (latency / 1000); // Points/s
     flushOk(operation.getName(), latency, rate, okPointNum);
   }
 
@@ -138,14 +137,14 @@ public class Measurement {
 
   private void flushOk(String operation, double latency, double rate, long okPointNum) {
     String clientName = Thread.currentThread().getName();
-    mysql.saveClientInsertProcess(clientName, operation, "OK", loopIndex, latency, elapseTime, rate, okPointNum,
-            0, remark);
+    mysql.saveClientMeasurement(
+        clientName, operation, "OK", loopIndex, latency, elapseTime, rate, okPointNum, 0, remark);
   }
 
   private void flushFail(String operation, long failPointNum) {
     String clientName = Thread.currentThread().getName();
-    mysql.saveClientInsertProcess(clientName, operation, "FAILED", loopIndex, elapseTime, 0, 0,
-            0, failPointNum, remark);
+    mysql.saveClientMeasurement(
+        clientName, operation, "FAILED", loopIndex, elapseTime, 0, 0, 0, failPointNum, remark);
   }
 
   public void save() {
@@ -161,16 +160,16 @@ public class Measurement {
         accRate = okPointNumMap.get(operation) * 1000 / accTime;
       }
 
-      mysql.saveCompleteMeasurement(operation.getName(),
-              Metric.AVG_LATENCY.getTypeValueMap().get(operation),
-              Metric.P99_LATENCY.getTypeValueMap().get(operation),
-              Metric.MEDIAN_LATENCY.getTypeValueMap().get(operation),
-              accTime,
-              accRate,
-              okPointNumMap.get(operation),
-              failPointNumMap.get(operation),
-              remark
-              );
+      mysql.saveOverallMeasurement(
+          operation.getName(),
+          Metric.AVG_LATENCY.getTypeValueMap().get(operation),
+          Metric.P99_LATENCY.getTypeValueMap().get(operation),
+          Metric.MEDIAN_LATENCY.getTypeValueMap().get(operation),
+          accTime,
+          accRate,
+          okPointNumMap.get(operation),
+          failPointNumMap.get(operation),
+          remark);
       try {
         Thread.sleep(10);
       } catch (InterruptedException e) {
@@ -187,8 +186,7 @@ public class Measurement {
     this.remark = remark;
   }
 
-  public void setOperationLatencies(
-      Map<Operation, List<Double>> operationLatencies) {
+  public void setOperationLatencies(Map<Operation, List<Double>> operationLatencies) {
     this.operationLatencies = operationLatencies;
   }
 
@@ -217,10 +215,10 @@ public class Measurement {
     for (Operation operation : Operation.values()) {
       operationLatencies.get(operation).addAll(m.getOperationLatencies().get(operation));
       getOperationLatencySumsList.get(operation).add(m.getOperationLatencySums().get(operation));
-      okOperationNumMap
-          .put(operation, okOperationNumMap.get(operation) + m.getOkOperationNum(operation));
-      failOperationNumMap
-          .put(operation, failOperationNumMap.get(operation) + m.getFailOperationNum(operation));
+      okOperationNumMap.put(
+          operation, okOperationNumMap.get(operation) + m.getOkOperationNum(operation));
+      failOperationNumMap.put(
+          operation, failOperationNumMap.get(operation) + m.getFailOperationNum(operation));
       okPointNumMap.put(operation, okPointNumMap.get(operation) + m.getOkPointNum(operation));
       failPointNumMap.put(operation, failPointNumMap.get(operation) + m.getFailPointNum(operation));
     }
@@ -245,24 +243,32 @@ public class Measurement {
         latencyList.sort(new DoubleComparator());
         Metric.MIN_LATENCY.getTypeValueMap().put(operation, latencyList.get(0));
         Metric.MAX_LATENCY.getTypeValueMap().put(operation, latencyList.get(totalOps - 1));
-        Metric.P10_LATENCY.getTypeValueMap()
+        Metric.P10_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.10)));
-        Metric.P25_LATENCY.getTypeValueMap()
+        Metric.P25_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.25)));
-        Metric.MEDIAN_LATENCY.getTypeValueMap()
+        Metric.MEDIAN_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.50)));
-        Metric.P75_LATENCY.getTypeValueMap()
+        Metric.P75_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.75)));
-        Metric.P90_LATENCY.getTypeValueMap()
+        Metric.P90_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.90)));
-        Metric.P95_LATENCY.getTypeValueMap()
+        Metric.P95_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.95)));
-        Metric.P99_LATENCY.getTypeValueMap()
+        Metric.P99_LATENCY
+            .getTypeValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.99)));
         double midAvgLatency = 0;
         double midSum = 0;
         int midCount = 0;
-        for (int i = (int) (totalOps * MID_AVG_RANGE[0]); i < (int) (totalOps * MID_AVG_RANGE[1]);
+        for (int i = (int) (totalOps * MID_AVG_RANGE[0]);
+            i < (int) (totalOps * MID_AVG_RANGE[1]);
             i++) {
           midSum += latencyList.get(i);
           midCount++;
@@ -270,8 +276,8 @@ public class Measurement {
         if (midCount != 0) {
           midAvgLatency = midSum / midCount;
         } else {
-          LOGGER
-              .error("Can not calculate mid-average latency because mid-operation number is zero.");
+          LOGGER.error(
+              "Can not calculate mid-average latency because mid-operation number is zero.");
         }
         Metric.MID_AVG_LATENCY.getTypeValueMap().put(operation, midAvgLatency);
       }
@@ -306,7 +312,6 @@ public class Measurement {
       String time = String.format("%.2f", accTime);
       System.out.print(time + intervalString);
       System.out.println(rate + intervalString);
-
     }
     System.out.println(
         "-----------------------------------------------------------------------------------------------------------------");
@@ -324,7 +329,6 @@ public class Measurement {
     System.out.println("SENSOR_NUMBER: " + config.SENSORS_NUMBER);
     System.out.println("BATCH_SIZE: " + config.BATCH_SIZE);
     System.out.println("LOOP: " + config.LOOP);
-    System.out.println("POINT_STEP: "+ config.POINT_STEP);
     System.out.println("QUERY_INTERVAL: " + config.QUERY_INTERVAL);
     System.out.println("IS_OVERFLOW: " + config.USE_OVERFLOW);
     System.out.println("OVERFLOW_MODE: " + config.OVERFLOW_MODE);
@@ -344,8 +348,8 @@ public class Measurement {
     for (Operation operation : Operation.values()) {
       System.out.print(operation.getName() + intervalString);
       for (Metric metric : Metric.values()) {
-        System.out
-            .print(String.format("%.2f", metric.typeValueMap.get(operation)) + intervalString);
+        System.out.print(
+            String.format("%.2f", metric.typeValueMap.get(operation)) + intervalString);
       }
       System.out.println();
     }
@@ -416,7 +420,5 @@ public class Measurement {
         typeValueMap.put(operation, 0D);
       }
     }
-
   }
-
 }

@@ -5,7 +5,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -232,7 +232,7 @@ public class SqlBuilder {
     }
 
     public SqlBuilder groupBy(long time) {
-        throw new NotImplementedException();
+        throw new NotImplementedException("");
     }
 
     public String build() {

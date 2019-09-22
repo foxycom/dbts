@@ -26,7 +26,6 @@ public class DBWrapper implements IDatabase {
   private Measurement measurement;
   private static final String ERROR_LOG = "Failed to do {} because unexpected exception: ";
 
-
   public DBWrapper(Measurement measurement) {
     DBFactory dbFactory = new DBFactory();
     try {
@@ -48,9 +47,15 @@ public class DBWrapper implements IDatabase {
         measureOperation(status, operation, batch.pointNum());
         String currentThread = Thread.currentThread().getName();
         double throughput = batch.pointNum() / (timeInMillis / Constants.MILLIS_TO_SECONDS);
-        String log = String.format(Locale.US, "%s INSERT ONE batch latency (DEVICE: %s, GROUP: %s), %.2f ms, THROUGHPUT: %.2f points/s",
-                currentThread, batch.getBike().getName(),
-                batch.getBike().getGroup(), timeInMillis, throughput);
+        String log =
+            String.format(
+                Locale.US,
+                "%s INSERT ONE batch latency (DEVICE: %s, GROUP: %s), %.2f ms, THROUGHPUT: %.2f points/s",
+                currentThread,
+                batch.getBike().getName(),
+                batch.getBike().getGroup(),
+                timeInMillis,
+                throughput);
         LOGGER.info(log);
       } else {
         measurement.addFailOperation(operation, batch.pointNum());
@@ -252,15 +257,18 @@ public class DBWrapper implements IDatabase {
     measurement.addOkOperation(operation, status.getCostTime() / NANO_TO_MILLIS, okPointNum);
   }
 
-  private void handleQueryOperation(Status status, Operation operation){
+  private void handleQueryOperation(Status status, Operation operation) {
     if (status.isOk()) {
       measureOperation(status, operation, status.getQueryResultPointNum());
       double timeInMillis = status.getCostTime() / NANO_TO_MILLIS;
       String formatTimeInMillis = String.format("%.2f", timeInMillis);
       String currentThread = Thread.currentThread().getName();
-      LOGGER
-          .info("{} complete {} with latency: {} ms, {} result points", currentThread, operation,
-              formatTimeInMillis, status.getQueryResultPointNum());
+      LOGGER.info(
+          "{} complete {} with latency: {} ms, {} result points",
+          currentThread,
+          operation,
+          formatTimeInMillis,
+          status.getQueryResultPointNum());
     } else {
       LOGGER.error("Execution fail: {}", status.getErrorMessage(), status.getException());
       measurement.addFailOperation(operation);
@@ -268,5 +276,4 @@ public class DBWrapper implements IDatabase {
       measurement.addOkPointNum(operation, status.getQueryResultPointNum());
     }
   }
-
 }

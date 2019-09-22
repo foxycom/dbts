@@ -11,16 +11,14 @@ import org.slf4j.LoggerFactory;
 public class OperationController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OperationController.class);
-    private static Config config = ConfigParser.INSTANCE.config();
+  private static Config config = ConfigParser.INSTANCE.config();
   private Random random;
 
   OperationController(int seed) {
     random = new Random(seed);
   }
 
-  /**
-   * @return Operation the next operation for client to execute
-   */
+  /** @return Operation the next operation for client to execute */
   Operation getNextOperationType() {
     List<Double> proportion = resolveOperationProportion();
     double[] p = new double[Operation.values().length + 1];

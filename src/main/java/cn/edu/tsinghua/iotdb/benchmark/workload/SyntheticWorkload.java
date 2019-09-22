@@ -16,6 +16,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,83 +32,87 @@ public class SyntheticWorkload implements IWorkload {
   private long maxTimestampIndex;
   private Random poissonRandom;
   private Random queryDeviceRandom;
-  private Random querySensorGroupRandom;
   private Map<Operation, Long> operationLoops;
-  private static Random random = new Random();
 
+  /**
+   * Creates an instance of synthetic workload generator.
+   *
+   * @param clientId ID of the thread which uses this generator.
+   */
   public SyntheticWorkload(int clientId) {
     probTool = new ProbTool();
     maxTimestampIndex = 0;
 
     poissonRandom = new Random(config.DATA_SEED);
     queryDeviceRandom = new Random(config.QUERY_SEED + clientId);
-    querySensorGroupRandom = new Random(config.QUERY_SEED);
     operationLoops = new EnumMap<>(Operation.class);
     for (Operation operation : Operation.values()) {
       operationLoops.put(operation, 0L);
     }
   }
 
+  /**
+   * Returns the timestamp for the given step relative to the configured start timestamp.
+   *
+   * @param stepOffset Step number.
+   * @return Timestamp for the given <code>stepOffset</code>.
+   */
   private static long getCurrentTimestamp(long stepOffset) {
-    long timeStampOffset = config.POINT_STEP * stepOffset;
-    if (config.USE_OVERFLOW) {
-      timeStampOffset += random.nextDouble() * config.POINT_STEP;
-    }
-    long currentTimestamp = Constants.START_TIMESTAMP + timeStampOffset;
+    long currentTimestamp = Constants.START_TIMESTAMP + stepOffset;
     if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
-      currentTimestamp += (long) (config.POINT_STEP * timestampRandom.nextDouble());
+      currentTimestamp += (long) timestampRandom.nextDouble();
     }
     return currentTimestamp;
   }
 
+  /**
+   * Generates a batch with entries being chronologically ordered.
+   *
+   * @param bike ID of the bike which the batch is generated for.
+   * @param loopIndex Index of the current loop.
+   * @return An chronologically ordered batch.
+   */
   private Batch getOrderedBatch(Bike bike, long loopIndex) {
-    Batch batch = new Batch();
+    Batch batch = new Batch(bike);
     batch.setTimeRange(config.loopTimeRange());
     for (Sensor sensor : bike.getSensors()) {
       addSensorData(sensor, batch, loopIndex);
     }
-    batch.setBike(bike);
     return batch;
   }
 
+  /**
+   * Generates of batch with entries being chronologically mixed up.
+   *
+   * <p>TODO: implement different sampling frequencies.
+   *
+   * @param bike ID of the bike which the batch is generated for.
+   * @return A chronologically mixed up batch.
+   */
   private Batch getDistOutOfOrderBatch(Bike bike) {
-    Batch batch = new Batch();
+    Batch batch = new Batch(bike);
     PossionDistribution possionDistribution = new PossionDistribution(poissonRandom);
     int nextDelta;
     long stepOffset;
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
       if (probTool.returnTrueByProb(config.OVERFLOW_RATIO, poissonRandom)) {
-        // generate overflow timestamp
+        // Generates overflow timestamp.
         nextDelta = possionDistribution.getNextPossionDelta();
         stepOffset = maxTimestampIndex - nextDelta;
       } else {
-        // generate normal increasing timestamp
+        // Generates normal increasing timestamp.
         maxTimestampIndex++;
         stepOffset = maxTimestampIndex;
       }
-      addOneRowIntoBatch(bike, batch, stepOffset);
+      // addOneRowIntoBatch(bike, batch, stepOffset);
     }
     batch.setBike(bike);
     return batch;
   }
 
-  static void addOneRowIntoBatch(Bike bike, Batch batch, long stepOffset) {
-    List<String> values = new ArrayList<>();
-    long currentTimestamp;
-    currentTimestamp = getCurrentTimestamp(stepOffset);
-    for (Sensor sensor : bike.getSensors()) {
-
-      // Different sensors may collect data with different frequencies
-      if (sensor.hasValue(currentTimestamp)) {
-        String value = sensor.getValue(currentTimestamp, config.DB_SWITCH);
-        values.add(value);
-      }
-    }
-    batch.add(currentTimestamp, values);
-  }
-
   /**
    * TODO assumption that GPS sensor is always slower than the fastest sensor
+   *
    * @param sensor
    * @param batch
    * @param loopIndex
@@ -123,7 +128,7 @@ public class SyntheticWorkload implements IWorkload {
     Integer valNum = Math.toIntExact(valuesNum);
     Point[] values = new Point[valNum];
     for (int i = 0; i < valuesNum; i++) {
-      long stepOffset = loopIndex * valuesNum + i;    // point step
+      long stepOffset = loopIndex * valuesNum + i; // point step
       long timestamp;
       if (sensor instanceof GpsSensor) {
         timestamp = minIntervalSensor.getTimestamp(stepOffset);
@@ -156,7 +161,9 @@ public class SyntheticWorkload implements IWorkload {
       Batch batch = getOrderedBatch(bike, loopIndex);
       long en = System.nanoTime();
       double time = (en - st) / Constants.NANO_TO_SECONDS;
-      LOGGER.info(String.format(Locale.US, "Generated one batch of size %d in %.3f s", batch.pointNum(), time));
+      LOGGER.info(
+          String.format(
+              Locale.US, "Generated one batch of size %d in %.3f s", batch.pointNum(), time));
       return batch;
     } else {
       Batch batch;
@@ -168,8 +175,9 @@ public class SyntheticWorkload implements IWorkload {
           batch = getGlobalOutOfOrderBatch();
           break;
         case 2:
-          batch = getDistOutOfOrderBatch(bike);
-          break;
+          /*batch = getDistOutOfOrderBatch(bike);*/
+          throw new NotImplementedException(
+              "distOutOfOrderBatch is not implemented in the moment.");
         default:
           throw new WorkloadException("Unsupported overflow mode: " + config.OVERFLOW_MODE);
       }
@@ -200,27 +208,51 @@ public class SyntheticWorkload implements IWorkload {
     return queryDevices;
   }
 
+  /**
+   * Checks if the configured number of devices and sensors per query is valid.
+   *
+   * @throws WorkloadException if number of query devices and/or sensors is configured invalidly.
+   */
   private void checkQuerySchemaParams() throws WorkloadException {
     if (!(config.QUERY_DEVICE_NUM > 0 && config.QUERY_DEVICE_NUM <= config.DEVICES_NUMBER)) {
-      throw new WorkloadException("QUERY_DEVICE_NUM is not correct, please check.");
+      throw new WorkloadException(
+          "The number of devices per query should be smaller than the overall devices number.");
     }
     if (!(config.QUERY_SENSOR_NUM > 0 && config.QUERY_SENSOR_NUM <= config.SENSORS_NUMBER)) {
-      throw new WorkloadException("QUERY_SENSOR_NUM is not correct, please check.");
+      throw new WorkloadException(
+          "The number of sensors per query should be smaller than the overall sensors number.");
     }
   }
 
+  /**
+   * Generates the left temporal boundary of a time range for a query.
+   *
+   * @return The left temporal boundary.
+   */
   private long getQueryStartTimestamp() {
     long currentQueryLoop = operationLoops.get(Operation.PRECISE_POINT);
-    long timestampOffset = currentQueryLoop * config.STEP_SIZE * config.POINT_STEP;
+    long timestampOffset = currentQueryLoop * config.STEP_SIZE;
     operationLoops.put(Operation.PRECISE_POINT, currentQueryLoop + 1);
     return Constants.START_TIMESTAMP + timestampOffset;
   }
 
+  /**
+   * Generates a random geospatial location.
+   *
+   * @return Random location.
+   */
   private GeoPoint getRandomLocation() {
     GeoFunction function = new GeoFunction(1234);
     return function.get(Constants.SPAWN_POINT);
   }
 
+  /**
+   * Generates query parameters.
+   *
+   * @param sensorType The type of sensor to the use in queries, e.g., humidity.
+   * @return Query parameters object.
+   * @throws WorkloadException if the configuration is defined invalidly.
+   */
   public Query getQuery(String sensorType) throws WorkloadException {
     List<Bike> bikes = getQueryBikesList();
     Sensor sensor = Sensors.ofType(sensorType);
@@ -229,10 +261,16 @@ public class SyntheticWorkload implements IWorkload {
     long endTimestamp = startTimestamp + config.QUERY_INTERVAL;
     GeoPoint randomLocation = getRandomLocation();
     Query query = new Query();
-    query = query.setSensor(sensor).setGpsSensor(gpsSensor).setBikes(bikes).setStartTimestamp(startTimestamp)
-            .setEndTimestamp(endTimestamp).setAggrFunc(config.QUERY_AGGREGATE_FUN)
-            .setThreshold(config.QUERY_LOWER_LIMIT).setLocation(randomLocation);
+    query =
+        query
+            .setSensor(sensor)
+            .setGpsSensor(gpsSensor)
+            .setBikes(bikes)
+            .setStartTimestamp(startTimestamp)
+            .setEndTimestamp(endTimestamp)
+            .setAggrFunc(config.QUERY_AGGREGATE_FUN)
+            .setThreshold(config.QUERY_LOWER_LIMIT)
+            .setLocation(randomLocation);
     return query;
   }
-
 }

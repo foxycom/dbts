@@ -7,7 +7,6 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.clickhouse.Clickhouse;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.cratedb.CrateDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.griddb.GridDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.influxdb.InfluxDB;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.kairosdb.KairosDB;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.memsql.MemSQL;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
 import java.sql.SQLException;
@@ -17,6 +16,7 @@ import cn.edu.tsinghua.iotdb.benchmark.tsdb.warp10.Warp10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** */
 public class DBFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DBFactory.class);
@@ -27,8 +27,6 @@ public class DBFactory {
     switch (config.DB_SWITCH) {
       case INFLUXDB:
         return new InfluxDB();
-      case KAIROSDB:
-        return new KairosDB();
       case TIMESCALEDB_NARROW:
         return new TimescaleDB(TimescaleDB.TableMode.NARROW_TABLE);
       case TIMESCALEDB_WIDE:
@@ -52,5 +50,4 @@ public class DBFactory {
         throw new SQLException("unsupported database " + config.DB_SWITCH);
     }
   }
-
 }

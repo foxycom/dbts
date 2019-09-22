@@ -8,19 +8,19 @@
         <name>test</name>
         <host>127.0.0.1</host>
         <port>5432</port>
-        <erase wait="5000">false</erase>
-        <createSchema>false</createSchema>
+        <erase wait="5000">true</erase>
+        <createSchema>true</createSchema>
     </db>
-    <mode>test_with_default_path</mode>
+    <mode>synthetic_benchmark</mode>
     <mysqlLog active="false" remark="INGEST">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">500</devices>
+    <devices prefix="d_">4</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>0:0:0:1:0:0:0:0:0:0:0</operationsProportion>
+    <operationsProportion>1:0:0:0:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -109,7 +109,6 @@
 
     <batch size="10000"/>
     <loops>1</loops>
-    <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
     <serverMonitor active="false">

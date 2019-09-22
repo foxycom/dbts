@@ -45,7 +45,8 @@ public class Bike {
   }
 
   private void createEvenlyAllocBikeSchema() {
-    int thisDeviceGroupIndex = calGroupId(bikeId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
+    int thisDeviceGroupIndex =
+        calGroupId(bikeId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
     group = GROUP_NAME_PREFIX + thisDeviceGroupIndex;
     setSensors(config.SENSORS);
   }

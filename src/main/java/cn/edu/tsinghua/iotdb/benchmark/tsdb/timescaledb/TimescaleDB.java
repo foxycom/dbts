@@ -19,7 +19,6 @@ import java.util.*;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
-import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +36,12 @@ public class TimescaleDB implements IDatabase {
   private SqlBuilder sqlBuilder;
   private TableMode dataModel;
 
-  public enum  TableMode {
+  public enum TableMode {
     NARROW_TABLE,
     WIDE_TABLE
   }
 
-  /**
-   * Initializes an instance of the database controller.
-   */
+  /** Initializes an instance of the database controller. */
   public TimescaleDB(TableMode mode) {
     dataModel = mode;
     sqlBuilder = new SqlBuilder();
@@ -61,11 +58,11 @@ public class TimescaleDB implements IDatabase {
   public void init() throws TsdbException {
     try {
       Class.forName(Constants.POSTGRESQL_JDBC_NAME);
-      connection = DriverManager.getConnection(
-          String.format(Constants.POSTGRESQL_URL, config.HOST, config.PORT, config.DB_NAME),
-          Constants.POSTGRESQL_USER,
-          Constants.POSTGRESQL_PASSWD
-      );
+      connection =
+          DriverManager.getConnection(
+              String.format(Constants.POSTGRESQL_URL, config.HOST, config.PORT, config.DB_NAME),
+              Constants.POSTGRESQL_USER,
+              Constants.POSTGRESQL_PASSWD);
     } catch (Exception e) {
       LOGGER.error("Initialization of TimescaleDB failed because ", e);
       throw new TsdbException(e);
@@ -98,7 +95,7 @@ public class TimescaleDB implements IDatabase {
    */
   @Override
   public void cleanup() throws TsdbException {
-    //delete old data
+    // delete old data
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
 
@@ -106,8 +103,9 @@ public class TimescaleDB implements IDatabase {
       statement.addBatch(dropBikeSql);
 
       if (dataModel == TableMode.NARROW_TABLE) {
-        String findSensorTablesSql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and " +
-                "tablename LIKE '%benchmark'";
+        String findSensorTablesSql =
+            "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' and "
+                + "tablename LIKE '%benchmark'";
         try (ResultSet rs = statement.executeQuery(findSensorTablesSql)) {
 
           while (rs.next()) {
@@ -159,20 +157,26 @@ public class TimescaleDB implements IDatabase {
 
   /**
    * Maps the data schema concepts:
+   *
    * <ul>
-   * <li>Sensor group name -> table name</li>
-   * <li>Bike name -> a field in table</li>
-   * <li>Sensor name -> a field in table</li>
-   * <li>Value(s) -> fields in table</li>
+   *   <li>Sensor group name -> table name
+   *   <li>Bike name -> a field in table
+   *   <li>Sensor name -> a field in table
+   *   <li>Value(s) -> fields in table
    * </ul>
-   * <p> Reference link: https://docs.timescale.com/v1.0/getting-started/creating-hypertables</p>
-   * -- We start by creating a regular PG table:
+   *
+   * <p>Reference link: https://docs.timescale.com/v1.0/getting-started/creating-hypertables -- We
+   * start by creating a regular PG table:
+   *
    * <p><code>
    * CREATE TABLE gps_benchmark (time TIMESTAMPTZ NOT NULL, bike_id VARCHAR(20) NOT NULL,
    *    sensor_id VARCHAR(20) NOT NULL, value REAL NULL);
-   * </code></p>
-   * -- This creates a hypertable that is partitioned by time using the values in the `time` column.
-   * <p><code>SELECT create_hypertable('gps_benchmark', 'time', chunk_time_interval => interval '1 h');</code></p>
+   * </code> -- This creates a hypertable that is partitioned by time using the values in the `time`
+   * column.
+   *
+   * <p><code>
+   * SELECT create_hypertable('gps_benchmark', 'time', chunk_time_interval => interval '1 h');
+   * </code>
    */
   @Override
   public void registerSchema(List<Bike> schemaList) throws TsdbException {
@@ -193,12 +197,12 @@ public class TimescaleDB implements IDatabase {
           statement.addBatch(createTableSql);
         }
 
-
         statement.executeBatch();
         connection.commit();
 
         for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
-          String convertToHyperTableSql = String.format(CONVERT_TO_HYPERTABLE, sensorGroup.getTableName());
+          String convertToHyperTableSql =
+              String.format(CONVERT_TO_HYPERTABLE, sensorGroup.getTableName());
           statement.execute(convertToHyperTableSql);
         }
       } else if (dataModel == TableMode.WIDE_TABLE) {
@@ -228,7 +232,8 @@ public class TimescaleDB implements IDatabase {
   public float getSize() throws TsdbException {
     float resultInGB = 0.0f;
     try (Statement statement = connection.createStatement()) {
-      String selectSizeSql = String.format("SELECT pg_database_size('%s') as db_size;", config.DB_NAME);
+      String selectSizeSql =
+          String.format("SELECT pg_database_size('%s') as db_size;", config.DB_NAME);
       ResultSet rs = statement.executeQuery(selectSizeSql);
       if (rs.next()) {
         long resultInB = rs.getLong("db_size");
@@ -250,13 +255,16 @@ public class TimescaleDB implements IDatabase {
       connection.setAutoCommit(false);
       if (dataModel == TableMode.NARROW_TABLE) {
         for (SensorGroup sensorGroup : config.SENSOR_GROUPS) {
-          String createIndexOnBikeSql = "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, time DESC);";
-          String createIndexOnBikeAndSensorSql = "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, sensor_id, time DESC)";
+          String createIndexOnBikeSql =
+              "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, time DESC);";
+          String createIndexOnBikeAndSensorSql =
+              "CREATE INDEX ON " + sensorGroup.getTableName() + " (bike_id, sensor_id, time DESC)";
           statement.addBatch(createIndexOnBikeSql);
           statement.addBatch(createIndexOnBikeAndSensorSql);
 
           SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
-          String createGeoIndexSql = "CREATE INDEX ON " + gpsSensorGroup.getTableName() + " USING GIST (value)";
+          String createGeoIndexSql =
+              "CREATE INDEX ON " + gpsSensorGroup.getTableName() + " USING GIST (value)";
           statement.addBatch(createGeoIndexSql);
         }
       } else if (dataModel == TableMode.WIDE_TABLE) {
@@ -265,7 +273,8 @@ public class TimescaleDB implements IDatabase {
 
         SensorGroup gpsSensorGroup = Sensors.groupOfType("gps");
         for (Sensor sensor : gpsSensorGroup.getSensors()) {
-          String createGeoIndexSql = "CREATE INDEX ON " + tableName + " USING GIST (" + sensor.getName() + ");";
+          String createGeoIndexSql =
+              "CREATE INDEX ON " + tableName + " USING GIST (" + sensor.getName() + ");";
           statement.addBatch(createGeoIndexSql);
         }
       }
@@ -278,8 +287,8 @@ public class TimescaleDB implements IDatabase {
   }
 
   /**
-   * Writes the given batch of data points into the database and measures the time the database takes to store the
-   * points.
+   * Writes the given batch of data points into the database and measures the time the database
+   * takes to store the points.
    *
    * @param batch The batch of data points.
    * @return The status of the execution.
@@ -313,15 +322,15 @@ public class TimescaleDB implements IDatabase {
   /**
    * Selects data points, which are stored with a given timestamp.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  SELECT value, time, bike_id FROM emg_benchmark WHERE (bike_id = 'bike_10') AND (time = '2018-08-29 18:00:00.0');
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') AND (time = '2018-08-29 18:00:00.0');
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters object.
    * @return The status of the execution.
@@ -332,14 +341,30 @@ public class TimescaleDB implements IDatabase {
     long timestamp = query.getStartTimestamp();
     if (dataModel == TableMode.NARROW_TABLE) {
       List<String> columns = new ArrayList<>(sensor.getFields());
-      columns.addAll(Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
-      sqlBuilder = sqlBuilder.reset().select(columns).from(sensor.getTableName())
-              .where().bikes(query.getBikes()).and().time(timestamp);
+      columns.addAll(
+          Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
+      sqlBuilder =
+          sqlBuilder
+              .reset()
+              .select(columns)
+              .from(sensor.getTableName())
+              .where()
+              .bikes(query.getBikes())
+              .and()
+              .time(timestamp);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      List<String> columns = Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(),
-              sensor.getName());
-      sqlBuilder = sqlBuilder.reset().select(columns).from(tableName).where().bikes(query.getBikes())
-              .and().time(timestamp);
+      List<String> columns =
+          Arrays.asList(
+              SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(), sensor.getName());
+      sqlBuilder =
+          sqlBuilder
+              .reset()
+              .select(columns)
+              .from(tableName)
+              .where()
+              .bikes(query.getBikes())
+              .and()
+              .time(timestamp);
     }
     return executeQuery(sqlBuilder.build());
   }
@@ -347,18 +372,18 @@ public class TimescaleDB implements IDatabase {
   /**
    * Selects the last known GPS position of bikes.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  SELECT value, bike_id, time, sensor_id FROM gps_benchmark WHERE (bike_id = 'bike_5') ORDER BY time DESC LIMIT 1;
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  select data.time, data.bike_id, b.owner_name, data.s_12 from bikes b inner join lateral (
    * 	select * from test t where t.bike_id = b.bike_id and s_12 is not null
    * 	order by time desc limit 1
    *  ) as data on true;
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters query.
    * @return The status of the execution.
@@ -370,24 +395,28 @@ public class TimescaleDB implements IDatabase {
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
       List<String> columns = new ArrayList<>(sensor.getFields());
-      columns.addAll(Arrays.asList(SqlBuilder.Column.BIKE.getName(), SqlBuilder.Column.TIME.getName(),
+      columns.addAll(
+          Arrays.asList(
+              SqlBuilder.Column.BIKE.getName(),
+              SqlBuilder.Column.TIME.getName(),
               SqlBuilder.Column.SENSOR.getName()));
-      sqlBuilder = sqlBuilder.reset().select(columns).from(sensor.getTableName()).where()
+      sqlBuilder =
+          sqlBuilder
+              .reset()
+              .select(columns)
+              .from(sensor.getTableName())
+              .where()
               .bikes(query.getBikes())
-              .orderBy(SqlBuilder.Column.TIME.getName(), SqlBuilder.Order.DESC).limit(1);
+              .orderBy(SqlBuilder.Column.TIME.getName(), SqlBuilder.Order.DESC)
+              .limit(1);
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT data.time, data.bike_id, b.owner_name, data.%s FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT * FROM %s t WHERE t.bike_id = b.bike_id\n" +
-              "\tORDER BY time DESC LIMIT 1\n" +
-              ") AS data ON true;";
-      sql = String.format(
-              Locale.US,
-              sql,
-              gpsSensor.getName(),
-              tableName,
-              gpsSensor.getName()
-      );
+      sql =
+          "SELECT data.time, data.bike_id, b.owner_name, data.%s FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT * FROM %s t WHERE t.bike_id = b.bike_id\n"
+              + "\tORDER BY time DESC LIMIT 1\n"
+              + ") AS data ON true;";
+      sql = String.format(Locale.US, sql, gpsSensor.getName(), tableName, gpsSensor.getName());
     }
 
     return executeQuery(sql);
@@ -396,13 +425,13 @@ public class TimescaleDB implements IDatabase {
   /**
    * Performs a scan of gps data points in a given time range for specified number of bikes.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  SELECT time, bike_id, value FROM gps_benchmark WHERE (bike_id = 'bike_10') AND (time >= '2018-08-29 18:00:00.0'
    *  AND time <= '2018-08-29 19:00:00.0');
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
    * 	SELECT s_12 AS location, bike_id FROM test t
@@ -411,7 +440,7 @@ public class TimescaleDB implements IDatabase {
    * 	AND time >= '2018-08-30 02:00:00.0'
    * 	AND time <= '2018-08-30 03:00:00.0'
    *  ) AS data ON true;
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters object.
    * @return The status of the execution.
@@ -422,30 +451,35 @@ public class TimescaleDB implements IDatabase {
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
     Sensor gpsSensor = query.getGpsSensor();
     Bike bike = query.getBikes().get(0);
-    List<String> columns = new ArrayList<>(Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
+    List<String> columns =
+        new ArrayList<>(
+            Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
       columns.addAll(gpsSensor.getFields());
 
-      sqlBuilder = sqlBuilder.reset().select(columns).from(gpsSensor.getTableName())
-              .where().bikes(query.getBikes()).and().time(query);
+      sqlBuilder =
+          sqlBuilder
+              .reset()
+              .select(columns)
+              .from(gpsSensor.getTableName())
+              .where()
+              .bikes(query.getBikes())
+              .and()
+              .time(query);
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT %s AS location, bike_id FROM test t\n" +
-              "\tWHERE t.bike_id = b.bike_id \n" +
-              "\tAND bike_id = '%s' \n" +
-              "\tAND time >= '%s' \n" +
-              "\tAND time <= '%s'\n" +
-              ") AS data ON true;";
-      sql = String.format(
-              Locale.US,
-              sql,
-              gpsSensor.getName(),
-              bike.getName(),
-              startTimestamp,
-              endTimestamp
-      );
+      sql =
+          "SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT %s AS location, bike_id FROM test t\n"
+              + "\tWHERE t.bike_id = b.bike_id \n"
+              + "\tAND bike_id = '%s' \n"
+              + "\tAND time >= '%s' \n"
+              + "\tAND time <= '%s'\n"
+              + ") AS data ON true;";
+      sql =
+          String.format(
+              Locale.US, sql, gpsSensor.getName(), bike.getName(), startTimestamp, endTimestamp);
     }
     return executeQuery(sql);
   }
@@ -453,7 +487,8 @@ public class TimescaleDB implements IDatabase {
   /**
    * Identifies active trips, when current value is above a threshold.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  WITH trip (second, current_value) AS (
    *   SELECT time_bucket('1 second', time) AS second, value(AVG)
@@ -461,9 +496,8 @@ public class TimescaleDB implements IDatabase {
    *   GROUP BY second HAVING AVG(value) > 3.000000
    *  ) SELECT g.time, t.current_value, g.value as location FROM gps_benchmark g INNER JOIN trip t ON g.time = t.second
    *  WHERE g.bike_id = 'bike_0';
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (
    * 	SELECT time_bucket(interval '1 s', time) AS second, bike_id, s_12
@@ -476,7 +510,7 @@ public class TimescaleDB implements IDatabase {
    * 	HAVING AVG(s_17) >= 3.000000
    *  ) AS data ON true
    *  ORDER BY data.second ASC, data.bike_id;
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters object.
    * @return The status of the execution.
@@ -493,27 +527,49 @@ public class TimescaleDB implements IDatabase {
     Sensor gpsSensor = query.getGpsSensor();
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql = "WITH trip (second, current_value) AS (SELECT time_bucket('1 second', %s) AS second, %s(%s)"
+      sql =
+          "WITH trip (second, current_value) AS (SELECT time_bucket('1 second', %s) AS second, %s(%s)"
               + " FROM %s WHERE %s = '%s' and %s > '%s' and %s < '%s' GROUP BY second HAVING %s(%s) > %f)"
               + " SELECT g.%s, t.current_value, g.%s as location FROM %s g INNER JOIN trip t "
               + "ON g.%s = t.second WHERE g.%s = '%s';";
-      sql = String.format(Locale.US, sql, timeColumn, config.QUERY_AGGREGATE_FUN.name(), valueColumn,
-              sensor.getTableName(), bikeColumn, bike.getName(), timeColumn, startTimestamp,
-              timeColumn, endTimestamp, config.QUERY_AGGREGATE_FUN, valueColumn, query.getThreshold(),
-              timeColumn, valueColumn, gpsSensor.getTableName(), timeColumn, bikeColumn, bike.getName());
+      sql =
+          String.format(
+              Locale.US,
+              sql,
+              timeColumn,
+              config.QUERY_AGGREGATE_FUN.name(),
+              valueColumn,
+              sensor.getTableName(),
+              bikeColumn,
+              bike.getName(),
+              timeColumn,
+              startTimestamp,
+              timeColumn,
+              endTimestamp,
+              config.QUERY_AGGREGATE_FUN,
+              valueColumn,
+              query.getThreshold(),
+              timeColumn,
+              valueColumn,
+              gpsSensor.getTableName(),
+              timeColumn,
+              bikeColumn,
+              bike.getName());
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT time_bucket(interval '1 s', time) AS second, bike_id, %s\n" +
-              "\tFROM test t \n" +
-              "\tWHERE t.bike_id = b.bike_id \n" +
-              "\tAND t.bike_id = '%s'\n" +
-              "\tAND time >= '%s' \n" +
-              "\tAND time < '%s'\n" +
-              "\tGROUP BY second, bike_id, %s\n" +
-              "\tHAVING AVG(%s) >= %f\n" +
-              ") AS data ON true\n" +
-              "ORDER BY data.second ASC, data.bike_id;";
-      sql = String.format(
+      sql =
+          "SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT time_bucket(interval '1 s', time) AS second, bike_id, %s\n"
+              + "\tFROM test t \n"
+              + "\tWHERE t.bike_id = b.bike_id \n"
+              + "\tAND t.bike_id = '%s'\n"
+              + "\tAND time >= '%s' \n"
+              + "\tAND time < '%s'\n"
+              + "\tGROUP BY second, bike_id, %s\n"
+              + "\tHAVING AVG(%s) >= %f\n"
+              + ") AS data ON true\n"
+              + "ORDER BY data.second ASC, data.bike_id;";
+      sql =
+          String.format(
               Locale.US,
               sql,
               gpsSensor.getName(),
@@ -522,18 +578,18 @@ public class TimescaleDB implements IDatabase {
               endTimestamp,
               gpsSensor.getName(),
               sensor.getName(),
-              query.getThreshold()
-      );
+              query.getThreshold());
     }
 
     return executeQuery(sql);
   }
 
   /**
-   * Computes the distance driven by a bike in the given time range identified by start and end timestamps where current
-   * exceeds some value.
+   * Computes the distance driven by a bike in the given time range identified by start and end
+   * timestamps where current exceeds some value.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  with trip_begin as (
    * 	select time_bucket(interval '1 s', time) as second, bike_id from emg_benchmark where value > 3.000000 and bike_id = 'bike_10' and time > '2018-08-29 18:00:00.0' and time < '2018-08-29 19:00:00.0'group by second, bike_id order by second asc limit 1
@@ -542,9 +598,8 @@ public class TimescaleDB implements IDatabase {
    *  )
    *  select st_length(st_makeline(g.value::geometry)::geography, false) from gps_benchmark g, trip_begin b, trip_end e where g.bike_id = 'bike_10'
    *  and g.time > b.second and g.time < e.second group by g.bike_id;
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(s_12::geometry)::geography, false)
    *  FROM bikes b INNER JOIN LATERAL (
@@ -553,7 +608,7 @@ public class TimescaleDB implements IDatabase {
    * 	GROUP BY second, s_12 HAVING AVG(s_17) > 3.000000
    *  ) AS data ON true
    *  GROUP BY b.bike_id, b.owner_name;
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters object.
    * @return The status of the execution.
@@ -570,28 +625,57 @@ public class TimescaleDB implements IDatabase {
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql = "with trip_begin as (\n" +
-              "\tselect time_bucket(interval '1 s', %s) as second, %s from %s where %s > %f and %s = '%s' and %s > '%s' and %s < '%s'group by second, %s order by second asc limit 1\n" +
-              "), trip_end as (\n" +
-              "\tselect time_bucket(interval '1 s', %s) as second, %s from %s where %s > %f and %s = '%s' and %s > '%s'and %s < '%s' group by second, %s order by second desc limit 1\n" +
-              ")\n" +
-              "select st_length(st_makeline(g.%s::geometry)::geography, false) from %s g, trip_begin b, trip_end e where g.%s = '%s'\n" +
-              "and g.time > b.second and g.time < e.second group by g.bike_id;";
-      sql = String.format(Locale.US, sql, timeColumn, bikeColumn, sensor.getTableName(), valueColumn,
-              query.getThreshold(), bikeColumn, bike.getName(), timeColumn, startTimestamp,
-              timeColumn, endTimestamp, bikeColumn, timeColumn, bikeColumn, sensor.getTableName(), valueColumn,
-              query.getThreshold(), bikeColumn, bike.getName(), timeColumn, startTimestamp,
-              timeColumn, endTimestamp, bikeColumn, valueColumn, sensor.getTableName(), bikeColumn,
+      sql =
+          "with trip_begin as (\n"
+              + "\tselect time_bucket(interval '1 s', %s) as second, %s from %s where %s > %f and %s = '%s' and %s > '%s' and %s < '%s'group by second, %s order by second asc limit 1\n"
+              + "), trip_end as (\n"
+              + "\tselect time_bucket(interval '1 s', %s) as second, %s from %s where %s > %f and %s = '%s' and %s > '%s'and %s < '%s' group by second, %s order by second desc limit 1\n"
+              + ")\n"
+              + "select st_length(st_makeline(g.%s::geometry)::geography, false) from %s g, trip_begin b, trip_end e where g.%s = '%s'\n"
+              + "and g.time > b.second and g.time < e.second group by g.bike_id;";
+      sql =
+          String.format(
+              Locale.US,
+              sql,
+              timeColumn,
+              bikeColumn,
+              sensor.getTableName(),
+              valueColumn,
+              query.getThreshold(),
+              bikeColumn,
+              bike.getName(),
+              timeColumn,
+              startTimestamp,
+              timeColumn,
+              endTimestamp,
+              bikeColumn,
+              timeColumn,
+              bikeColumn,
+              sensor.getTableName(),
+              valueColumn,
+              query.getThreshold(),
+              bikeColumn,
+              bike.getName(),
+              timeColumn,
+              startTimestamp,
+              timeColumn,
+              endTimestamp,
+              bikeColumn,
+              valueColumn,
+              sensor.getTableName(),
+              bikeColumn,
               bike.getName());
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(%s::geometry)::geography, false) \n" +
-              "FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT time_bucket(interval '1 s', time) AS second, %s FROM %s t \n" +
-              "\tWHERE t.bike_id = b.bike_id AND bike_id = '%s' AND time >= '%s' AND time <= '%s'\n" +
-              "\tGROUP BY second, %s HAVING AVG(%s) > %f\n" +
-              ") AS data ON true\n" +
-              "GROUP BY b.bike_id, b.owner_name;";
-      sql = String.format(
+      sql =
+          "SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(%s::geometry)::geography, false) \n"
+              + "FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT time_bucket(interval '1 s', time) AS second, %s FROM %s t \n"
+              + "\tWHERE t.bike_id = b.bike_id AND bike_id = '%s' AND time >= '%s' AND time <= '%s'\n"
+              + "\tGROUP BY second, %s HAVING AVG(%s) > %f\n"
+              + ") AS data ON true\n"
+              + "GROUP BY b.bike_id, b.owner_name;";
+      sql =
+          String.format(
               Locale.US,
               sql,
               gpsSensor.getName(),
@@ -602,19 +686,18 @@ public class TimescaleDB implements IDatabase {
               endTimestamp,
               gpsSensor.getName(),
               sensor.getName(),
-              query.getThreshold()
-      );
+              query.getThreshold());
     }
     return executeQuery(sql);
   }
 
   /**
-   *
-   * <p><code>
+   * <code>
    *  SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
    * 	SELECT DISTINCT(bike_id) FROM test t WHERE time > '2018-08-30 03:00:00.0'
    *  );
-   * </code></p>
+   * </code>
+   *
    * @param query
    * @return
    */
@@ -631,44 +714,63 @@ public class TimescaleDB implements IDatabase {
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql = "with trip as (\n" +
-              "\tselect time_bucket(interval '1 s', %s) as second, %s, avg(%s) as value from %s \n" +
-              "\twhere %s > %f and %s = '%s' \n" +
-              "\tgroup by second, %s\n" +
-              ") \n" +
-              "select time_bucket(interval '%d ms', g.%s) as half_minute, avg(t.%s), t.%s, st_makeline(g.%s::geometry) from %s g, trip t \n" +
-              "where g.%s = '%s' and g.%s = t.second and g.%s > '%s' and g.%s < '%s'\n" +
-              "group by half_minute, t.%s;";
-      sql = String.format(Locale.US, sql, timeColumn, bikeColumn, valueColumn, sensor.getTableName(),
-              valueColumn, config.QUERY_LOWER_LIMIT, bikeColumn, bike.getName(), bikeColumn, config.TIME_BUCKET,
-              timeColumn, valueColumn, bikeColumn, valueColumn, gpsSensor.getTableName(), bikeColumn,
-              bike.getName(), timeColumn, timeColumn, startTimestamp, timeColumn, endTimestamp, bikeColumn);
-    } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n" +
-              "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n" +
-              ");";
-      sql = String.format(
+      sql =
+          "with trip as (\n"
+              + "\tselect time_bucket(interval '1 s', %s) as second, %s, avg(%s) as value from %s \n"
+              + "\twhere %s > %f and %s = '%s' \n"
+              + "\tgroup by second, %s\n"
+              + ") \n"
+              + "select time_bucket(interval '%d ms', g.%s) as half_minute, avg(t.%s), t.%s, st_makeline(g.%s::geometry) from %s g, trip t \n"
+              + "where g.%s = '%s' and g.%s = t.second and g.%s > '%s' and g.%s < '%s'\n"
+              + "group by half_minute, t.%s;";
+      sql =
+          String.format(
               Locale.US,
               sql,
-              tableName,
-              endTimestamp
-      );
+              timeColumn,
+              bikeColumn,
+              valueColumn,
+              sensor.getTableName(),
+              valueColumn,
+              config.QUERY_LOWER_LIMIT,
+              bikeColumn,
+              bike.getName(),
+              bikeColumn,
+              config.TIME_BUCKET,
+              timeColumn,
+              valueColumn,
+              bikeColumn,
+              valueColumn,
+              gpsSensor.getTableName(),
+              bikeColumn,
+              bike.getName(),
+              timeColumn,
+              timeColumn,
+              startTimestamp,
+              timeColumn,
+              endTimestamp,
+              bikeColumn);
+    } else if (dataModel == TableMode.WIDE_TABLE) {
+      sql =
+          "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n"
+              + "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n"
+              + ");";
+      sql = String.format(Locale.US, sql, tableName, endTimestamp);
     }
     return executeQuery(sql);
   }
 
   /**
+   * TODO probably include also gps coordinates or path segment Scans metrics of a sensor in a
+   * specific time interval and selects those which have a certain value.
    *
-   * TODO probably include also gps coordinates or path segment
-   * Scans metrics of a sensor in a specific time interval and selects those which have a certain value.
+   * <p>NARROW_TABLE:
    *
-   * NARROW_TABLE:
    * <p><code>
    *  SELECT time, bike_id, value FROM emg_benchmark WHERE value > 3.0 AND (bike_id = 'bike_5')
    *  AND (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0');
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (
    * 	SELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t
@@ -680,7 +782,7 @@ public class TimescaleDB implements IDatabase {
    *  ) AS data
    *  ON true
    *  ORDER BY b.bike_id, data.minute DESC;
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters object.
    * @return The status of the execution.
@@ -688,50 +790,55 @@ public class TimescaleDB implements IDatabase {
   @Override
   public Status lastTimeActivelyDriven(Query query) {
     Sensor sensor = query.getSensor();
-    List<String> columns = new ArrayList<>(
-            Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName())
-    );
+    List<String> columns =
+        new ArrayList<>(
+            Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
       columns.addAll(sensor.getFields());
-      sqlBuilder = sqlBuilder.reset().select(columns).from(sensor.getTableName()).where()
-              .value(SqlBuilder.Op.GREATER, query.getThreshold()).and()
-              .bikes(query.getBikes()).and().time(query);
+      sqlBuilder =
+          sqlBuilder
+              .reset()
+              .select(columns)
+              .from(sensor.getTableName())
+              .where()
+              .value(SqlBuilder.Op.GREATER, query.getThreshold())
+              .and()
+              .bikes(query.getBikes())
+              .and()
+              .time(query);
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
       Timestamp timestamp = new Timestamp(query.getEndTimestamp());
-      sql = "SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t \n" +
-              "\tWHERE t.bike_id = b.bike_id AND time > '%s'\n" +
-              "\tAND %s IS NOT NULL\n" +
-              "\tGROUP BY minute, bike_id\n" +
-              "\tHAVING AVG(%s) > %f\n" +
-              "\tORDER BY minute DESC LIMIT 1\n" +
-              ") AS data \n" +
-              "ON true \n" +
-              "ORDER BY b.bike_id, data.minute DESC;";
-      sql = String.format(
-              Locale.US,
-              sql,
-              timestamp,
-              sensor.getName(),
-              sensor.getName(),
-              query.getThreshold()
-      );
+      sql =
+          "SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t \n"
+              + "\tWHERE t.bike_id = b.bike_id AND time > '%s'\n"
+              + "\tAND %s IS NOT NULL\n"
+              + "\tGROUP BY minute, bike_id\n"
+              + "\tHAVING AVG(%s) > %f\n"
+              + "\tORDER BY minute DESC LIMIT 1\n"
+              + ") AS data \n"
+              + "ON true \n"
+              + "ORDER BY b.bike_id, data.minute DESC;";
+      sql =
+          String.format(
+              Locale.US, sql, timestamp, sensor.getName(), sensor.getName(), query.getThreshold());
     }
     return executeQuery(sql);
   }
 
   /**
-   * Groups entries within a time range in time buckets and by bikes and aggregates values in each time bucket.
+   * Groups entries within a time range in time buckets and by bikes and aggregates values in each
+   * time bucket.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  SELECT time_bucket(interval '300000 ms', time) as time_bucket, AVG(value), bike_id FROM emg_benchmark
    *  WHERE (time >= '2018-08-29 18:00:00.0' AND time <= '2018-08-29 19:00:00.0') GROUP BY time_bucket, bike_id;
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (
    * 	SELECT time_bucket(interval '1 min', time) AS minute, AVG(s_27) AS value
@@ -742,7 +849,7 @@ public class TimescaleDB implements IDatabase {
    * 	GROUP BY minute
    *  ) AS data ON true
    *  ORDER BY data.minute ASC, b.bike_id;
-   * </code></p>
+   * </code>
    *
    * @param query The query parameters object.
    * @return The status of the execution.
@@ -756,39 +863,42 @@ public class TimescaleDB implements IDatabase {
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
       List<String> aggregatedColumns = new ArrayList<>(sensor.getFields());
-      List<String> plainColumns = new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
-      sqlBuilder = sqlBuilder.reset().select(aggregatedColumns, plainColumns, query.getAggrFunc(), config.TIME_BUCKET)
-              .from(sensor.getTableName()).where().time(query)
-              .groupBy(Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
+      List<String> plainColumns =
+          new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
+      sqlBuilder =
+          sqlBuilder
+              .reset()
+              .select(aggregatedColumns, plainColumns, query.getAggrFunc(), config.TIME_BUCKET)
+              .from(sensor.getTableName())
+              .where()
+              .time(query)
+              .groupBy(
+                  Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
       sql = sqlBuilder.build();
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT time_bucket(interval '1 min', time) AS minute, AVG(%s) AS value\n" +
-              "\tFROM test t WHERE t.bike_id = b.bike_id\n" +
-              "\tAND bike_id = '%s'\n" +
-              "\tAND time >= '%s'\n" +
-              "\tAND time <= '%s'\n" +
-              "\tGROUP BY minute\n" +
-              ") AS data ON true\n" +
-              "ORDER BY data.minute ASC, b.bike_id;";
-      sql = String.format(
-              Locale.US,
-              sql,
-              sensor.getName(),
-              bike.getName(),
-              startTimestamp,
-              endTimestamp
-      );
+      sql =
+          "SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT time_bucket(interval '1 min', time) AS minute, AVG(%s) AS value\n"
+              + "\tFROM test t WHERE t.bike_id = b.bike_id\n"
+              + "\tAND bike_id = '%s'\n"
+              + "\tAND time >= '%s'\n"
+              + "\tAND time <= '%s'\n"
+              + "\tGROUP BY minute\n"
+              + ") AS data ON true\n"
+              + "ORDER BY data.minute ASC, b.bike_id;";
+      sql =
+          String.format(
+              Locale.US, sql, sensor.getName(), bike.getName(), startTimestamp, endTimestamp);
     }
 
     return executeQuery(sql);
   }
 
   /**
-   * todo change
-   * Creates a heat map with average air quality out of gps points.
+   * todo change Creates a heat map with average air quality out of gps points.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  with map as (select (st_dump(map.geom)).geom from (
    * 	select st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670, 13.410947, 48.556736) as grid
@@ -797,15 +907,15 @@ public class TimescaleDB implements IDatabase {
    * 	select time_bucket(interval '1 sec', ab.time) as second, avg(value) as value, bike_id from emg_benchmark ab where ab.time > '2018-08-29 18:00:00.0' and ab.time < '2018-08-29 19:00:00.0' group by second, bike_id
    *  ) a
    *  where g.bike_id = a.bike_id and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
    * <p><code>
    *  SELECT ST_X(s_12::geometry) AS longitude,
    *  ST_Y(s_12::geometry) AS latitude, AVG(s_34) FROM test t
    *  WHERE time >= '2018-08-30 02:00:00.0' AND time <= '2018-08-30 03:00:00.0'
    *  GROUP BY longitude, latitude;
-   * </code></p>
+   * </code>
+   *
    * @param query The heatmap query paramters object.
    * @return The status of the execution.
    */
@@ -821,8 +931,9 @@ public class TimescaleDB implements IDatabase {
     String bikeColumn = SqlBuilder.Column.BIKE.getName();
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql = "with map as (select (st_dump(map.geom)).geom from (\n" +
-              "\tselect st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670,"
+      sql =
+          "with map as (select (st_dump(map.geom)).geom from (\n"
+              + "\tselect st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670,"
               + " %f, %f) as grid\n"
               + ") map)\n"
               + "select m.geom as cell, avg(a.%s) from %s g, map m, (\n"
@@ -830,22 +941,41 @@ public class TimescaleDB implements IDatabase {
               + "where ab.%s > '%s' and ab.%s < '%s' group by second, %s\n"
               + ") a\n"
               + "where g.%s = a.%s and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;";
-      sql = String.format(Locale.US, sql, startPoint.getLongitude(), startPoint.getLatitude(), valueColumn,
-              gpsSensor.getTableName(), timeColumn, valueColumn, bikeColumn, sensor.getTableName(), timeColumn,
-              startTimestamp, timeColumn, endTimestamp, bikeColumn, bikeColumn, bikeColumn);
+      sql =
+          String.format(
+              Locale.US,
+              sql,
+              startPoint.getLongitude(),
+              startPoint.getLatitude(),
+              valueColumn,
+              gpsSensor.getTableName(),
+              timeColumn,
+              valueColumn,
+              bikeColumn,
+              sensor.getTableName(),
+              timeColumn,
+              startTimestamp,
+              timeColumn,
+              endTimestamp,
+              bikeColumn,
+              bikeColumn,
+              bikeColumn);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT ST_X(%s::geometry) AS longitude, \n" +
-              "ST_Y(%s::geometry) AS latitude, AVG(%s) FROM %s t\n" +
-              "WHERE time >= '%s' AND time <= '%s'\n" +
-              "GROUP BY longitude, latitude;";
-      sql = String.format(Locale.US, sql,
+      sql =
+          "SELECT ST_X(%s::geometry) AS longitude, \n"
+              + "ST_Y(%s::geometry) AS latitude, AVG(%s) FROM %s t\n"
+              + "WHERE time >= '%s' AND time <= '%s'\n"
+              + "GROUP BY longitude, latitude;";
+      sql =
+          String.format(
+              Locale.US,
+              sql,
               gpsSensor.getName(),
               gpsSensor.getName(),
               sensor.getName(),
               tableName,
               startTimestamp,
-              endTimestamp
-      );
+              endTimestamp);
     }
     return executeQuery(sql);
   }
@@ -853,7 +983,8 @@ public class TimescaleDB implements IDatabase {
   /**
    * Selects bikes whose last gps location lies in a certain area.
    *
-   * NARROW_TABLE:
+   * <p>NARROW_TABLE:
+   *
    * <p><code>
    *  with last_location as (
    * 	select bike_id, last(value, time) as location from gps_benchmark group by bike_id
@@ -862,10 +993,9 @@ public class TimescaleDB implements IDatabase {
    *    st_buffer(st_setsrid(st_makepoint(13.431947, 48.566736),4326)::geography, 500)::geometry,
    *    l.location::geometry
    *  );
-   * </code></p>
+   * </code> WIDE_TABLE:
    *
-   * WIDE_TABLE:
-   *  <p><code>
+   * <p><code>
    *  SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
    * 	SELECT s_12 AS location FROM test t WHERE t.bike_id = b.bike_id
    * 	ORDER BY time DESC LIMIT 1
@@ -873,7 +1003,8 @@ public class TimescaleDB implements IDatabase {
    *  WHERE ST_CONTAINS(
    * 	ST_BUFFER(ST_SETSRID(ST_MAKEPOINT(13.431947, 48.566736),4326)::geography, 500
    * 			 )::geometry, data.location::geometry);
-   * </code></p>
+   * </code>
+   *
    * @param query
    * @return
    */
@@ -882,29 +1013,40 @@ public class TimescaleDB implements IDatabase {
     String sql = "";
     Sensor gpsSensor = query.getGpsSensor();
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql = "with last_location as (\n" +
-              "\tselect %s, last(%s, %s) as location from %s group by %s\n" +
-              ") select * from last_location l where st_contains(st_buffer(st_setsrid(st_makepoint(%f, %f),4326)::geography, %d)::geometry, l.location::geometry);";
-      sql = String.format(Locale.US, sql, SqlBuilder.Column.BIKE.getName(), SqlBuilder.Column.VALUE.getName(),
-              SqlBuilder.Column.TIME.getName(), gpsSensor.getTableName(), SqlBuilder.Column.BIKE.getName(),
-              Constants.SPAWN_POINT.getLongitude(), Constants.SPAWN_POINT.getLatitude(), config.RADIUS);
+      sql =
+          "with last_location as (\n"
+              + "\tselect %s, last(%s, %s) as location from %s group by %s\n"
+              + ") select * from last_location l where st_contains(st_buffer(st_setsrid(st_makepoint(%f, %f),4326)::geography, %d)::geometry, l.location::geometry);";
+      sql =
+          String.format(
+              Locale.US,
+              sql,
+              SqlBuilder.Column.BIKE.getName(),
+              SqlBuilder.Column.VALUE.getName(),
+              SqlBuilder.Column.TIME.getName(),
+              gpsSensor.getTableName(),
+              SqlBuilder.Column.BIKE.getName(),
+              Constants.SPAWN_POINT.getLongitude(),
+              Constants.SPAWN_POINT.getLatitude(),
+              config.RADIUS);
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql = "SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n" +
-              "\tSELECT %s AS location FROM %s t WHERE t.bike_id = b.bike_id\n" +
-              "\tORDER BY time DESC LIMIT 1\n" +
-              ") AS data ON true\n" +
-              "WHERE ST_CONTAINS(\n" +
-              "\tST_BUFFER(ST_SETSRID(ST_MAKEPOINT(%f, %f),4326)::geography, %d\n" +
-              "\t\t\t )::geometry, data.location::geometry);";
-      sql = String.format(
+      sql =
+          "SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n"
+              + "\tSELECT %s AS location FROM %s t WHERE t.bike_id = b.bike_id\n"
+              + "\tORDER BY time DESC LIMIT 1\n"
+              + ") AS data ON true\n"
+              + "WHERE ST_CONTAINS(\n"
+              + "\tST_BUFFER(ST_SETSRID(ST_MAKEPOINT(%f, %f),4326)::geography, %d\n"
+              + "\t\t\t )::geometry, data.location::geometry);";
+      sql =
+          String.format(
               Locale.US,
               sql,
               gpsSensor.getName(),
               tableName,
               Constants.SPAWN_POINT.getLongitude(),
               Constants.SPAWN_POINT.getLatitude(),
-              config.RADIUS
-      );
+              config.RADIUS);
     }
     return executeQuery(sql);
   }
@@ -918,7 +1060,7 @@ public class TimescaleDB implements IDatabase {
     long en;
     int line = 0;
     int queryResultPointNum = 0;
-    try (Statement statement = connection.createStatement()){
+    try (Statement statement = connection.createStatement()) {
       st = System.nanoTime();
       try (ResultSet resultSet = statement.executeQuery(sql)) {
         while (resultSet.next()) {
@@ -944,11 +1086,22 @@ public class TimescaleDB implements IDatabase {
    */
   private String getCreateTableSql(SensorGroup sensorGroup) {
     StringBuilder sqlBuilder = new StringBuilder();
-    sqlBuilder.append("CREATE TABLE ").append(sensorGroup.getTableName()).append(" (time TIMESTAMPTZ NOT NULL, "
-            + "bike_id VARCHAR(20) REFERENCES bikes (bike_id), sensor_id VARCHAR(20) NOT NULL");
+    sqlBuilder
+        .append("CREATE TABLE ")
+        .append(sensorGroup.getTableName())
+        .append(
+            " (time TIMESTAMPTZ NOT NULL, "
+                + "bike_id VARCHAR(20) REFERENCES bikes (bike_id), sensor_id VARCHAR(20) NOT NULL");
 
-    sensorGroup.getFields().stream().forEach(field -> sqlBuilder.append(", ").append(field).append(" ")
-            .append(sensorGroup.getDataType()).append(" NULL"));
+    sensorGroup.getFields().stream()
+        .forEach(
+            field ->
+                sqlBuilder
+                    .append(", ")
+                    .append(field)
+                    .append(" ")
+                    .append(sensorGroup.getDataType())
+                    .append(" NULL"));
     sqlBuilder.append(");");
     return sqlBuilder.toString();
   }
@@ -958,10 +1111,18 @@ public class TimescaleDB implements IDatabase {
    */
   private String getCreateTableSql() {
     StringBuilder sqlBuilder = new StringBuilder();
-    sqlBuilder.append("CREATE TABLE ").append(tableName).append(" (time TIMESTAMPTZ NOT NULL, ")
-            .append("bike_id VARCHAR(20) REFERENCES bikes (bike_id)");
-    config.SENSORS.forEach(sensor -> sqlBuilder.append(", ").append(sensor.getName()).append(" ")
-            .append(sensor.getDataType()));
+    sqlBuilder
+        .append("CREATE TABLE ")
+        .append(tableName)
+        .append(" (time TIMESTAMPTZ NOT NULL, ")
+        .append("bike_id VARCHAR(20) REFERENCES bikes (bike_id)");
+    config.SENSORS.forEach(
+        sensor ->
+            sqlBuilder
+                .append(", ")
+                .append(sensor.getName())
+                .append(" ")
+                .append(sensor.getDataType()));
     sqlBuilder.append(");");
     return sqlBuilder.toString();
   }
@@ -971,7 +1132,8 @@ public class TimescaleDB implements IDatabase {
    */
   private String getCreateBikesTableSql() {
     StringBuilder sqlBuilder = new StringBuilder();
-    sqlBuilder.append("CREATE TABLE IF NOT EXISTS bikes (bike_id VARCHAR PRIMARY KEY, owner_name VARCHAR(100) NOT NULL);");
+    sqlBuilder.append(
+        "CREATE TABLE IF NOT EXISTS bikes (bike_id VARCHAR PRIMARY KEY, owner_name VARCHAR(100) NOT NULL);");
     return sqlBuilder.toString();
   }
 
@@ -991,8 +1153,13 @@ public class TimescaleDB implements IDatabase {
       }
 
       Bike bike = bikesList.get(i);
-      sqlBuilder.append("('").append(bike.getName()).append("', ")
-              .append("'").append(bike.getOwnerName()).append("')");
+      sqlBuilder
+          .append("('")
+          .append(bike.getName())
+          .append("', ")
+          .append("'")
+          .append(bike.getOwnerName())
+          .append("')");
     }
     sqlBuilder.append(";");
     return sqlBuilder.toString();
@@ -1012,7 +1179,10 @@ public class TimescaleDB implements IDatabase {
         continue;
       }
 
-      sqlBuilder.append("INSERT INTO ").append(sensor.getSensorGroup().getTableName()).append(" VALUES ");
+      sqlBuilder
+          .append("INSERT INTO ")
+          .append(sensor.getSensorGroup().getTableName())
+          .append(" VALUES ");
 
       boolean firstIteration = true;
       for (Point point : entries.get(sensor)) {
@@ -1022,9 +1192,16 @@ public class TimescaleDB implements IDatabase {
           sqlBuilder.append(", ");
         }
         Timestamp timestamp = new Timestamp(point.getTimestamp());
-        sqlBuilder.append("('").append(timestamp).append("', ")
-                .append("'").append(bike.getName()).append("', ")
-                .append("'").append(sensor.getName()).append("'");
+        sqlBuilder
+            .append("('")
+            .append(timestamp)
+            .append("', ")
+            .append("'")
+            .append(bike.getName())
+            .append("', ")
+            .append("'")
+            .append(sensor.getName())
+            .append("'");
         if (sensor.getFields().size() == 1) {
           sqlBuilder.append(", ").append(point.getValue());
         } else {

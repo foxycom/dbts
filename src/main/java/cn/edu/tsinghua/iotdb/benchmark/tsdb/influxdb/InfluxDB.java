@@ -43,9 +43,7 @@ public class InfluxDB implements IDatabase {
   private org.influxdb.InfluxDB influxDbInstance;
   private SqlBuilder sqlBuilder;
 
-  /**
-   * Creates an instance of the InfluxDB controller.
-   */
+  /** Creates an instance of the InfluxDB controller. */
   public InfluxDB() {
     influxUrl = String.format("http://%s:%s", config.HOST, config.PORT);
     influxDbName = config.DB_NAME;
@@ -57,11 +55,13 @@ public class InfluxDB implements IDatabase {
   public void init() throws TsdbException {
     try {
       OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
-      clientBuilder.connectTimeout(20, TimeUnit.MINUTES)
-              .readTimeout(20, TimeUnit.MINUTES)
-              .writeTimeout(20, TimeUnit.MINUTES)
-              .retryOnConnectionFailure(true);
-      influxDbInstance = org.influxdb.InfluxDBFactory.connect(influxUrl, clientBuilder)
+      clientBuilder
+          .connectTimeout(20, TimeUnit.MINUTES)
+          .readTimeout(20, TimeUnit.MINUTES)
+          .writeTimeout(20, TimeUnit.MINUTES)
+          .retryOnConnectionFailure(true);
+      influxDbInstance =
+          org.influxdb.InfluxDBFactory.connect(influxUrl, clientBuilder)
               .setDatabase(influxDbName)
               .setRetentionPolicy(defaultRp)
               .setConsistency(org.influxdb.InfluxDB.ConsistencyLevel.ALL)
@@ -71,7 +71,6 @@ public class InfluxDB implements IDatabase {
       throw new TsdbException(e);
     }
   }
-
 
   @Override
   public void cleanup() throws TsdbException {
@@ -113,13 +112,13 @@ public class InfluxDB implements IDatabase {
   @Override
   public Status insertOneBatch(Batch batch) {
     BatchPoints.Builder batchBuilder = BatchPoints.builder().precision(TimeUnit.MILLISECONDS);
-    Map<Sensor, Point[]> entries = batch.getEntries();
     Bike bike = batch.getBike();
 
     Map<Long, Map<String, String>> rows = transformBatch(batch);
 
     for (long timestamp : rows.keySet()) {
-      org.influxdb.dto.Point.Builder pointBuilder = org.influxdb.dto.Point.measurement(measurementName)
+      org.influxdb.dto.Point.Builder pointBuilder =
+          org.influxdb.dto.Point.measurement(measurementName)
               .tag(SqlBuilder.Column.BIKE.getName(), bike.getName())
               .tag(SqlBuilder.Column.OWNER_NAME.getName(), bike.getOwnerName());
 
@@ -127,7 +126,8 @@ public class InfluxDB implements IDatabase {
       for (String field : fields.keySet()) {
         pointBuilder.addField(field, Double.parseDouble(fields.get(field)));
       }
-      org.influxdb.dto.Point influxPoint = pointBuilder.time(timestamp, TimeUnit.MILLISECONDS).build();
+      org.influxdb.dto.Point influxPoint =
+          pointBuilder.time(timestamp, TimeUnit.MILLISECONDS).build();
       batchBuilder.point(influxPoint);
     }
     BatchPoints batchPoints = batchBuilder.build();
@@ -149,10 +149,9 @@ public class InfluxDB implements IDatabase {
   }
 
   /**
-   *
-   * <p><code>
+   * <code>
    *     SELECT * FROM test WHERE bike_id = 'bike_2' AND time = 1535587200000000000;
-   * </code></p>
+   * </code>
    *
    * @param query universal precise query condition parameters
    * @return
@@ -163,22 +162,15 @@ public class InfluxDB implements IDatabase {
     Bike bike = query.getBikes().get(0);
 
     String sql = "SELECT * FROM %s WHERE bike_id = '%s' AND time = %d;";
-    sql = String.format(
-            Locale.US,
-            sql,
-            measurementName,
-            bike.getName(),
-            timestamp
-    );
+    sql = String.format(Locale.US, sql, measurementName, bike.getName(), timestamp);
     return executeQueryAndGetStatus(sql);
   }
 
   /**
-   *
-   * <p><code>
+   * <code>
    *     SELECT longitude, latitude FROM test
    *     WHERE bike_id = 'bike_0' AND time > 1535587200000000000 and time < 1535590800000000000;
-   * </code></p>
+   * </code>
    *
    * @param query
    * @return
@@ -188,27 +180,22 @@ public class InfluxDB implements IDatabase {
     Bike bike = query.getBikes().get(0);
     long startTimestamp = trailingZeros(query.getStartTimestamp());
     long endTimestamp = trailingZeros(query.getEndTimestamp());
-    String sql = "SELECT longitude, latitude FROM %s WHERE bike_id = '%s' AND time > %d and time < %d;";
-    sql = String.format(
-            Locale.US,
-            sql,
-            measurementName,
-            bike.getName(),
-            startTimestamp,
-            endTimestamp
-    );
+    String sql =
+        "SELECT longitude, latitude FROM %s WHERE bike_id = '%s' AND time > %d and time < %d;";
+    sql =
+        String.format(
+            Locale.US, sql, measurementName, bike.getName(), startTimestamp, endTimestamp);
     return executeQueryAndGetStatus(sql);
   }
 
   /**
-   *
-   * <p><code>
+   * <code>
    *     SELECT * FROM (
    *        SELECT MEAN(s_17) AS avg, FIRST(longitude) as longitude, LAST(latitude) AS latitude
    *        FROM test WHERE bike_id = 'bike_2' AND time >= 1535587200000000000 AND time <= 1535590800000000000
    *        GROUP BY time(1s)
    *     ) WHERE avg > 1000.000000;
-   * </code></p>
+   * </code>
    *
    * @param query
    * @return
@@ -219,9 +206,11 @@ public class InfluxDB implements IDatabase {
     Bike bike = query.getBikes().get(0);
     long startTimestamp = trailingZeros(query.getStartTimestamp());
     long endTimestamp = trailingZeros(query.getEndTimestamp());
-    String sql = "SELECT * FROM(SELECT MEAN(%s) AS avg, FIRST(longitude) as longitude, LAST(latitude) AS latitude " +
-            "FROM %s WHERE bike_id = '%s' AND time >= %d AND time <= %d GROUP BY time(1s)) WHERE avg > %f;";
-    sql = String.format(
+    String sql =
+        "SELECT * FROM(SELECT MEAN(%s) AS avg, FIRST(longitude) as longitude, LAST(latitude) AS latitude "
+            + "FROM %s WHERE bike_id = '%s' AND time >= %d AND time <= %d GROUP BY time(1s)) WHERE avg > %f;";
+    sql =
+        String.format(
             Locale.US,
             sql,
             sensor.getName(),
@@ -229,16 +218,14 @@ public class InfluxDB implements IDatabase {
             bike.getName(),
             startTimestamp,
             endTimestamp,
-            query.getThreshold()
-    );
+            query.getThreshold());
     return executeQueryAndGetStatus(sql);
   }
 
   /**
-   *
-   * <p><code>
+   * <code>
    *     SELECT bike_id FROM (SELECT LAST(s_0) FROM test GROUP BY bike_id) WHERE time < 1535590800000000000;
-   * </code></p>
+   * </code>
    *
    * @param query
    * @return
@@ -248,48 +235,39 @@ public class InfluxDB implements IDatabase {
     long timestamp = trailingZeros(query.getEndTimestamp());
     Sensor sensor = query.getSensor();
     String sql = "SELECT bike_id FROM (SELECT LAST(%s) FROM %s GROUP BY bike_id) WHERE time < %d;";
-    sql = String.format(
-            Locale.US,
-            sql,
-            sensor.getName(),
-            measurementName,
-            timestamp
-    );
+    sql = String.format(Locale.US, sql, sensor.getName(), measurementName, timestamp);
     return executeQueryAndGetStatus(sql);
   }
 
   /**
-   * <p><code>
+   * <code>
    *     SELECT LAST("avg") FROM (SELECT MEAN(s_17) AS avg FROM test WHERE time > 1535587200000000000
    *     GROUP BY time(1m), bike_id, owner_name) WHERE "avg" > 3.000000 GROUP BY bike_id, owner_name;
-   * </code></p>
+   * </code>
+   *
    * @param query contains universal range query with value filter parameters
    * @return
    */
   @Override
-  public Status lastTimeActivelyDriven(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+  public Status lastTimeActivelyDriven(
+      cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     long timestamp = trailingZeros(query.getStartTimestamp());
     Sensor sensor = query.getSensor();
-    String sql = "SELECT LAST(\"avg\") FROM (SELECT MEAN(%s) AS avg FROM %s WHERE time > %d " +
-            "GROUP BY time(1m), bike_id, owner_name) WHERE \"avg\" > %f GROUP BY bike_id, owner_name;";
-    sql = String.format(
-            Locale.US,
-            sql,
-            sensor.getName(),
-            measurementName,
-            timestamp,
-            query.getThreshold()
-    );
+    String sql =
+        "SELECT LAST(\"avg\") FROM (SELECT MEAN(%s) AS avg FROM %s WHERE time > %d "
+            + "GROUP BY time(1m), bike_id, owner_name) WHERE \"avg\" > %f GROUP BY bike_id, owner_name;";
+    sql =
+        String.format(
+            Locale.US, sql, sensor.getName(), measurementName, timestamp, query.getThreshold());
     return executeQueryAndGetStatus(sql);
   }
 
   /**
-   *
-   * <p><code>
+   * <code>
    *     SELECT MEAN(s_27) FROM test
    *     WHERE bike_id = 'bike_2' AND time > 1535587200000000000 AND time < 1535590800000000000
    *     GROUP BY time(1m) fill(none);
-   * </code></p>
+   * </code>
    *
    * @param query contains universal group by query condition parameters
    * @return
@@ -301,57 +279,53 @@ public class InfluxDB implements IDatabase {
     long startTimestamp = trailingZeros(query.getStartTimestamp());
     long endTimestamp = trailingZeros(query.getEndTimestamp());
 
-    String sql = "SELECT MEAN(%s) FROM %s WHERE bike_id = '%s' AND time > %d AND time < %d GROUP BY time(1m) fill(none);";
-    sql = String.format(
+    String sql =
+        "SELECT MEAN(%s) FROM %s WHERE bike_id = '%s' AND time > %d AND time < %d GROUP BY time(1m) fill(none);";
+    sql =
+        String.format(
             Locale.US,
             sql,
             sensor.getName(),
             measurementName,
             bike.getName(),
             startTimestamp,
-            endTimestamp
-    );
+            endTimestamp);
     return executeQueryAndGetStatus(sql);
   }
 
   @Override
   public Status lastKnownPosition(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
-    String sql = "SELECT LAST(longitude) AS longitude, LAST(latitude) AS latitude FROM %s " +
-            "GROUP BY bike_id, bike_owner;";
-    sql = String.format(
-            Locale.US,
-            sql,
-            measurementName
-    );
+    String sql =
+        "SELECT LAST(longitude) AS longitude, LAST(latitude) AS latitude FROM %s "
+            + "GROUP BY bike_id, bike_owner;";
+    sql = String.format(Locale.US, sql, measurementName);
     return executeQueryAndGetStatus(sql);
   }
 
-  /***
+  /**
+   * *
    *
    * <p><code>
    *     SELECT FIRST(longitude), FIRST(latitude), MEAN(s_34) FROM test
    *     WHERE time >= 1535587200000000000 and time <= 1535590800000000000
    *     GROUP BY time(1s);
-   * </code></p>
+   * </code>
    *
    * @param query
    * @return
    */
   @Override
-  public Status airPollutionHeatMap(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
+  public Status airPollutionHeatMap(
+      cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     long startTimestamp = trailingZeros(query.getStartTimestamp());
     long endTimestamp = trailingZeros(query.getEndTimestamp());
     Sensor sensor = query.getSensor();
-    String sql = "SELECT FIRST(longitude), FIRST(latitude), MEAN(%s) FROM %s WHERE time >= %d and time <= %d " +
-            "GROUP BY time(1s);";
-    sql = String.format(
-            Locale.US,
-            sql,
-            sensor.getName(),
-            measurementName,
-            startTimestamp,
-            endTimestamp
-    );
+    String sql =
+        "SELECT FIRST(longitude), FIRST(latitude), MEAN(%s) FROM %s WHERE time >= %d and time <= %d "
+            + "GROUP BY time(1s);";
+    sql =
+        String.format(
+            Locale.US, sql, sensor.getName(), measurementName, startTimestamp, endTimestamp);
     return executeQueryAndGetStatus(sql);
   }
 
@@ -364,7 +338,6 @@ public class InfluxDB implements IDatabase {
   public Status bikesInLocation(cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query query) {
     return null;
   }
-
 
   private Status executeQueryAndGetStatus(String sql) {
     LOGGER.debug("{} executes query: {}", Thread.currentThread().getName(), sql);
@@ -398,11 +371,11 @@ public class InfluxDB implements IDatabase {
       for (Point point : points) {
         rows.computeIfAbsent(point.getTimestamp(), k -> new HashMap<>());
         if (point.hasMultipleValues()) {
-         List<String> fields = sensor.getFields();
-         String[] values = point.getValues();
-         for (int i = 0; i < fields.size(); i++) {
-           rows.get(point.getTimestamp()).put(fields.get(i), values[i]);
-         }
+          List<String> fields = sensor.getFields();
+          String[] values = point.getValues();
+          for (int i = 0; i < fields.size(); i++) {
+            rows.get(point.getTimestamp()).put(fields.get(i), values[i]);
+          }
         } else {
           rows.get(point.getTimestamp()).put(sensor.getName(), point.getValue());
         }

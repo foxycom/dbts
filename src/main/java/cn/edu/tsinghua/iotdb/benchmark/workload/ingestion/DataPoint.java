@@ -58,8 +58,16 @@ public class DataPoint {
 
   @Override
   public String toString() {
-    return "[sensor:" + sensor + ", device:" + device + ", group:" + group + ", timestamp:"
-        + timestamp + ", value:"
-        + value + "]";
+    return "[sensor:"
+        + sensor
+        + ", device:"
+        + device
+        + ", group:"
+        + group
+        + ", timestamp:"
+        + timestamp
+        + ", value:"
+        + value
+        + "]";
   }
 }

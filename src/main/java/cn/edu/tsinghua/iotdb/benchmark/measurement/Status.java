@@ -28,7 +28,11 @@ public class Status {
     this.queryResultPointNum = queryResultPointNum;
   }
 
-  public Status(boolean isOk, long costTime, int queryResultPointNum, Exception exception,
+  public Status(
+      boolean isOk,
+      long costTime,
+      int queryResultPointNum,
+      Exception exception,
       String errorMessage) {
     this.isOk = isOk;
     this.costTime = costTime;
@@ -56,6 +60,4 @@ public class Status {
   public boolean isOk() {
     return isOk;
   }
-
-
 }

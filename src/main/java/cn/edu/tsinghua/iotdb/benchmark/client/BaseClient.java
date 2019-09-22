@@ -3,38 +3,31 @@ package cn.edu.tsinghua.iotdb.benchmark.client;
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.monitor.ClientMonitoring;
 import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
-import cn.edu.tsinghua.iotdb.benchmark.workload.SingletonWorkload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
-
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 
-/**
- * 负责人造数据的写入、查询，真实数据的查询。
- * 根据OPERATION_PROPORTION的比例执行写入和查询, 具体的查询和写入数据由workload确定。
- */
+/** */
 public abstract class BaseClient extends Client implements Runnable {
 
   protected static Logger LOGGER;
 
   private OperationController operationController;
   private IWorkload syntheticWorkload;
-  private final SingletonWorkload singletonWorkload;
   private long insertLoopIndex;
   private DataSchema dataSchema = DataSchema.getInstance();
   private static ClientMonitoring clientMonitoring = ClientMonitoring.INSTANCE;
 
-
-  public BaseClient(int id, CountDownLatch countDownLatch, CyclicBarrier barrier,
-      IWorkload workload) {
+  public BaseClient(
+      int id, CountDownLatch countDownLatch, CyclicBarrier barrier, IWorkload workload) {
     super(id, countDownLatch, barrier);
     syntheticWorkload = workload;
-    singletonWorkload = SingletonWorkload.getInstance();
     operationController = new OperationController(id);
     insertLoopIndex = 0;
     initLogger();
@@ -65,14 +58,15 @@ public abstract class BaseClient extends Client implements Runnable {
             insertLoopIndex++;
           } else {
             try {
-              dbWrapper.insertOneBatch(singletonWorkload.getOneBatch());
+              // dbWrapper.insertOneBatch(syntheticWorkload.getOneBatch());
+              throw new NotImplementedException("");
             } catch (Exception e) {
               LOGGER.error("Failed to insert one batch data because ", e);
             }
           }
           break;
         case PRECISE_POINT:
-            clientMonitoring.start();
+          clientMonitoring.start();
           try {
             dbWrapper.precisePoint(syntheticWorkload.getQuery("light"));
           } catch (Exception e) {
@@ -88,7 +82,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case DOWNSAMPLE:
-            clientMonitoring.start();
+          clientMonitoring.start();
           try {
             dbWrapper.downsample(syntheticWorkload.getQuery("oximeter"));
           } catch (WorkloadException e) {
@@ -96,7 +90,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case LAST_KNOWN_POSITION:
-            clientMonitoring.start();
+          clientMonitoring.start();
           try {
             dbWrapper.lastKnownPosition(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
@@ -104,7 +98,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case GPS_PATH_SCAN:
-            clientMonitoring.start();
+          clientMonitoring.start();
           try {
             dbWrapper.gpsPathScan(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
@@ -112,7 +106,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case IDENTIFY_TRIPS:
-            clientMonitoring.start();
+          clientMonitoring.start();
           try {
             dbWrapper.identifyTrips(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
@@ -120,7 +114,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case AIRQUALITY_HEATMAP:
-            clientMonitoring.start();
+          clientMonitoring.start();
           try {
             dbWrapper.airPollutionHeatMap(syntheticWorkload.getQuery("particles"));
           } catch (WorkloadException e) {
@@ -156,11 +150,10 @@ public abstract class BaseClient extends Client implements Runnable {
       }
 
       String percent = String.format("%.2f", (loopIndex + 1) * 100.0D / config.LOOP);
-      LOGGER.info("{} {}% syntheticWorkload is done.", Thread.currentThread().getName(), percent);
+      LOGGER.info(
+          "{} {}% of synthetic workload is done.", Thread.currentThread().getName(), percent);
     }
   }
 
   abstract void initLogger();
-
 }
-

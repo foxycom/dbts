@@ -11,7 +11,7 @@
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>
-    <mode>test_with_default_path</mode>
+    <mode>synthetic_benchmark</mode>
     <mysqlLog active="false" remark="INGEST">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
@@ -109,7 +109,6 @@
 
     <batch size="10000"/>
     <loops>1</loops>
-    <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
     <serverMonitor active="false">

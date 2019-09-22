@@ -11,10 +11,9 @@ public class Record {
     this.recordDataValue = recordDataValue;
   }
 
-  public int size(){
+  public int size() {
     return recordDataValue.size();
   }
-
 
   public long getTimestamp() {
     return timestamp;
@@ -23,5 +22,4 @@ public class Record {
   public List<String> getRecordDataValue() {
     return recordDataValue;
   }
-
 }

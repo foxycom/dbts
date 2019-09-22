@@ -1,6 +1,5 @@
 package cn.edu.tsinghua.iotdb.benchmark.workload;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
@@ -111,20 +110,6 @@ public class SyntheticWorkloadTest {
    */
   @Test
   public void testGetOrderedBatch() throws Exception {
-    config.BATCH_SIZE = 5;
-    config.POINT_STEP = 5000;
-    config.IS_RANDOM_TIMESTAMP_INTERVAL = false;
-    SyntheticWorkload syntheticWorkload = new SyntheticWorkload(1);
-    for (int i = 0; i < 3; i++) {
-      Batch batch = syntheticWorkload.getOneBatch(new Bike(1, nameGenerator.getName()), i);
-      long old = 0;
-      for(Record record: batch.getRecords()){
-        // 检查map里timestamp获取到的是否是按序的
-        assertTrue(record.getTimestamp() > old);
-        old = record.getTimestamp();
-      }
-      System.out.println(batch.getRecords().toString());
-    }
 
   }
 
@@ -133,17 +118,7 @@ public class SyntheticWorkloadTest {
    */
   @Test
   public void testGetDistOutOfOrderBatch() throws Exception {
-//TODO: Test goes here... 
-/* 
-try { 
-   Method method = SyntheticWorkload.getClass().getMethod("getDistOutOfOrderBatch");
-   method.setAccessible(true); 
-   method.invoke(<Object>, <Parameters>); 
-} catch(NoSuchMethodException e) { 
-} catch(IllegalAccessException e) { 
-} catch(InvocationTargetException e) { 
-} 
-*/
+
   }
 
   /**
@@ -151,17 +126,7 @@ try {
    */
   @Test
   public void testGetLocalOutOfOrderBatch() throws Exception {
-//TODO: Test goes here... 
-/* 
-try { 
-   Method method = SyntheticWorkload.getClass().getMethod("getLocalOutOfOrderBatch");
-   method.setAccessible(true); 
-   method.invoke(<Object>, <Parameters>); 
-} catch(NoSuchMethodException e) { 
-} catch(IllegalAccessException e) { 
-} catch(InvocationTargetException e) { 
-} 
-*/
+
   }
 
   /**

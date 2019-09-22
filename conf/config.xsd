@@ -149,8 +149,8 @@
     <xs:simpleContent>
       <xs:restriction base="xs:string">
         <xs:enumeration value="server_mode"/>
-        <xs:enumeration value="test_with_default_path"/>
-        <xs:enumeration value="query_test_with_default_path"/>
+        <xs:enumeration value="synthetic_benchmark"/>
+        <xs:enumeration value="query_synthetic_benchmark"/>
       </xs:restriction>
     </xs:simpleContent>
   </xs:complexType>
@@ -204,7 +204,6 @@
       <xs:element type="uni:sensorGroupsType" name="sensorGroups" xmlns:uni="https://uni-passau.de" minOccurs="0" />
       <xs:element type="uni:batchType" name="batch" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="xs:integer" name="loops" minOccurs="0"/>
-      <xs:element type="xs:integer" name="pointStep" minOccurs="0"/>
       <xs:element type="xs:string" name="encoding" minOccurs="0"/>
       <xs:element type="uni:serverMonitorType" name="serverMonitor" xmlns:uni="https://uni-passau.de"/>
       <xs:element type="xs:boolean" name="mulDevBatch" minOccurs="0"/>
