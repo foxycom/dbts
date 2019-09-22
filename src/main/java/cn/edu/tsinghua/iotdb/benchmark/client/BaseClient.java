@@ -2,7 +2,7 @@ package cn.edu.tsinghua.iotdb.benchmark.client;
 
 import cn.edu.tsinghua.iotdb.benchmark.client.OperationController.Operation;
 import cn.edu.tsinghua.iotdb.benchmark.monitor.ClientMonitoring;
-import cn.edu.tsinghua.iotdb.benchmark.workload.IWorkload;
+import cn.edu.tsinghua.iotdb.benchmark.workload.Workload;
 import cn.edu.tsinghua.iotdb.benchmark.workload.WorkloadException;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
@@ -19,13 +19,13 @@ public abstract class BaseClient extends Client implements Runnable {
   protected static Logger LOGGER;
 
   private OperationController operationController;
-  private IWorkload syntheticWorkload;
+  private Workload syntheticWorkload;
   private long insertLoopIndex;
   private DataSchema dataSchema = DataSchema.getInstance();
   private static ClientMonitoring clientMonitoring = ClientMonitoring.INSTANCE;
 
   public BaseClient(
-      int id, CountDownLatch countDownLatch, CyclicBarrier barrier, IWorkload workload) {
+      int id, CountDownLatch countDownLatch, CyclicBarrier barrier, Workload workload) {
     super(id, countDownLatch, barrier);
     syntheticWorkload = workload;
     operationController = new OperationController(id);

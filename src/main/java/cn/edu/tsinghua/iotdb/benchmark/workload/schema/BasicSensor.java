@@ -147,7 +147,7 @@ public class BasicSensor implements Sensor {
 
   @Override
   public void setTick(long tick) {
-    // do nothing
+    // Not needed.
   }
 
   @Override

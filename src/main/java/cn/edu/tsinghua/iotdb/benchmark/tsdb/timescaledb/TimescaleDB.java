@@ -4,7 +4,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.Database;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
@@ -22,7 +22,7 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.SensorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TimescaleDB implements IDatabase {
+public class TimescaleDB implements Database {
 
   private static final int B2GB = 1024 * 1024 * 1024;
   private Connection connection;

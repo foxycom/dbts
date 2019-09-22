@@ -4,25 +4,21 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.Database;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.utils.NameGenerator;
-import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
-import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GeoPoint;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Sensor;
-import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
 
-public class CrateDB implements IDatabase {
+public class CrateDB implements Database {
 
   private static final int B2GB = 1024 * 1024 * 1024;
   private Connection connection;

@@ -1,9 +1,8 @@
 package cn.edu.tsinghua.iotdb.benchmark.tsdb.griddb;
 
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.Database;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
@@ -11,12 +10,11 @@ import com.toshiba.mwcloud.gs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-public class GridDB implements IDatabase {
+public class GridDB implements Database {
   private static final Logger LOGGER = LoggerFactory.getLogger(GridDB.class);
 
   private GridStore store;

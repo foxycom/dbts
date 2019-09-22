@@ -3,7 +3,7 @@ package cn.edu.tsinghua.iotdb.benchmark.tsdb.influxdb;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.Database;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.utils.InfluxBuilder;
 import cn.edu.tsinghua.iotdb.benchmark.utils.SqlBuilder;
@@ -11,7 +11,6 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -26,9 +25,7 @@ import org.influxdb.dto.QueryResult.Series;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.parsers.DocumentBuilder;
-
-public class InfluxDB implements IDatabase {
+public class InfluxDB implements Database {
   public static final long MILLIS_TO_NANO = 1000000L;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InfluxDB.class);

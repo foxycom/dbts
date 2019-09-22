@@ -27,7 +27,7 @@ public class CommandCli {
         Option.builder(CONFIG_ARGS)
             .argName(CONFIG_NAME)
             .hasArg()
-            .desc("Config file path (optional)")
+            .desc("Config file path")
             .build();
     options.addOption(config);
 
@@ -35,13 +35,12 @@ public class CommandCli {
   }
 
   private boolean parseParams(
-      CommandLine commandLine,
       CommandLineParser parser,
       Options options,
       String[] args,
       HelpFormatter hf) {
     try {
-      commandLine = parser.parse(options, args);
+      CommandLine commandLine = parser.parse(options, args);
       if (commandLine.hasOption(HELP_ARGS)) {
         hf.printHelp(Constants.CONSOLE_PREFIX, options, true);
         return false;
@@ -56,7 +55,7 @@ public class CommandCli {
       hf.printHelp(Constants.CONSOLE_PREFIX, options, true);
       return false;
     } catch (Exception e) {
-      System.out.println("Error params input, because " + e.getMessage());
+      System.out.println("Wrong params input, because " + e.getMessage());
       hf.printHelp(Constants.CONSOLE_PREFIX, options, true);
       return false;
     }
@@ -67,7 +66,6 @@ public class CommandCli {
     Options options = createOptions();
     HelpFormatter hf = new HelpFormatter();
     hf.setWidth(MAX_HELP_CONSOLE_WIDTH);
-    CommandLine commandLine = null;
     CommandLineParser parser = new DefaultParser();
 
     if (args == null || args.length == 0) {
@@ -75,7 +73,7 @@ public class CommandCli {
       hf.printHelp(Constants.CONSOLE_PREFIX, options, true);
       return false;
     }
-    return parseParams(commandLine, parser, options, args, hf);
+    return parseParams(parser, options, args, hf);
   }
 
   public static void main(String[] args) {}

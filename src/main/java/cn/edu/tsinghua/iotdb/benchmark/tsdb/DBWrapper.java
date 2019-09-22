@@ -16,11 +16,11 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DBWrapper implements IDatabase {
+public class DBWrapper implements Database {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(IDatabase.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
   private static Config config = ConfigParser.INSTANCE.config();
-  private IDatabase db;
+  private Database db;
   private static final double NANO_TO_SECOND = 1000000000.0d;
   private static final double NANO_TO_MILLIS = 1000000.0d;
   private Measurement measurement;

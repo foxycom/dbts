@@ -22,7 +22,7 @@ public class DBFactory {
   private static final Logger LOGGER = LoggerFactory.getLogger(DBFactory.class);
   private static Config config = ConfigParser.INSTANCE.config();
 
-  public IDatabase getDatabase() throws SQLException {
+  public Database getDatabase() throws SQLException {
 
     switch (config.DB_SWITCH) {
       case INFLUXDB:

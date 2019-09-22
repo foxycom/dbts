@@ -4,12 +4,9 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.Database;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.timescaledb.TimescaleDB;
-import cn.edu.tsinghua.iotdb.benchmark.utils.Sensors;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
-import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Point;
 import cn.edu.tsinghua.iotdb.benchmark.workload.query.impl.Query;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.GpsSensor;
@@ -25,12 +22,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
-public class Vertica implements IDatabase {
+public class Vertica implements Database {
   private static final Logger LOGGER = LoggerFactory.getLogger(Vertica.class);
   public static final String DROP_TABLE = "DROP TABLE IF EXISTS %s CASCADE;";
   private Config config;
@@ -40,7 +35,7 @@ public class Vertica implements IDatabase {
 
   public Vertica() {
     config = ConfigParser.INSTANCE.config();
-    templatesFile = new STGroupFile("vertica/queries.stg");
+    templatesFile = new STGroupFile("../templates/vertica/queries.stg");
   }
 
   @Override

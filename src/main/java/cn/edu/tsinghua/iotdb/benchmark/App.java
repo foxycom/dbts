@@ -15,7 +15,6 @@ import cn.edu.tsinghua.iotdb.benchmark.workload.schema.Bike;
 import cn.edu.tsinghua.iotdb.benchmark.workload.schema.DataSchema;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -26,6 +25,15 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class is the starting point of the benchmark tool. It decides which working mode to take
+ * based on the configuration file, which should be passed as a command line parameter, see
+ * {@link #main(String[])}. Currently only two modes are supported: benchmark with synthetic data
+ * and server mode. The former works with synthetic data generated on the fly, and executes
+ * predefined scenarios. The latter should be used on the machine running the benchmarked DBMS
+ * instance, as it collects machine's KPIs and sends them over TCP to the main benchmark tool, which
+ * runs in synthetic mode. See {@link SyntheticClient} and {@link ServerMonitoring} for more.
+ */
 public class App {
 
   static {
@@ -35,7 +43,14 @@ public class App {
   private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
   private static ClientMonitoring clientMonitoring;
 
-  public static void main(String[] args) throws SQLException {
+  /**
+   * Entry point of the benchmark tool. The input params should at least contain the -cf argument
+   * pointing to the location of a configuration file, e.g., -cf /home/user/dbts/conf/memsql.xml.
+   * See {@link CommandCli#init(String[])}.
+   *
+   * @param args CLI params.
+   */
+  public static void main(String[] args) {
 
     CommandCli cli = new CommandCli();
     if (!cli.init(args)) {
@@ -44,18 +59,22 @@ public class App {
     Config config = ConfigParser.INSTANCE.config();
     switch (config.WORK_MODE) {
       case SYNTHETIC_BENCHMARK:
-        testWithDefaultPath(config);
+        syntheticBenchmark(config);
         break;
       case SERVER_MODE:
         serverMode(config);
         break;
       default:
-        throw new SQLException("unsupported mode " + config.WORK_MODE);
+        throw new IllegalArgumentException("Unsupported mode " + config.WORK_MODE);
     }
   }
 
-  /** 按比例选择workload执行的测试 */
-  private static void testWithDefaultPath(Config config) {
+  /**
+   * Executes benchmarks with synthetic data.
+   *
+   * @param config Configuration params instance.
+   */
+  private static void syntheticBenchmark(Config config) {
 
     MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
     mySql.initMysql(true);
@@ -64,17 +83,15 @@ public class App {
     clientMonitoring.connect();
 
     Measurement measurement = new Measurement();
-    measurement.setRemark("this is my remark");
     DBWrapper dbWrapper = new DBWrapper(measurement);
 
-    // register schema if needed
     try {
       dbWrapper.init();
       if (config.ERASE_DATA) {
         try {
           dbWrapper.cleanup();
         } catch (TsdbException e) {
-          LOGGER.error("Cleanup {} failed because ", config.DB_SWITCH, e);
+          LOGGER.error("Could not erase {} data because ", config.DB_SWITCH, e);
         }
       }
       try {
@@ -85,18 +102,18 @@ public class App {
         }
         dbWrapper.registerSchema(schemaList);
       } catch (TsdbException e) {
-        LOGGER.error("Register {} schema failed because ", config.DB_SWITCH, e);
+        LOGGER.error("Registering {} schema failed because ", config.DB_SWITCH, e);
       }
     } catch (TsdbException e) {
-      LOGGER.error("Initialize {} failed because ", config.DB_SWITCH, e);
+      LOGGER.error("Initialization of {} failed because ", config.DB_SWITCH, e);
     } finally {
       try {
         dbWrapper.close();
       } catch (TsdbException e) {
-        LOGGER.error("Close {} failed because ", config.DB_SWITCH, e);
+        LOGGER.error("Could not close {} connection because ", config.DB_SWITCH, e);
       }
     }
-    // create CLIENT_NUMBER client threads to do the workloads
+
     List<Measurement> threadsMeasurements = new ArrayList<>();
     List<Client> clients = new ArrayList<>();
     CountDownLatch downLatch = new CountDownLatch(config.CLIENTS_NUMBER);
@@ -104,6 +121,8 @@ public class App {
         new CyclicBarrier(
             config.CLIENTS_NUMBER,
             () -> {
+
+              // Calculates and saves thread metrics after each loop.
               Measurement loopMeasurement = new Measurement();
               for (Client client : clients) {
                 loopMeasurement.mergeMeasurement(client.getMeasurement());
@@ -122,6 +141,16 @@ public class App {
     finalMeasure(executorService, downLatch, measurement, threadsMeasurements, st, clients);
   }
 
+  /**
+   * Calculates overall measurements after each thread has finished its tests.
+   *
+   * @param executorService Threads executor service.
+   * @param downLatch Threads down latch.
+   * @param measurement The overall measurement.
+   * @param threadsMeasurements Thread-specific measurements.
+   * @param st Start timestamp.
+   * @param clients Threads list.
+   */
   private static void finalMeasure(
       ExecutorService executorService,
       CountDownLatch downLatch,
@@ -132,33 +161,38 @@ public class App {
     executorService.shutdown();
 
     try {
-      // wait for all clients finish test
+      // Waits for all clients to finish tests.
       downLatch.await();
+
       clientMonitoring.shutdown();
     } catch (InterruptedException e) {
-      LOGGER.error("Exception occurred during waiting for all threads finish.", e);
+      LOGGER.error("Exception occurred during waiting for all threads to finish.", e);
       Thread.currentThread().interrupt();
     }
     long en = System.nanoTime();
     LOGGER.info("All clients finished.");
 
-    // sum up all the measurements and calculate statistics
+    // Sums up all the measurements and calculates statistics.
     measurement.setElapseTime((en - st) / Constants.NANO_TO_SECONDS);
+
     for (Client client : clients) {
       threadsMeasurements.add(client.getMeasurement());
     }
     for (Measurement m : threadsMeasurements) {
       measurement.mergeMeasurement(m);
     }
-    // must call calculateMetrics() before using the Metrics
+
     measurement.calculateMetrics();
-    // output results
-    measurement.showConfigs();
     measurement.showMeasurements();
     measurement.showMetrics();
     measurement.save();
   }
 
+  /**
+   * Starts dbts in server mode.
+   *
+   * @param config Configuration params instance.
+   */
   private static void serverMode(Config config) {
     ServerMonitoring monitor = ServerMonitoring.INSTANCE;
     try {

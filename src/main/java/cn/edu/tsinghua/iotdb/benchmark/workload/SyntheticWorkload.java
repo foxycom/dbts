@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class SyntheticWorkload implements IWorkload {
+public class SyntheticWorkload implements Workload {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SyntheticWorkload.class);
   private static Config config = ConfigParser.INSTANCE.config();

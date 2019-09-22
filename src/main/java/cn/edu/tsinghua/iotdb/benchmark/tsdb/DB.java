@@ -16,7 +16,7 @@ public enum DB {
   TIMESCALEDB_NARROW,
   TIMESCALEDB_WIDE;
 
-  private IDatabase db;
+  private Database db;
 
   public float getSize() throws TsdbException {
     float size = 0.0f;

@@ -4,7 +4,7 @@ import cn.edu.tsinghua.iotdb.benchmark.conf.Config;
 import cn.edu.tsinghua.iotdb.benchmark.conf.ConfigParser;
 import cn.edu.tsinghua.iotdb.benchmark.conf.Constants;
 import cn.edu.tsinghua.iotdb.benchmark.measurement.Status;
-import cn.edu.tsinghua.iotdb.benchmark.tsdb.IDatabase;
+import cn.edu.tsinghua.iotdb.benchmark.tsdb.Database;
 import cn.edu.tsinghua.iotdb.benchmark.tsdb.TsdbException;
 import cn.edu.tsinghua.iotdb.benchmark.utils.NameGenerator;
 import cn.edu.tsinghua.iotdb.benchmark.workload.ingestion.Batch;
@@ -21,7 +21,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.Map;
 
-public class Clickhouse implements IDatabase {
+public class Clickhouse implements Database {
 
   public static final String DROP_TABLE = "DROP TABLE IF EXISTS %s;";
   private static final Logger LOGGER = LoggerFactory.getLogger(Clickhouse.class);
@@ -35,7 +35,7 @@ public class Clickhouse implements IDatabase {
   public Clickhouse() {
     config = ConfigParser.INSTANCE.config();
     nameGenerator = NameGenerator.INSTANCE;
-    templatesFile = new STGroupFile("clickhouse/scenarios.stg");
+    templatesFile = new STGroupFile("../templates/clickhouse/scenarios.stg");
     tableName = "test";
   }
 
@@ -60,7 +60,7 @@ public class Clickhouse implements IDatabase {
       statement.execute(String.format(DROP_TABLE, "bikes"));
       statement.execute(String.format(DROP_TABLE, tableName));
 
-      LOGGER.info("Waiting {}ms for old data deletion.", config.ERASE_WAIT_TIME);
+      LOGGER.info("Waiting {}ms to erase old data.", config.ERASE_WAIT_TIME);
       Thread.sleep(config.ERASE_WAIT_TIME);
     } catch (SQLException e) {
       LOGGER.warn("Erasing {} failed, because: {}", tableName, e.getMessage());
