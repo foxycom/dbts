@@ -1,0 +1,58 @@
+package de.uni_passau.dbts.benchmark.workload.schema;
+
+import de.uni_passau.dbts.benchmark.tsdb.DB;
+import org.apache.commons.lang3.NotImplementedException;
+
+import java.util.Locale;
+
+public class GeoPoint {
+  private double longitude;
+  private double latitude;
+
+  public GeoPoint(double longitude, double latitude) {
+    this.longitude = longitude;
+    this.latitude = latitude;
+  }
+
+  public GeoPoint(GeoPoint other) {
+    this.longitude = other.longitude;
+    this.latitude = other.latitude;
+  }
+
+  public double getLongitude() {
+    return longitude;
+  }
+
+  public void setLongitude(double longitude) {
+    this.longitude = longitude;
+  }
+
+  public double getLatitude() {
+    return latitude;
+  }
+
+  public void setLatitude(double latitude) {
+    this.latitude = latitude;
+  }
+
+  public String getValue(DB currentDb) {
+    switch (currentDb) {
+      case MEMSQL:
+      case CRATEDB:
+        return String.format("'POINT(%s %s)'", longitude, latitude);
+      case VERTICA:
+        return String.format("POINT(%s %s)", longitude, latitude);
+      case CITUS:
+      case TIMESCALEDB_WIDE:
+      case TIMESCALEDB_NARROW:
+        return String.format("ST_SetSRID(ST_MakePoint(%s, %s),4326)", longitude, latitude);
+      case INFLUXDB:
+      case CLICKHOUSE:
+        return String.format(Locale.US, "%f,%f", longitude, latitude);
+      case WARP10:
+        return String.format(Locale.US, "%f,%f", latitude, longitude);
+      default:
+        throw new NotImplementedException("");
+    }
+  }
+}
