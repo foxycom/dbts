@@ -50,7 +50,7 @@ WITH data AS (
 	AND time > '<start>'
 	AND time \< '<end>'
 	GROUP BY second, bike_id, <gpsSensor>
-	HAVING AVG(<sensor>) >= <threshold>
+	HAVING AVG(<sensor>) > <threshold>
 )
 SELECT d.second, d.bike_id, b.owner_name, d.<gpsSensor> FROM bikes b, data d
 WHERE d.bike_id = b.bike_id

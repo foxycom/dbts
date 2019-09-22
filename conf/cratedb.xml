@@ -109,7 +109,6 @@
 
     <batch size="10000"/>
     <loops>1</loops>
-    <pointStep>1</pointStep>
     <encoding>gorilla</encoding>
 
     <serverMonitor active="false">
