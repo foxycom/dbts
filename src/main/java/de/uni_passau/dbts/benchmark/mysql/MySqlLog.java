@@ -362,10 +362,6 @@ public class MySqlLog {
       statement.addBatch(sql);
       sql =
           String.format(
-              SAVE_CONFIG, "'" + projectID + "'", "'VERSION'", "'" + config.VERSION + "'");
-      statement.addBatch(sql);
-      sql =
-          String.format(
               SAVE_CONFIG,
               "'" + projectID + "'",
               "'CLIENT_NUMBER'",
@@ -376,13 +372,6 @@ public class MySqlLog {
       sql =
           String.format(
               SAVE_CONFIG, "'" + projectID + "'", "'IS_OVERFLOW'", "'" + config.USE_OVERFLOW + "'");
-      statement.addBatch(sql);
-      sql =
-          String.format(
-              SAVE_CONFIG,
-              "'" + projectID + "'",
-              "'MUL_DEV_BATCH'",
-              "'" + config.MUL_DEV_BATCH + "'");
       statement.addBatch(sql);
       sql =
           String.format(

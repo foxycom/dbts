@@ -1,5 +1,8 @@
 package de.uni_passau.dbts.benchmark.utils;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import de.uni_passau.dbts.benchmark.conf.Config;
 import de.uni_passau.dbts.benchmark.conf.ConfigParser;
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
@@ -11,9 +14,8 @@ public class Sensors {
   private static Config config = ConfigParser.INSTANCE.config();
 
   public static Sensor minInterval(List<Sensor> sensors) {
-    if (sensors.isEmpty()) {
-      return null;
-    }
+    checkNotNull(sensors);
+    checkArgument(!sensors.isEmpty());
 
     Sensor sensorWithMinInterval = sensors.get(0);
     for (Sensor sensor : sensors) {
@@ -25,6 +27,8 @@ public class Sensors {
   }
 
   public static Sensor ofType(String type) {
+    checkNotNull(type);
+
     Sensor typedSensor = null;
     for (Sensor sensor : config.SENSORS) {
       if (sensor.getSensorGroup().getName().toLowerCase().contains(type.toLowerCase())) {

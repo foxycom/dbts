@@ -320,7 +320,6 @@ public class Measurement {
   public void showConfigs() {
     System.out.println("----------------------Test Configurations----------------------");
     System.out.println("DB_SWITCH: " + config.DB_SWITCH);
-    System.out.println("GEN_DATA_FILE_PATH: " + config.GEN_DATA_FILE_PATH);
     System.out.println("OPERATION_PROPORTION: " + config.OPERATION_PROPORTION);
     System.out.println("IS_CLIENT_BIND: " + config.BIND_CLIENTS_TO_DEVICES);
     System.out.println("CLIENT_NUMBER: " + config.CLIENTS_NUMBER);
