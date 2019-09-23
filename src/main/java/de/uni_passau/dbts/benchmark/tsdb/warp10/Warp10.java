@@ -455,8 +455,8 @@ public class Warp10 implements Database {
    * <p>// Fetches GPS data of all bikes:</p><p><code>
    * [ <br>
    *   $read_token <br>
-   *   'gps' <br>
-   *   { 'sensor_id' 's_12' } <br>
+   *   'emg' <br>
+   *   { 'sensor_id' 's_40' } <br>
    *   MAXLONG <br>
    *   MINLONG <br>
    * ] FETCH <br></code>
@@ -470,13 +470,13 @@ public class Warp10 implements Database {
    */
   @Override
   public Status lastKnownPosition(Query query) {
-    Sensor gpsSensor = query.getGpsSensor();
-    SensorGroup sensorGroup = gpsSensor.getSensorGroup();
+    Sensor sensor = query.getSensor();
+    SensorGroup sensorGroup = sensor.getSensorGroup();
     ST template = templatesFile.getInstanceOf("lastKnownPosition");
     template
         .add("readToken", config.READ_TOKEN)
         .add("class", sensorGroup.getName())
-        .add("sensor", gpsSensor.getName());
+        .add("sensor", sensor.getName());
     String warpScript = template.render();
     return exec(warpScript);
   }
