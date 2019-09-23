@@ -62,7 +62,7 @@ public class Warp10 implements Database {
     writeUri = String.format(writeUri, config.HOST, config.PORT);
     deleteUri = String.format(deleteUri, config.HOST, config.PORT);
     execUri = String.format(execUri, config.HOST, config.PORT);
-    templatesFile = new STGroupFile("../templates/warp10/scenarios.stg");
+    templatesFile = new STGroupFile("templates/warp10/scenarios.stg");
   }
 
   @Override
@@ -513,50 +513,58 @@ public class Warp10 implements Database {
    * 'some token' <br>
    * 'read_token' STORE <br> </code>
    *
-   * <p>// Fetches values of particles sensors within a time range:
+   * <p>// Fetches ids of all bikes:
    *
    * <p><code>
    * [ <br>
-   * $read_token <br>
-   * 'particles' <br>
-   * { 'sensor_id' 's_34' } <br>
-   * '2018-08-30T01:00:00.000Z' <br>
-   * '2018-08-30T00:00:00.000Z' <br>
-   * ] FETCH <br></code>
-   *
-   * <p>// Downsamples to 1 second buckets:
-   *
-   * <p><code>
-   * &lt;% <br>
-   * DROP 'gts' STORE <br>
-   * [ <br>
-   * $gts <br>
-   * bucketizer.mean <br>
-   * 0 1 s 0 <br>
-   * ] <br>
-   * BUCKETIZE NONEMPTY <br>
-   * <p>
-   * %&gt; LMAP FLATTEN <br>
-   * <p>
-   * [] 'list' STORE <br></code>
-   *
-   * <p>// Selects distinct coordinates and respective particles values:
+   *   $read_token <br>
+   *   'particles' <br>
+   *   { 'sensor_id' 's_34' } <br>
+   * ] FIND <br>
+   * <% <br>
+   *   DROP <br>
+   *   LABELS 'bike_id' GET <br>
+   * %> <br>
+   * LMAP</code>
    *
    * <p><code>
-   * &lt;%
-   * SWAP 'gts' STORE <br>
-   * $gts LOCATIONS <br>
-   * 'latitudes' STORE <br>
-   * 'longitudes' STORE <br>
-   * $gts VALUES 'values' STORE <br>
-   * 0 $values SIZE 1 - <br>
-   * &lt;% <br>
-   * 'i' STORE <br>
-   * $list [ $values $i GET $latitudes $i GET $longitudes $i GET ] +! <br>
-   * %&gt; <br>
-   * FOR <br>
-   * %&gt; <br>
-   * LFLATMAP
+   * () 'heatmap' STORE </code>
+   * <p>// For each bike:</p>
+   * <p><code>
+   * <%
+   *   'bike_id' STORE</code>
+   *
+   *   <p>// Fetches particles data within a time range:</p><p><code>
+   *   [
+   *     $read_token
+   *     'particles'
+   *     { 'sensor_id' 's_34' 'bike_id' $bike_id }
+   *     '2018-08-30T01:00:00.000Z'
+   *     '2018-08-30T00:00:00.000Z'
+   *   ] FETCH</code>
+   *
+   *   <p>// Downsamples to 1 second buckets:</p><p><code>
+   *   [
+   *     SWAP
+   *     bucketizer.mean
+   *     0 1 s 0
+   *   ] BUCKETIZE 'res' STORE</code>
+   *
+   *   <p>// If there are any data, then stores each combination of location + particles value into
+   *   the <code>heatmap</code> set</p><p><code>
+   *   <% $res SIZE 0 > %>
+   *   <%
+   *     $res 0 GET 'gts' STORE
+   *     $gts LOCATIONS 'longitudes' STORE 'latitudes' STORE
+   *     $gts VALUES 'values' STORE
+   *     0 $values SIZE 1 -
+   *     <%
+   *       'i' STORE
+   *       $heatmap [ $longitudes $i GET $latitudes $i GET $values $i GET ] +! DROP
+   *     %> FOR
+   *   %> IFT
+   * %> FOREACH
+   * $heatmap SET->
    * </code>
    */
   @Override

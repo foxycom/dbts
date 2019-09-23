@@ -33,40 +33,45 @@ airPollutionHeatMap(readToken, class, sensor, end, start) ::= <<
 'read_token' STORE
 
 [
+  $read_token
+  '<class>'
+  { 'sensor_id' '<sensor>' }
+] FIND
+\<%
+  DROP
+  LABELS 'bike_id' GET
+%>
+LMAP
+() 'heatmap' STORE
+\<%
+  'bike_id' STORE
+  [
     $read_token
     '<class>'
-    { 'sensor_id' '<sensor>' }
+    { 'sensor_id' '<sensor>' 'bike_id' $bike_id }
     '<end>'
     '<start>'
-] FETCH
+  ] FETCH
 
-\<%
-    DROP 'gts' STORE
-    [
-        $gts
-        bucketizer.mean
-        0 1 s 0
-    ]
-    BUCKETIZE NONEMPTY
+  [
+    SWAP
+    bucketizer.mean
+    0 1 s 0
+  ] BUCKETIZE 'res' STORE
 
-%> LMAP FLATTEN
-
-[] 'list' STORE
-
-\<%
-    SWAP 'gts' STORE
-    $gts LOCATIONS
-    'latitudes' STORE
-    'longitudes' STORE
+  \<% $res SIZE 0 > %>
+  \<%
+    $res 0 GET 'gts' STORE
+    $gts LOCATIONS 'longitudes' STORE 'latitudes' STORE
     $gts VALUES 'values' STORE
     0 $values SIZE 1 -
     \<%
-        'i' STORE
-        $list [ $values $i GET $latitudes $i GET $longitudes $i GET ] +!
-    %>
-    FOR
-%>
-LFLATMAP
+      'i' STORE
+      $heatmap [ $longitudes $i GET $latitudes $i GET $values $i GET ] +! DROP
+    %> FOR
+  %> IFT
+%> FOREACH
+$heatmap SET->
 >>
 
 offlineBikes(readToken, bikesNum, class, sensor, time) ::= <<
