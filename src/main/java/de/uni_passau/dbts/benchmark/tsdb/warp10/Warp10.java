@@ -807,10 +807,10 @@ public class Warp10 implements Database {
   }
 
   private Status send(HttpRequest request) {
-    HttpResponse<String> res;
+    HttpResponse<Void> res;
     long startTimestamp = System.nanoTime();
     try {
-      res = client.send(request, HttpResponse.BodyHandlers.ofString());
+      res = client.send(request, HttpResponse.BodyHandlers.discarding());
     } catch (IOException | InterruptedException e) {
       LOGGER.debug("An error occurred while sending request: ", e);
       return new Status(false, 0, e, e.getMessage());
@@ -818,7 +818,7 @@ public class Warp10 implements Database {
     if (res.statusCode() != 200) {
       LOGGER.error(
           "Could not process request with code {} because {}", res.statusCode(), res.body());
-      return new Status(false, 0, new TsdbException(), res.body());
+      return new Status(false, 0, new TsdbException(), res.toString());
     }
     long endTimestamp = System.nanoTime();
     Map<String, List<String>> headers = res.headers().map();
