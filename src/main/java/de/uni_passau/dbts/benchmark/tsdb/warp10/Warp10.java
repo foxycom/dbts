@@ -62,7 +62,7 @@ public class Warp10 implements Database {
     writeUri = String.format(writeUri, config.HOST, config.PORT);
     deleteUri = String.format(deleteUri, config.HOST, config.PORT);
     execUri = String.format(execUri, config.HOST, config.PORT);
-    templatesFile = new STGroupFile("templates/warp10/scenarios.stg");
+    templatesFile = new STGroupFile("../templates/warp10/scenarios.stg");
   }
 
   @Override
