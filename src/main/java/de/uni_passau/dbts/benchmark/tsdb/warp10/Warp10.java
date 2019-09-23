@@ -301,53 +301,29 @@ public class Warp10 implements Database {
    * 'some token' <br>
    * 'read_token' STORE <br></code>
    *
-   * <p>// Generates a list of all bikes:
+   * <p>// Fetches last accelerometer readings for each bike:
    *
    * <p><code>
-   * [] 'bikes' STORE <br>
-   * 0 12 1 - <br>
-   * &lt;% <br>
-   * 'i' STORE <br>
-   * $bikes [ 'bike_' $i TOSTRING + ] APPEND DROP <br>
-   * %&gt; <br>
-   * FOR <br>
-   * [] 'offlineBikes' STORE <br></code>
+   * [
+   *   $read_token
+   *   'accelerometer'
+   *   { 'sensor_id' 's_0' }
+   *   MAXLONG
+   *   -1
+   * ] FETCH NONEMPTY<br></code>
    *
-   * <p>// Fetches accelerometer readings within the time range:
-   *
-   * <p><code>
-   * [ <br>
-   * $read_token <br>
-   * 'accelerometer' <br>
-   * { 'sensor_id' 's_0' } <br>
-   * '2018-08-30T01:00:00.000Z' <br>
-   * '2018-08-30T00:00:00.000Z' <br>
-   * ] FETCH NONEMPTY <br></code>
-   *
-   * <p>// Gets bike ids from the fetched data:
+   * <p>// Looks for bikes with last timestamp < given timestamp:
    *
    * <p><code>
-   * &lt;% <br>
-   * DROP <br>
-   * LABELS 'bike_id' GET <br>
-   * %&gt; <br>
-   * LMAP 'gtsBikes' STORE <br></code>
-   *
-   * <p>// Compares all bike ids with fetched bike ids and stores those not included in the fetched
-   * data:
-   *
-   * <p><code>
-   * $bikes SIZE 1 - 'size' STORE <br>
-   * 0 $size <br>
-   * &lt;% <br>
-   * 'i' STORE <br>
-   * $bikes $i GET 'bike_id' STORE <br>
-   * &lt;% $gtsBikes $bike_id CONTAINS SWAP DROP %&gt; <br>
-   * &lt;%  %&gt; <br>
-   * &lt;% $offlineBikes $bike_id +! DROP %&gt; <br>
-   * IFTE <br>
-   * %&gt; FOR <br>
-   * $offlineBikes <br>
+   * '2018-08-30T01:00:00.000Z' TOTIMESTAMP 'timestamp' STORE <br>
+   * [] 'offline_bikes' STORE <br>
+   * <% <br>
+   *   'gts' STORE <br>
+   *   <% $gts TICKS 0 GET $timestamp < %> <br>
+   *   <% $offline_bikes $gts LABELS 'bike_id' GET +! DROP %> <br>
+   *   IFT <br>
+   * %> FOREACH <br>
+   * $offline_bikes <br>
    * </code>
    */
   @Override
@@ -355,15 +331,13 @@ public class Warp10 implements Database {
     Sensor sensor = query.getSensor();
     SensorGroup sensorGroup = sensor.getSensorGroup();
     String endTimestamp = parseTimestamp(query.getEndTimestamp());
-    String startTimestamp = parseTimestamp(query.getStartTimestamp());
     ST template = templatesFile.getInstanceOf("offlineBikes");
     template
         .add("readToken", config.READ_TOKEN)
         .add("bikesNum", config.DEVICES_NUMBER)
         .add("class", sensorGroup.getName())
         .add("sensor", sensor.getName())
-        .add("end", endTimestamp)
-        .add("start", startTimestamp);
+        .add("time", endTimestamp);
     String warpScript = template.render();
     return exec(warpScript);
   }
@@ -488,36 +462,46 @@ public class Warp10 implements Database {
    * 'some token' <br>
    * 'read_token' STORE <br></code>
    *
-   * <p>// Fetches GPS data of all bikes:
+   * <p>// Fetches last GPS data of all bikes:
    *
    * <p><code>
    * [ <br>
-   * $read_token <br>
-   * 'gps' <br>
-   * { 'sensor_id' 's_12' } <br>
-   * MAXLONG <br>
-   * MINLONG <br>
-   * ] FETCH <br></code>
+   *   $read_token <br>
+   *   'emg' <br>
+   *   { 'sensor_id' 's_40' } <br>
+   *   MAXLONG <br>
+   *   -1 <br>
+   * ] FETCH</code>
    *
-   * <p>// Selects last value for each bike:
+   * <p>// Puts last known data of each bike in a map:
    *
    * <p><code>
-   * [ <br>
-   * SWAP <br>
-   * mapper.last <br>
-   * MAXLONG MAXLONG 1 <br>
-   * ] MAP <br>
+   * <% <br>
+   *   DROP <br>
+   *   'gts' STORE <br>
+   *   $gts TICKS 0 GET 'timestamp' STORE <br>
+   *   $gts LOCATIONS 0 GET 'longitude' STORE <br>
+   *   0 GET 'latitude' STORE <br>
+   *   $gts LABELS 'bike_id' GET 'bike_id' STORE <br>
+   *   { <br>
+   *     'bike_id' $bike_id <br>
+   *     'timestamp' $timestamp <br>
+   *     'longitude' $longitude <br>
+   *     'latitude' $latitude <br>
+   *   } <br>
+   * %> <br>
+   * LMAP
    * </code>
    */
   @Override
   public Status lastKnownPosition(Query query) {
-    Sensor gpsSensor = query.getGpsSensor();
-    SensorGroup sensorGroup = gpsSensor.getSensorGroup();
+    Sensor sensor = query.getSensor();
+    SensorGroup sensorGroup = sensor.getSensorGroup();
     ST template = templatesFile.getInstanceOf("lastKnownPosition");
     template
         .add("readToken", config.READ_TOKEN)
         .add("class", sensorGroup.getName())
-        .add("sensor", gpsSensor.getName());
+        .add("sensor", sensor.getName());
     String warpScript = template.render();
     return exec(warpScript);
   }
@@ -674,26 +658,17 @@ public class Warp10 implements Database {
    * 13.4443045 48.5645384, 13.4489393 48.5683155, 13.4492826 48.5710701, 13.4406567  <br>
    * 48.5723195))' 0.1 false GEO.WKT 'area' STORE <br></code>
    *
-   * <p>// Fetches data within a time range:
+   * <p>// Fetches last data of each bike:
    *
    * <p><code>
    * [ <br>
    * $read_token <br>
    * 'emg' <br>
    * { 'sensor_id' 's_40' } <br>
-   * '2018-08-30T01:00:00.000Z' <br>
-   * '2018-08-30T00:00:00.000Z' <br>
+   * MAXLONG <br>
+   * -1 <br>
    * ] FETCH <br></code>
-   *
-   * <p>// Selects last values for each bike:
-   *
-   * <p><code>
-   * [ <br>
-   * SWAP <br>
-   * mapper.last <br>
-   * MAXLONG MAXLONG 1 <br>
-   * ] MAP <br></code>
-   *
+
    * <p>// Checks if last coordinates lie within the area boundaries:
    *
    * <p><code>
@@ -708,15 +683,11 @@ public class Warp10 implements Database {
   public Status bikesInLocation(Query query) {
     Sensor sensor = query.getSensor();
     SensorGroup sensorGroup = sensor.getSensorGroup();
-    String endTimestamp = parseTimestamp(query.getEndTimestamp());
-    String startTimestamp = parseTimestamp(query.getStartTimestamp());
     ST template = templatesFile.getInstanceOf("bikesInLocation");
     template
         .add("readToken", config.READ_TOKEN)
         .add("class", sensorGroup.getName())
-        .add("sensor", sensor.getName())
-        .add("end", endTimestamp)
-        .add("start", startTimestamp);
+        .add("sensor", sensor.getName());
     String warpScript = template.render();
     return exec(warpScript);
   }

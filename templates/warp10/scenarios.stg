@@ -69,43 +69,26 @@ airPollutionHeatMap(readToken, class, sensor, end, start) ::= <<
 LFLATMAP
 >>
 
-offlineBikes(readToken, bikesNum, class, sensor, end, start) ::= <<
+offlineBikes(readToken, bikesNum, class, sensor, time) ::= <<
 '<readToken>'
 'read_token' STORE
-[] 'bikes' STORE
-0 <bikesNum> 1 -
-\<%
-  'i' STORE
-  $bikes [ 'bike_' $i TOSTRING + ] APPEND DROP
-%>
-FOR
-[] 'offlineBikes' STORE
 
 [
   $read_token
   '<class>'
   { 'sensor_id' '<sensor>' }
-  '<end>'
-  '<start>'
+  MAXLONG
+  -1
 ] FETCH NONEMPTY
-
+'<time>' TOTIMESTAMP 'timestamp' STORE
+[] 'offline_bikes' STORE
 \<%
-  DROP
-  LABELS 'bike_id' GET
-%>
-LMAP 'gtsBikes' STORE
-
-$bikes SIZE 1 - 'size' STORE
-0 $size
-\<%
-   'i' STORE
-   $bikes $i GET 'bike_id' STORE
-   \<% $gtsBikes $bike_id CONTAINS SWAP DROP %>
-   \<%  %>
-   \<% $offlineBikes $bike_id +! DROP %>
-   IFTE
-%> FOR
-$offlineBikes
+  'gts' STORE
+  \<% $gts TICKS 0 GET $timestamp \< %>
+  \<% $offline_bikes $gts LABELS 'bike_id' GET +! DROP %>
+  IFT
+%> FOREACH
+$offline_bikes
 >>
 
 gpsPathScan(readToken, class, sensor, bike, end, start) ::= <<
@@ -125,7 +108,7 @@ $gts TICKS
 $gts LOCATIONS
 >>
 
-bikesInLocation(readToken, class, sensor, end, start) ::= <<
+bikesInLocation(readToken, class, sensor) ::= <<
 '<readToken>'
 'read_token' STORE
 'POLYGON ((13.4406567 48.5723195, 13.4373522 48.5707861, 13.4373522 48.5662708, 13.4443045 48.5645384, 13.4489393 48.5683155, 13.4492826 48.5710701, 13.4406567 48.5723195))' 0.1 false GEO.WKT 'area' STORE
@@ -134,15 +117,9 @@ bikesInLocation(readToken, class, sensor, end, start) ::= <<
   $read_token
   '<class>'
   { 'sensor_id' '<sensor>' }
-  '<end>'
-  '<start>'
+  MAXLONG
+  -1
 ] FETCH
-
-[
-  SWAP
-  mapper.last
-  MAXLONG MAXLONG 1
-] MAP
 
 [
   SWAP
@@ -237,11 +214,21 @@ lastKnownPosition(readToken, class, sensor) ::= <<
   '<class>'
   { 'sensor_id' '<sensor>' }
   MAXLONG
-  MINLONG
+  -1
 ] FETCH
-[
-  SWAP
-  mapper.last
-  MAXLONG MAXLONG 1
-] MAP
+\<%
+  DROP
+  'gts' STORE
+  $gts TICKS 0 GET 'timestamp' STORE
+  $gts LOCATIONS 0 GET 'longitude' STORE
+  0 GET 'latitude' STORE
+  $gts LABELS 'bike_id' GET 'bike_id' STORE
+  {
+    'bike_id' $bike_id
+    'timestamp' $timestamp
+    'longitude' $longitude
+    'latitude' $latitude
+  }
+%>
+LMAP
 >>
