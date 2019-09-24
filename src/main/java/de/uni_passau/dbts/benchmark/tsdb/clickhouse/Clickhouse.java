@@ -129,7 +129,7 @@ public class Clickhouse implements Database {
       // Creates bikes' relational data table.
       statement.execute(
           "CREATE TABLE IF NOT EXISTS bikes (bike_id String, owner_name String) "
-              + "ENGINE = MergeTree() PARTITION BY bike_id ORDER BY bike_id;");
+              + "ENGINE = MergeTree() ORDER BY bike_id;");
 
       // Inserts all bikes.
       statement.execute(getInsertBikesSql(schemaList));
