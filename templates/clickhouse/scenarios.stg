@@ -19,10 +19,9 @@ GROUP BY longitude, latitude;
 >>
 
 lastKnownPosition(tableName) ::= <<
-SELECT bike_id, anyLast(time) AS time, anyLast(longitude) AS longitude,
-anyLast(latitude) AS latitude
-FROM <tableName> GROUP
-BY bike_id;
+SELECT anyLast(time), bike_id, anyLast(longitude), anyLast(latitude) FROM (
+   SELECT time, bike_id, longitude, latitude FROM <tableName> ORDER BY time
+) GROUP BY bike_id;
 >>
 
 identifyTrips(tableName, bike, start, end, sensor, threshold) ::= <<
