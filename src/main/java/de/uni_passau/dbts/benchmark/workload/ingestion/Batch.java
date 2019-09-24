@@ -54,7 +54,7 @@ public class Batch {
   }
 
   /**
-   * Transforms the from column-oriented format (each column represents readings of one sensor
+   * Transforms the batch from column-oriented format (each column represents readings of one sensor
    * group) to row-oriented format.
    *
    * @return Transformed batch.

@@ -431,10 +431,6 @@ public class MySqlLog {
     Statement statement = mysqlConnection.createStatement();
 
     ResultSet resultSet = statement.executeQuery(checkTable);
-    if (resultSet.next()) {
-      return true;
-    } else {
-      return false;
-    }
+    return resultSet.next();
   }
 }

@@ -5,7 +5,6 @@ import de.uni_passau.dbts.benchmark.conf.Config;
 import de.uni_passau.dbts.benchmark.conf.ConfigParser;
 import de.uni_passau.dbts.benchmark.conf.Constants;
 import de.uni_passau.dbts.benchmark.distribution.PossionDistribution;
-import de.uni_passau.dbts.benchmark.distribution.ProbTool;
 import de.uni_passau.dbts.benchmark.function.GeoFunction;
 import de.uni_passau.dbts.benchmark.utils.NameGenerator;
 import de.uni_passau.dbts.benchmark.utils.Sensors;
@@ -27,7 +26,6 @@ public class SyntheticWorkload implements Workload {
   private static final Logger LOGGER = LoggerFactory.getLogger(SyntheticWorkload.class);
   private static Config config = ConfigParser.INSTANCE.config();
   private static Random timestampRandom = new Random(config.DATA_SEED);
-  private ProbTool probTool;
   private NameGenerator nameGenerator = NameGenerator.INSTANCE;
   private long maxTimestampIndex;
   private Random poissonRandom;
@@ -40,7 +38,6 @@ public class SyntheticWorkload implements Workload {
    * @param clientId ID of the thread which uses this generator.
    */
   public SyntheticWorkload(int clientId) {
-    probTool = new ProbTool();
     maxTimestampIndex = 0;
 
     poissonRandom = new Random(config.DATA_SEED);
@@ -95,7 +92,7 @@ public class SyntheticWorkload implements Workload {
     int nextDelta;
     long stepOffset;
     for (long batchOffset = 0; batchOffset < config.BATCH_SIZE; batchOffset++) {
-      if (probTool.returnTrueByProb(config.OVERFLOW_RATIO, poissonRandom)) {
+      if (poissonRandom.nextDouble() < config.OVERFLOW_RATIO) {
         // Generates overflow timestamp.
         nextDelta = possionDistribution.getNextPossionDelta();
         stepOffset = maxTimestampIndex - nextDelta;

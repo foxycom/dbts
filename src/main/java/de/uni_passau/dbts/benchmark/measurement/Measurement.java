@@ -3,18 +3,21 @@ package de.uni_passau.dbts.benchmark.measurement;
 import de.uni_passau.dbts.benchmark.client.OperationController.Operation;
 import de.uni_passau.dbts.benchmark.conf.Config;
 import de.uni_passau.dbts.benchmark.conf.ConfigParser;
-
-import java.util.*;
-
 import de.uni_passau.dbts.benchmark.mysql.MySqlLog;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Measurement {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Measurement.class);
-  private static Config config = ConfigParser.INSTANCE.config();
   private static final double[] MID_AVG_RANGE = {0.1, 0.9};
+  private static Config config = ConfigParser.INSTANCE.config();
   private Map<Operation, List<Double>> operationLatencies;
 
   /* The sums of latencies per operation per thread. */
@@ -91,20 +94,8 @@ public class Measurement {
     return failPointNumMap.get(operation);
   }
 
-  public void addOperationLatency(Operation op, double latency) {
-    operationLatencies.get(op).add(latency);
-  }
-
   public void addOkPointNum(Operation operation, int pointNum) {
     okPointNumMap.put(operation, okPointNumMap.get(operation) + pointNum);
-  }
-
-  public void addFailPointNum(Operation operation, int pointNum) {
-    failPointNumMap.put(operation, failPointNumMap.get(operation) + pointNum);
-  }
-
-  public void addOkOperation(Operation operation) {
-    okOperationNumMap.put(operation, okOperationNumMap.get(operation) + 1);
   }
 
   public void addFailOperation(Operation operation) {
@@ -117,6 +108,10 @@ public class Measurement {
 
   private Map<Operation, List<Double>> getOperationLatencies() {
     return operationLatencies;
+  }
+
+  public void setOperationLatencies(Map<Operation, List<Double>> operationLatencies) {
+    this.operationLatencies = operationLatencies;
   }
 
   public void addOkOperation(Operation operation, double latency, long okPointNum) {
@@ -184,10 +179,6 @@ public class Measurement {
 
   public void setRemark(String remark) {
     this.remark = remark;
-  }
-
-  public void setOperationLatencies(Map<Operation, List<Double>> operationLatencies) {
-    this.operationLatencies = operationLatencies;
   }
 
   public double getCreateSchemaTime() {
@@ -356,20 +347,6 @@ public class Measurement {
         "-----------------------------------------------------------------------------------------------------------------");
   }
 
-  class DoubleComparator implements Comparator<Double> {
-
-    @Override
-    public int compare(Double a, Double b) {
-      if (a < b) {
-        return -1;
-      } else if (Objects.equals(a, b)) {
-        return 0;
-      } else {
-        return 1;
-      }
-    }
-  }
-
   private double getDoubleListSum(List<Double> list) {
     double sum = 0;
     for (double item : list) {
@@ -400,16 +377,7 @@ public class Measurement {
     MAX_LATENCY("MAX"),
     MAX_THREAD_LATENCY_SUM("MAX_SUM");
 
-    public Map<Operation, Double> getTypeValueMap() {
-      return typeValueMap;
-    }
-
     Map<Operation, Double> typeValueMap;
-
-    public String getName() {
-      return name;
-    }
-
     String name;
 
     Metric(String name) {
@@ -417,6 +385,28 @@ public class Measurement {
       typeValueMap = new EnumMap<>(Operation.class);
       for (Operation operation : Operation.values()) {
         typeValueMap.put(operation, 0D);
+      }
+    }
+
+    public Map<Operation, Double> getTypeValueMap() {
+      return typeValueMap;
+    }
+
+    public String getName() {
+      return name;
+    }
+  }
+
+  class DoubleComparator implements Comparator<Double> {
+
+    @Override
+    public int compare(Double a, Double b) {
+      if (a < b) {
+        return -1;
+      } else if (Objects.equals(a, b)) {
+        return 0;
+      } else {
+        return 1;
       }
     }
   }

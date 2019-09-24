@@ -10,86 +10,146 @@ import org.slf4j.LoggerFactory;
 public class Bike {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Bike.class);
-  private static Config config = ConfigParser.INSTANCE.config();
-  public static final String GROUP_NAME_PREFIX = "group_";
+
+  /** Prefix to use for each group's name. */
+  private static final String GROUP_NAME_PREFIX = "group_";
+
+  /** Prefix to use for each bike's name. */
   private static final String DEVICE_NAME_PREFIX = "bike_";
 
-  // each device belongs to one group, i.e., database
+  /** Config singleton. */
+  private static Config config = ConfigParser.INSTANCE.config();
+
+  /** Each bike belongs to a group. */
   private String group;
 
-  // bikeId
-  private String device;
+  /** Name of the bike. */
+  private String name;
 
-  // sensorIds
+  /** List of sensors which the bike is equipped with. */
   private List<Sensor> sensors;
 
-  // only for synthetic data set
-  private int bikeId;
+  /** Index of the bike. */
+  private int bikeIdx;
 
+  /** Owner's name */
   private String ownerName;
 
-  public Bike(int bikeId, String ownerName) {
-    this.bikeId = bikeId;
-    this.device = DEVICE_NAME_PREFIX + bikeId;
+  /**
+   * Creates a new bike.
+   *
+   * @param bikeIdx Index of the new bike.
+   * @param ownerName Owner's name.
+   */
+  public Bike(int bikeIdx, String ownerName) {
+    this.bikeIdx = bikeIdx;
+    this.name = DEVICE_NAME_PREFIX + bikeIdx;
     this.ownerName = ownerName;
     sensors = new ArrayList<>();
     createEvenlyAllocBikeSchema();
   }
 
-  public Bike(String group, String device, List<Sensor> sensors, String ownerName) {
+  /**
+   * Creates a new bike.
+   *
+   * @param group Group name the bike belongs to.
+   * @param name Name of the bike.
+   * @param sensors List of sensors the bike is equipped with.
+   * @param ownerName Owner's name.
+   */
+  public Bike(String group, String name, List<Sensor> sensors, String ownerName) {
     this.group = GROUP_NAME_PREFIX + group;
-    this.device = DEVICE_NAME_PREFIX + device;
+    this.name = DEVICE_NAME_PREFIX + name;
     this.ownerName = ownerName;
     setSensors(sensors);
   }
 
+  /**
+   * Allocates the bike to a group the way that each group preferably contains an even number
+   * of bikes.
+   */
   private void createEvenlyAllocBikeSchema() {
-    int thisDeviceGroupIndex =
-        calGroupId(bikeId, config.DEVICES_NUMBER, config.DEVICE_GROUPS_NUMBER);
+    int thisDeviceGroupIndex = bikeIdx % config.DEVICE_GROUPS_NUMBER;
     group = GROUP_NAME_PREFIX + thisDeviceGroupIndex;
     setSensors(config.SENSORS);
   }
 
-  static int calGroupId(int bikeId, int deviceNum, int groupNum) {
-    return bikeId % groupNum;
-  }
-
+  /**
+   * Returns the name of the bike.
+   *
+   * @return Name of the bike.
+   */
   public String getName() {
-    return device;
+    return name;
   }
 
-  public void setDevice(String device) {
-    this.device = device;
+  /**
+   * Sets a new name.
+   *
+   * @param name New name.
+   */
+  public void setName(String name) {
+    this.name = name;
   }
 
+  /**
+   * Returns the group which the bike belongs to.
+   *
+   * @return NName of the group.
+   */
   public String getGroup() {
     return group;
   }
 
+  /**
+   * Assigns the bike to another group.
+   *
+   * @param group Name of the new group.
+   */
   public void setGroup(String group) {
     this.group = group;
   }
 
+  /**
+   * Returns list of sensors which the bike is equipped with.
+   *
+   * @return List of sensors.
+   */
   public List<Sensor> getSensors() {
     return sensors;
   }
 
+  /**
+   * Deeply copies the given list of sensors and applies it to the bike.
+   *
+   * @param sensors List of sensors.
+   */
   public void setSensors(List<Sensor> sensors) {
     this.sensors = new ArrayList<>(sensors.size());
     for (Sensor sensor : sensors) {
       if (sensor instanceof GpsSensor) {
 
-        this.sensors.add(new GpsSensor((GpsSensor) sensor, bikeId));
+        this.sensors.add(new GpsSensor((GpsSensor) sensor, bikeIdx));
       } else {
         this.sensors.add(new BasicSensor((BasicSensor) sensor));
       }
     }
   }
 
+  /**
+   * Returns the name of the bike owner.
+   *
+   * @return Name of the bike owner.
+   */
   public String getOwnerName() {
     return ownerName;
   }
 
+  /**
+   * Sets a new bike owner.
+   *
+   * @param ownerName Name of a new bike owner.
+   */
   public void setOwnerName(String ownerName) {
     this.ownerName = ownerName;
   }

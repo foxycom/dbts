@@ -27,7 +27,7 @@ public enum IoUsage {
       this.pos = p;
       this.max = m;
     }
-  };
+  }
 
   /**
    * Reads io from iostat. Its sample output is:
