@@ -397,7 +397,10 @@ public class Clickhouse implements Database {
   @Override
   public Status bikesInLocation(Query query) {
     ST template = templatesFile.getInstanceOf("bikesInLocation");
-    template.add("tableName", tableName);
+    template.add("tableName", tableName)
+        .add("longitude", Constants.SPAWN_POINT.getLongitude())
+        .add("latitude", Constants.SPAWN_POINT.getLatitude())
+        .add("radius", config.RADIUS);
     String debug = template.render();
     return executeQuery(debug);
   }
