@@ -95,7 +95,7 @@ public enum ClientMonitoring {
       return;
     }
 
-    if (state != state.DEAD) {
+    if (state != State.DEAD) {
       out.println(Message.CLOSE);
       client.proceed = false;
       state = State.DEAD;
@@ -108,7 +108,7 @@ public enum ClientMonitoring {
   private enum State {
     RUNNING,
     STOPPED,
-    DEAD;
+    DEAD
   }
 
   private class Client implements Runnable {

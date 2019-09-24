@@ -16,7 +16,7 @@ public abstract class Client implements Runnable {
   protected static Config config = ConfigParser.INSTANCE.config();
   protected Measurement measurement;
   private CountDownLatch countDownLatch;
-  protected CyclicBarrier barrier;
+  CyclicBarrier barrier;
   int clientThreadId;
   DBWrapper dbWrapper;
 

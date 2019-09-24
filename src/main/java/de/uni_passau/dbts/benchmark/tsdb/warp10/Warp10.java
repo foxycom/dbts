@@ -203,16 +203,22 @@ public class Warp10 implements Database {
    *
    * <p><code>
    * 'some token' <br>
-   * 'read_token' STORE <br>
-   * <p>
+   * 'read_token' STORE <br></code>
+   *
+   * <p>// Fetches current sensor values of a bike within a time range:
+   *
+   * <p><code>
    * [ <br>
    * $read_token <br>
    * 'current' <br>
    * { 'bike_id' 'bike_8' 'sensor_id' 's_17' } <br>
    * '2018-08-30T01:00:00.000Z' <br>
    * '2018-08-30T00:00:00.000Z' <br>
-   * ] FETCH <br>
-   * <p>
+   * ] FETCH <br></code>
+   *
+   * <p>// Selects only timestamps and locations arrays:
+   *
+   * <p><code>
    * 0 GET 'gts' STORE <br>
    * $gts TICKS <br>
    * $gts LOCATIONS <br>
@@ -312,17 +318,17 @@ public class Warp10 implements Database {
    *   -1
    * ] FETCH NONEMPTY<br></code>
    *
-   * <p>// Looks for bikes with last timestamp < given timestamp:
+   * <p>// Looks for bikes with last timestamp &lt; given timestamp:
    *
    * <p><code>
    * '2018-08-30T01:00:00.000Z' TOTIMESTAMP 'timestamp' STORE <br>
    * [] 'offline_bikes' STORE <br>
-   * <% <br>
+   * &lt;% <br>
    *   'gts' STORE <br>
-   *   <% $gts TICKS 0 GET $timestamp < %> <br>
-   *   <% $offline_bikes $gts LABELS 'bike_id' GET +! DROP %> <br>
+   *   &lt;% $gts TICKS 0 GET $timestamp &lt; %&gt; <br>
+   *   &lt;% $offline_bikes $gts LABELS 'bike_id' GET +! DROP %&gt; <br>
    *   IFT <br>
-   * %> FOREACH <br>
+   * %&gt; FOREACH <br>
    * $offline_bikes <br>
    * </code>
    */
@@ -380,7 +386,6 @@ public class Warp10 implements Database {
    * <p>// Selects last timestamp for each bike_id:
    *
    * <p><code>
-   * <p>
    * &lt;% <br>
    * DROP 'gts' STORE <br>
    * [] 'list' STORE <br>
@@ -476,7 +481,7 @@ public class Warp10 implements Database {
    * <p>// Puts last known data of each bike in a map:
    *
    * <p><code>
-   * <% <br>
+   * &lt;% <br>
    *   DROP <br>
    *   'gts' STORE <br>
    *   $gts TICKS 0 GET 'timestamp' STORE <br>
@@ -489,7 +494,7 @@ public class Warp10 implements Database {
    *     'longitude' $longitude <br>
    *     'latitude' $latitude <br>
    *   } <br>
-   * %> <br>
+   * %&gt; <br>
    * LMAP
    * </code>
    */
@@ -521,20 +526,24 @@ public class Warp10 implements Database {
    *   'particles' <br>
    *   { 'sensor_id' 's_34' } <br>
    * ] FIND <br>
-   * <% <br>
+   * &lt;% <br>
    *   DROP <br>
    *   LABELS 'bike_id' GET <br>
-   * %> <br>
+   * %&gt; <br>
    * LMAP</code>
    *
    * <p><code>
    * () 'heatmap' STORE </code>
-   * <p>// For each bike:</p>
+   *
+   * <p>// For each bike:
+   *
    * <p><code>
-   * <%
+   * &lt;%
    *   'bike_id' STORE</code>
    *
-   *   <p>// Fetches particles data within a time range:</p><p><code>
+   * <p>// Fetches particles data within a time range:
+   *
+   * <p><code>
    *   [
    *     $read_token
    *     'particles'
@@ -543,28 +552,32 @@ public class Warp10 implements Database {
    *     '2018-08-30T00:00:00.000Z'
    *   ] FETCH</code>
    *
-   *   <p>// Downsamples to 1 second buckets:</p><p><code>
+   * <p>// Downsamples to 1 second buckets:
+   *
+   * <p><code>
    *   [
    *     SWAP
    *     bucketizer.mean
    *     0 1 s 0
    *   ] BUCKETIZE 'res' STORE</code>
    *
-   *   <p>// If there are any data, then stores each combination of location + particles value into
-   *   the <code>heatmap</code> set</p><p><code>
-   *   <% $res SIZE 0 > %>
-   *   <%
+   * <p>// If there are any data, then stores each combination of location + particles value into
+   * the <code>heatmap</code> set
+   *
+   * <p><code>
+   *   &lt;% $res SIZE 0 &gt; %&gt;
+   *   &lt;%
    *     $res 0 GET 'gts' STORE
    *     $gts LOCATIONS 'longitudes' STORE 'latitudes' STORE
    *     $gts VALUES 'values' STORE
    *     0 $values SIZE 1 -
-   *     <%
+   *     &lt;%
    *       'i' STORE
    *       $heatmap [ $longitudes $i GET $latitudes $i GET $values $i GET ] +! DROP
-   *     %> FOR
-   *   %> IFT
-   * %> FOREACH
-   * $heatmap SET->
+   *     %&gt; FOR
+   *   %&gt; IFT
+   * %&gt; FOREACH
+   * $heatmap SET-&gt;
    * </code>
    */
   @Override
@@ -676,7 +689,7 @@ public class Warp10 implements Database {
    * MAXLONG <br>
    * -1 <br>
    * ] FETCH <br></code>
-
+   *
    * <p>// Checks if last coordinates lie within the area boundaries:
    *
    * <p><code>

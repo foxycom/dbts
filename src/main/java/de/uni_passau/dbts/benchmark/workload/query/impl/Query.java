@@ -6,17 +6,34 @@ import de.uni_passau.dbts.benchmark.workload.schema.GeoPoint;
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
 import java.util.List;
 
+/**
+ * Universal object that stores query parameters for any benchmark scenario.
+ */
 public class Query {
-  private List<Bike> bikes;
-  private Sensor sensor;
-  private Sensor gpsSensor;
-  private long startTimestamp;
-  private long endTimestamp;
-  private Aggregation aggrFunc;
-  private double threshold;
-  private GeoPoint location;
 
-  public Query() {}
+  /** List of bikes to query. */
+  private List<Bike> bikes;
+
+  /** Sensor to query. */
+  private Sensor sensor;
+
+  /** GPS sensor to query. */
+  private Sensor gpsSensor;
+
+  /** Left boundary of a time range. */
+  private long startTimestamp;
+
+  /** Right boundary of a time range. */
+  private long endTimestamp;
+
+  /** Aggregation function. */
+  private Aggregation aggrFunc;
+
+  /** Value threshold. */
+  private double threshold;
+
+  /** GPS location. */
+  private GeoPoint location;
 
   /**
    * Returns the bikes list.
@@ -38,14 +55,19 @@ public class Query {
     return this;
   }
 
+  /**
+   * Returns the basic sensor.
+   *
+   * @return Basic sensor.
+   */
   public Sensor getSensor() {
     return sensor;
   }
 
   /**
-   * Sets a sensor to use in the query.
+   * Sets a basic sensor to use in the query.
    *
-   * @param sensor Sensor to use.
+   * @param sensor Basic sensor to use.
    * @return The muted object to use in the builder style.
    */
   public Query setSensor(Sensor sensor) {
@@ -53,6 +75,11 @@ public class Query {
     return this;
   }
 
+  /**
+   * Returns the GPS sensor.
+   *
+   * @return GPS sensor.
+   */
   public Sensor getGpsSensor() {
     return gpsSensor;
   }
@@ -108,19 +135,42 @@ public class Query {
     return this;
   }
 
+  /**
+   * Returns the aggregation function of the query.
+   *
+   * @return Aggregation function.
+   */
   public Aggregation getAggrFunc() {
     return aggrFunc;
   }
 
+  /**
+   * Sets an aggregation function, which is used to aggregate values of a sensor,
+   * see {@link #setSensor(Sensor)}.
+   *
+   * @param func Aggregation function.
+   * @return The muted object to use in the builder style.
+   */
   public Query setAggrFunc(Aggregation func) {
     this.aggrFunc = func;
     return this;
   }
 
+  /**
+   * Returns the value threshold of the query.
+   *
+   * @return Value threshold.
+   */
   public double getThreshold() {
     return threshold;
   }
 
+  /**
+   * Sets a value threshold to compare values of the sensor, see {@link #setSensor(Sensor)}.
+   *
+   * @param threshold Threshold value.
+   * @return The muted object to use in the builder style.
+   */
   public Query setThreshold(double threshold) {
     this.threshold = threshold;
     return this;
@@ -129,7 +179,7 @@ public class Query {
   /**
    * Returns the GPS location stored in the
    *
-   * @return
+   * @return GPS location.
    */
   public GeoPoint getLocation() {
     return location;

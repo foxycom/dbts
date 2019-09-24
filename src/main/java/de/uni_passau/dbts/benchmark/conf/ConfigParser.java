@@ -77,13 +77,11 @@ public enum ConfigParser {
 
     config.BATCH_SIZE = xml.getInt("batch[@size]", config.BATCH_SIZE);
     config.LOOP = xml.getLong("loops", config.LOOP);
-    config.ENCODING = xml.getString("encoding", config.ENCODING).toUpperCase();
     config.MONITOR_SERVER = xml.getBoolean("serverMonitor[@active]", config.MONITOR_SERVER);
     config.DRIVE_NAME = xml.getString("serverMonitor.drive");
     config.IFACE_NAME = xml.getString("serverMonitor.iface");
     config.SERVER_MONITOR_PORT = xml.getInt("serverMonitor.port");
 
-    config.MUL_DEV_BATCH = xml.getBoolean("mulDevBatch", config.MUL_DEV_BATCH);
     config.USE_OVERFLOW = xml.getBoolean("overflow[@active]", config.USE_OVERFLOW);
     config.OVERFLOW_RATIO = xml.getDouble("overflow.ratio", config.OVERFLOW_RATIO);
     config.LAMBDA = xml.getDouble("overflow.lambda", config.LAMBDA);
@@ -105,14 +103,7 @@ public enum ConfigParser {
         Aggregation.valueOf(xml.getString("query.aggregateFunction").toUpperCase());
     config.QUERY_INTERVAL = xml.getLong("query.interval", config.INTERVAL);
     config.QUERY_LOWER_LIMIT = xml.getDouble("query.lowerLimit", config.QUERY_LOWER_LIMIT);
-    config.IS_EMPTY_PRECISE_POINT_QUERY =
-        xml.getBoolean("query.emptyPrecisePointQuery", config.IS_EMPTY_PRECISE_POINT_QUERY);
     config.TIME_BUCKET = xml.getLong("query.timeBucket", config.TIME_BUCKET);
-    config.LIMIT_CLAUSE_MODE = xml.getInt("query.limitClause", config.LIMIT_CLAUSE_MODE);
-    config.QUERY_LIMIT_N = xml.getInt("query.limitN", config.QUERY_LIMIT_N);
-    config.QUERY_LIMIT_OFFSET = xml.getInt("query.limitOffset", config.QUERY_LIMIT_OFFSET);
-    config.QUERY_SLIMIT_N = xml.getInt("query.sLimitN", config.QUERY_SLIMIT_N);
-    config.QUERY_SLIMIT_OFFSET = xml.getInt("query.sLimitOffset", config.QUERY_SLIMIT_OFFSET);
 
     initSensors(xml);
   }

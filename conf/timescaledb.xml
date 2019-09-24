@@ -109,7 +109,6 @@
 
     <batch size="10000"/>
     <loops>1</loops>
-    <encoding>gorilla</encoding>
 
     <serverMonitor active="false">
         <drive>sdb</drive>
@@ -117,7 +116,6 @@
         <port>56565</port>
     </serverMonitor>
 
-    <mulDevBatch>false</mulDevBatch>
     <overflow active="false">
         <ratio>0.5</ratio>
         <lamda>2200.0</lamda>
@@ -139,13 +137,7 @@
         <aggregateFunction>avg</aggregateFunction>
         <interval>3600000</interval>
         <lowerLimit>3</lowerLimit>
-        <emptyPrecisePointQuery>false</emptyPrecisePointQuery>
         <timeBucket>300000</timeBucket>
-        <limitClause>0</limitClause>
-        <limitN>5</limitN>
-        <limitOffset>5</limitOffset>
-        <sLimitN>5</sLimitN>
-        <sLimitOffset>5</sLimitOffset>
     </query>
 
 </config>
