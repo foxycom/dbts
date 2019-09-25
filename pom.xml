@@ -11,6 +11,7 @@
   <name>dbts</name>
   <url>http://maven.apache.org</url>
 
+
   <properties>
     <compile.version>1.13</compile.version>
     <targetJavaVersion>1.13</targetJavaVersion>
@@ -91,12 +92,6 @@
     </dependency>
 
     <dependency>
-      <groupId>io.crate</groupId>
-      <artifactId>crate-jdbc-standalone</artifactId>
-      <version>2.6.0</version>
-      <type>pom</type>
-    </dependency>
-    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
       <version>2.5</version>
@@ -150,7 +145,11 @@
       <artifactId>google-java-format</artifactId>
       <version>1.7</version>
     </dependency>
-
+    <dependency>
+      <groupId>io.crate</groupId>
+      <artifactId>crate-jdbc</artifactId>
+      <version>2.5.1</version>
+    </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
