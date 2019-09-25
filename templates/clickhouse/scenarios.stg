@@ -38,13 +38,14 @@ WHERE d.bike_id = b.bike_id
 ORDER BY d.second ASC, d.bike_id;
 >>
 
-bikesInLocation(tableName) ::= <<
-SELECT bike_id, owner_name, longitude, latitude FROM (
-   SELECT max(time) AS last_time, bike_id FROM <tableName> GROUP BY bike_id
-) AS l, test AS t, bikes AS b
-WHERE t.time = l.last_time AND t.bike_id = l.bike_id AND b.bike_id = t.bike_id
-AND pointInPolygon((longitude, latitude), [(13.4406567, 48.5723195), (13.4373522, 48.5707861), (13.4373522, 48.5662708),
-(13.4443045, 48.5645384), (13.4489393, 48.5683155), (13.4492826, 48.5710701), (13.4406567, 48.5723195)]);
+bikesInLocation(tableName, longitude, latitude, radius) ::= <<
+SELECT b.bike_id, b.owner_name FROM (
+     SELECT bike_id, anyLast(longitude) as longitude, anyLast(latitude) as latitude
+     FROM <tableName>
+     GROUP BY bike_id
+) AS d, bikes AS b
+WHERE b.bike_id = d.bike_id
+AND greatCircleDistance(longitude, latitude, <longitude>, <latitude>) \< <radius>;
 >>
 
 gpsPathScan(tableName, bike, start, end) ::= <<
