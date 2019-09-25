@@ -26,7 +26,7 @@ public class Constants {
   public static final String VERTICA_PASSWD = "";
 
   public static final String CRATE_DRIVER = "io.crate.client.jdbc.CrateDriver";
-  public static final String CRATE_URL = "jdbc:crate://%s:%s/";
+  public static final String CRATE_URL = "crate://%s:%s/";
   public static final String CRATE_USER = "crate";
   public static final String CRATE_PASSWD = "";
 
