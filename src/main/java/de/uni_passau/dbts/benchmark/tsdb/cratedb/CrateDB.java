@@ -49,7 +49,7 @@ public class CrateDB implements Database {
   @Override
   public void init() throws TsdbException {
     try {
-      Class.forName(Constants.POSTGRESQL_JDBC_NAME);
+      Class.forName(Constants.CRATE_DRIVER);
       connection =
           DriverManager.getConnection(
               String.format(Constants.CRATE_URL, config.HOST, config.PORT),

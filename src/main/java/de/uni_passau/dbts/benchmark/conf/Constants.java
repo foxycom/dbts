@@ -16,7 +16,7 @@ public class Constants {
 
   public static final String TIME_BUCKET_ALIAS = "time_bucket";
 
-  public static final String MYSQL_DRIVENAME = "com.mysql.jdbc.Driver";
+  public static final String MYSQL_DRIVER_NAME = "com.mysql.jdbc.Driver";
   public static final String MYSQL_URL = "jdbc:mysql://%s:%s/%s";
   public static final String MYSQL_USER = "root";
   public static final String MYSQL_PASSWD = "";
@@ -25,6 +25,7 @@ public class Constants {
   public static final String VERTICA_USER = "dbadmin";
   public static final String VERTICA_PASSWD = "";
 
+  public static final String CRATE_DRIVER = "io.crate.client.jdbc.CrateDriver";
   public static final String CRATE_URL = "jdbc:crate://%s:%s/";
   public static final String CRATE_USER = "crate";
   public static final String CRATE_PASSWD = "";
