@@ -68,7 +68,7 @@ public class MemSQL implements Database {
   @Override
   public void init() throws TsdbException {
     try {
-      Class.forName(Constants.MYSQL_DRIVENAME);
+      Class.forName(Constants.MYSQL_DRIVER_NAME);
       connection =
           DriverManager.getConnection(
               String.format(Constants.MYSQL_URL, config.HOST, config.PORT, config.DB_NAME),

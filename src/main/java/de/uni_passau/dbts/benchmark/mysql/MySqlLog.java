@@ -50,7 +50,7 @@ public class MySqlLog {
     projectID = config.DB_SWITCH.name() + "_" + config.REMARK + lab;
     if (config.USE_MYSQL) {
       try {
-        Class.forName(Constants.MYSQL_DRIVENAME);
+        Class.forName(Constants.MYSQL_DRIVER_NAME);
         mysqlConnection = DriverManager.getConnection(config.MYSQL_URL);
         if (initTables) {
           initTable();

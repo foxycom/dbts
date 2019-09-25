@@ -329,12 +329,12 @@ public class Clickhouse implements Database {
    * {@inheritDoc} Example query:
    *
    * <p><code>
-   * SELECT bike_id, last_time, longitude, latitude FROM (
-   *     SELECT max(time) AS last_time, bike_id
-   *     FROM test GROUP BY bike_id
-   * ) AS d, test AS t
-   * WHERE t.time = d.last_time AND t.bike_id = d.bike_id;
+   * SELECT anyLast(time), bike_id, anyLast(longitude), anyLast(latitude)
+   * FROM test GROUP BY bike_id;
    * </code>
+   *
+   * <p>The result of anyLast is unpredictable, unless the rows are sorted. Luckily, they are,
+   * because of the order key. See {@link #getCreateTableSql()}.
    */
   @Override
   public Status lastKnownPosition(Query query) {
@@ -368,11 +368,11 @@ public class Clickhouse implements Database {
   }
 
   /**
-   * ClickHouse does not support distance aggregations, yet. However, it can compute distance between
-   * two geospatial points. Some custom function might be applied chronologically to every two rows
-   * to compute distance and then summarize the results.
+   * ClickHouse does not support distance aggregations, yet. However, it can compute distance
+   * between two geospatial points. Some custom function might be applied chronologically to every
+   * two rows to compute distance and then summarize the results.
    *
-   * TODO test self join with row numbers.
+   * <p>TODO test self join with row numbers.
    *
    * @param query Query params object.
    * @return Status of the execution.
@@ -410,7 +410,7 @@ public class Clickhouse implements Database {
    *
    * <p><code>
    *   INSERT INTO bikes (bike_id, owner_name) VALUES ('bike_0', 'John'), ('bike_1', 'Melissa'), ...
-   * </code></p>
+   * </code>
    *
    * @param bikesList List of bikes.
    * @return SQL query.
