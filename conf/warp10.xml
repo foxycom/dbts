@@ -12,8 +12,8 @@
         <createSchema>false</createSchema>
     </db>
     <warp10>
-        <readToken>IQtJ8fOXxViDGXBY1VHnO3kxJicIfnrKGsDHDa_UqYiJgHyDJDQiQBgchA6xF4uMdAu8P7pKF4QOm59Q5Mm2ek0IO7xBSHV9sN5LkqxyLav8p0E_Gl5olF</readToken>
-        <writeToken>Wa8LSR4me4YdeIhvK74ZXpC3hIFcseDz5oQ0s12Pj_Vl.JUnvdErWY_0SM5PrMuypqXVZldkNdNuMYSSn8FG1tr7urRPDFSiHsKIze0Shqok73TDA54euxvBPz4z_qou</writeToken>
+        <readToken>.Ixgr2xpo4cCUjLrJLfloeoMZ56LXkyzXaaCC1txorCjoDhqwrbEnyjkpBAZlxHm_vzocmHR2zsh0fTaLxvHPzkEzur4mQ.uyg39HaabYOlclh0Qdp2BCV</readToken>
+        <writeToken>HrBDMs5ClrBrL0LjL.TRuImu6oaHN8wzTLu2bxqBCdVmBWsvBtSE.u0Tx3Sabp6jcR3j7eQu6dF2yxbCwZzaQypiyUXlvJZ_qJXHiy.UJmHPIAC5NKTi4YPhOcqvB1k4</writeToken>
     </warp10>
     <mode>synthetic_benchmark</mode>
     <mysqlLog active="false" remark="LAST">
@@ -24,7 +24,7 @@
     <devices prefix="d_">12</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>0:0:0:0:0:0:0:1:0:0:0</operationsProportion>
+    <operationsProportion>0:0:0:1:0:0:0:0:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="double precision">
@@ -111,7 +111,7 @@
         </sensorGroup>
     </sensorGroups>
 
-    <batch size="10"/>
+    <batch size="10000"/>
     <loops>1</loops>
 
     <serverMonitor active="false">

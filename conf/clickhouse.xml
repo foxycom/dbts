@@ -17,10 +17,10 @@
     </mysqlLog>
     <clients bindToDevices="true">4</clients>
     <deviceGroups>3</deviceGroups>
-    <devices prefix="d_">4</devices>
+    <devices prefix="d_">12</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
-    <operationsProportion>0:0:0:0:0:0:0:0:0:0:1</operationsProportion>
+    <operationsProportion>0:0:0:0:0:0:0:1:0:0:0</operationsProportion>
 
     <sensorGroups prefix="s_">
         <sensorGroup name="accelerometer" dataType="Float64">
