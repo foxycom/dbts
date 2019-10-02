@@ -29,7 +29,7 @@ public class BikesSchema {
 
   /**
    * Returns the mapping of worker threads to bikes.
-   * @return
+   * @return Mapping of worker threads to bikes.
    */
   public Map<Integer, List<Bike>> getClientBindSchema() {
     return CLIENT_BIND_SCHEMA;
