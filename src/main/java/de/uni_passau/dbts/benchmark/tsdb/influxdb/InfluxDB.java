@@ -7,7 +7,7 @@ import de.uni_passau.dbts.benchmark.tsdb.Database;
 import de.uni_passau.dbts.benchmark.tsdb.TsdbException;
 import de.uni_passau.dbts.benchmark.utils.SqlBuilder;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
-import de.uni_passau.dbts.benchmark.workload.ingestion.Point;
+import de.uni_passau.dbts.benchmark.workload.ingestion.DataPoint;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
 import java.util.HashMap;
@@ -33,6 +33,8 @@ public class InfluxDB implements Database {
   private static final long MILLIS_TO_NANO = 1000000L;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(InfluxDB.class);
+
+  /** Config singleton. */
   private static Config config = ConfigParser.INSTANCE.config();
 
   /** InfluxDB's API URL. */
@@ -417,19 +419,19 @@ public class InfluxDB implements Database {
   private Map<Long, Map<String, String>> transformBatch(Batch batch) {
     Map<Long, Map<String, String>> rows = new HashMap<>();
     Bike bike = batch.getBike();
-    Map<Sensor, Point[]> entries = batch.getEntries();
+    Map<Sensor, DataPoint[]> entries = batch.getEntries();
     for (Sensor sensor : bike.getSensors()) {
-      Point[] points = entries.get(sensor);
-      for (Point point : points) {
-        rows.computeIfAbsent(point.getTimestamp(), k -> new HashMap<>());
-        if (point.hasMultipleValues()) {
+      DataPoint[] dataPoints = entries.get(sensor);
+      for (DataPoint dataPoint : dataPoints) {
+        rows.computeIfAbsent(dataPoint.getTimestamp(), k -> new HashMap<>());
+        if (dataPoint.hasMultipleValues()) {
           List<String> fields = sensor.getFields();
-          String[] values = point.getValues();
+          String[] values = dataPoint.getValues();
           for (int i = 0; i < fields.size(); i++) {
-            rows.get(point.getTimestamp()).put(fields.get(i), values[i]);
+            rows.get(dataPoint.getTimestamp()).put(fields.get(i), values[i]);
           }
         } else {
-          rows.get(point.getTimestamp()).put(sensor.getName(), point.getValue());
+          rows.get(dataPoint.getTimestamp()).put(sensor.getName(), dataPoint.getValue());
         }
       }
     }

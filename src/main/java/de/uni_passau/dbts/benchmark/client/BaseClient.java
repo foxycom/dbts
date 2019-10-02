@@ -6,7 +6,7 @@ import de.uni_passau.dbts.benchmark.workload.Workload;
 import de.uni_passau.dbts.benchmark.workload.WorkloadException;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
-import de.uni_passau.dbts.benchmark.workload.schema.DataSchema;
+import de.uni_passau.dbts.benchmark.workload.schema.BikesSchema;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -32,7 +32,7 @@ public abstract class BaseClient extends Client implements Runnable {
   private long insertLoopIndex;
 
   /** Schema of bikes the client has to process. */
-  private DataSchema dataSchema = DataSchema.getInstance();
+  private BikesSchema bikesSchema = BikesSchema.getInstance();
 
   /**
    * Singleton of a system monitor client, which the worker thread can tell to start or stop monitoring
@@ -70,7 +70,7 @@ public abstract class BaseClient extends Client implements Runnable {
           monitoringClient.start();
           if (config.BIND_CLIENTS_TO_DEVICES) {
             try {
-              List<Bike> schema = dataSchema.getClientBindSchema().get(clientThreadId);
+              List<Bike> schema = bikesSchema.getClientBindSchema().get(clientThreadId);
               int i = 1;
               for (Bike bike : schema) {
                 Batch batch = syntheticWorkload.getOneBatch(bike, insertLoopIndex);

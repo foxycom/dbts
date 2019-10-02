@@ -7,6 +7,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A bike.
+ */
 public class Bike {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Bike.class);
@@ -32,7 +35,7 @@ public class Bike {
   /** Index of the bike. */
   private int bikeIdx;
 
-  /** Owner's name */
+  /** The bike owner's name. */
   private String ownerName;
 
   /**

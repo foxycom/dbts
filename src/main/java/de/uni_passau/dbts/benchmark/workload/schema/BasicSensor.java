@@ -9,17 +9,35 @@ import java.util.*;
 
 import static de.uni_passau.dbts.benchmark.conf.Constants.START_TIMESTAMP;
 
+/**
+ * A very basic sensor type that only yields primitive values.
+ */
 public class BasicSensor implements Sensor {
   private static NumberFormat nf = NumberFormat.getNumberInstance(Locale.US);
 
+  /** Values function. */
   private Function function;
 
+  /** Name of the sensor. */
   private String name;
+
+  /** The sensor group the sensor belongs to. */
   private SensorGroup sensorGroup;
+
+  /** Sampling interval. */
   long interval;
+
+  /** Values' data type. */
   private String dataType;
+
+  /** Value fields. */
   private List<String> fields;
 
+  /**
+   * Creates a new copy.
+   *
+   * @param other The other sensor to copy.
+   */
   public BasicSensor(BasicSensor other) {
     this.name = other.name;
     this.function = other.function;
@@ -30,6 +48,16 @@ public class BasicSensor implements Sensor {
     this.fields.addAll(other.fields);
   }
 
+  /**
+   * Creates a new sensor instance.
+   *
+   * @param name Name of the sensor.
+   * @param sensorGroup The sensor group the sensor should belong to
+   * @param function Values function.
+   * @param freq Sampling frequency.
+   * @param dataType Values' data type.
+   * @param fields Values fields.
+   */
   public BasicSensor(
       String name,
       SensorGroup sensorGroup,

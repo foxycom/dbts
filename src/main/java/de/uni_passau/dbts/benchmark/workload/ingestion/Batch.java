@@ -6,32 +6,61 @@ import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
 
 import java.util.*;
 
+/**
+ * Batch of data points.
+ */
 public class Batch {
 
+  /** The bike the data points belong to. */
   private Bike bike;
-  private long timeRange;
-  private Map<Sensor, Point[]> entries = new HashMap<>();
 
+  /** The time range of the data points stored in the batch. */
+  private long timeRange;
+
+  /** Sensors and their data points. */
+  private Map<Sensor, DataPoint[]> entries = new HashMap<>();
+
+  /**
+   * Creates an instance.
+   *
+   * @param bike A bike.
+   */
   public Batch(Bike bike) {
     this.bike = bike;
   }
 
+  /**
+   * Returns the bike the data points belong to.
+   *
+   * @return Bike.
+   */
   public Bike getBike() {
     return bike;
   }
 
+  /**
+   * Sets a new bike.
+   *
+   * @param bike New bike.
+   */
   public void setBike(Bike bike) {
     this.bike = bike;
   }
 
-  public void add(Sensor sensor, Point[] values) {
+  /**
+   * Adds a sensor along with its data points.
+   *
+   * @param sensor Sensor.
+   * @param values Sensor's values.
+   */
+  public void add(Sensor sensor, DataPoint[] values) {
     entries.put(sensor, values);
   }
 
   /**
-   * use the row protocol which means data are organized in List[timestamp, List[value]]
+   * Returns the number of points in the batch.
    *
-   * @return data point number in this batch
+   * @return Number of points.
    */
   public int pointNum() {
     int pointNum = 0;
@@ -41,15 +70,30 @@ public class Batch {
     return pointNum;
   }
 
+  /**
+   * Sets a new time range.
+   *
+   * @param timeRange New time range.
+   */
   public void setTimeRange(long timeRange) {
     this.timeRange = timeRange;
   }
 
+  /**
+   * Returns the time range of data points.
+   *
+   * @return Time range.
+   */
   public long getTimeRange() {
     return this.timeRange;
   }
 
-  public Map<Sensor, Point[]> getEntries() {
+  /**
+   * Returns all data points in the batch.
+   *
+   * @return Data points of the batch.
+   */
+  public Map<Sensor, DataPoint[]> getEntries() {
     return entries;
   }
 
@@ -70,17 +114,17 @@ public class Batch {
     }
 
     Sensor mostFrequentSensor = Sensors.minInterval(sensors);
-    for (Point point : entries.get(mostFrequentSensor)) {
-      rows.computeIfAbsent(point.getTimestamp(), k -> new ArrayList<>(emptyRow));
+    for (DataPoint dataPoint : entries.get(mostFrequentSensor)) {
+      rows.computeIfAbsent(dataPoint.getTimestamp(), k -> new ArrayList<>(emptyRow));
     }
 
     int column = 0;
     for (Sensor sensor : sensors) {
-      for (Point point : entries.get(sensor)) {
-        String[] values = point.getValues();
+      for (DataPoint dataPoint : entries.get(sensor)) {
+        String[] values = dataPoint.getValues();
         int valueOffset = 0;
         for (String value : values) {
-          rows.get(point.getTimestamp()).set(column + valueOffset, value);
+          rows.get(dataPoint.getTimestamp()).set(column + valueOffset, value);
           valueOffset++;
         }
       }

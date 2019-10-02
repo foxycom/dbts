@@ -9,7 +9,7 @@ import de.uni_passau.dbts.benchmark.tsdb.TsdbException;
 import de.uni_passau.dbts.benchmark.utils.Sensors;
 import de.uni_passau.dbts.benchmark.utils.SqlBuilder;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
-import de.uni_passau.dbts.benchmark.workload.ingestion.Point;
+import de.uni_passau.dbts.benchmark.workload.ingestion.DataPoint;
 import de.uni_passau.dbts.benchmark.workload.query.impl.Query;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
@@ -784,7 +784,7 @@ public class TimescaleDB implements Database {
    * @return List of sensor group specific SQL queries.
    */
   private List<String> getInsertOneBatchSql(Batch batch) {
-    Map<Sensor, Point[]> entries = batch.getEntries();
+    Map<Sensor, DataPoint[]> entries = batch.getEntries();
     Bike bike = batch.getBike();
     StringBuilder sqlBuilder = new StringBuilder();
 
@@ -800,13 +800,13 @@ public class TimescaleDB implements Database {
           .append(" VALUES ");
 
       boolean firstIteration = true;
-      for (Point point : entries.get(sensor)) {
+      for (DataPoint dataPoint : entries.get(sensor)) {
         if (firstIteration) {
           firstIteration = false;
         } else {
           sqlBuilder.append(", ");
         }
-        Timestamp timestamp = new Timestamp(point.getTimestamp());
+        Timestamp timestamp = new Timestamp(dataPoint.getTimestamp());
         sqlBuilder
             .append("('")
             .append(timestamp)
@@ -818,9 +818,9 @@ public class TimescaleDB implements Database {
             .append(sensor.getName())
             .append("'");
         if (sensor.getFields().size() == 1) {
-          sqlBuilder.append(", ").append(point.getValue());
+          sqlBuilder.append(", ").append(dataPoint.getValue());
         } else {
-          String[] values = point.getValues();
+          String[] values = dataPoint.getValues();
           Arrays.stream(values).forEach(value -> sqlBuilder.append(", ").append(value));
         }
         sqlBuilder.append(")");

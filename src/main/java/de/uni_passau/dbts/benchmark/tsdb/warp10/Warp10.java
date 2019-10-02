@@ -6,7 +6,7 @@ import de.uni_passau.dbts.benchmark.measurement.Status;
 import de.uni_passau.dbts.benchmark.tsdb.Database;
 import de.uni_passau.dbts.benchmark.tsdb.TsdbException;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
-import de.uni_passau.dbts.benchmark.workload.ingestion.Point;
+import de.uni_passau.dbts.benchmark.workload.ingestion.DataPoint;
 import de.uni_passau.dbts.benchmark.workload.query.impl.Query;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
@@ -741,7 +741,7 @@ public class Warp10 implements Database {
    * @return Transformed
    */
   private Map<Sensor, Reading[]> transform(Batch batch) {
-    Map<Sensor, Point[]> entries = batch.getEntries();
+    Map<Sensor, DataPoint[]> entries = batch.getEntries();
     Sensor gpsSensor = null;
     for (Sensor sensor : entries.keySet()) {
       if (sensor.getSensorGroup().getName().contains("gps")) {
@@ -750,8 +750,8 @@ public class Warp10 implements Database {
       }
     }
 
-    Point[] gpsEntries = entries.get(gpsSensor);
-    Map<Long, Point> gpsLookupTable = new HashMap<>(gpsEntries.length);
+    DataPoint[] gpsEntries = entries.get(gpsSensor);
+    Map<Long, DataPoint> gpsLookupTable = new HashMap<>(gpsEntries.length);
     Arrays.stream(gpsEntries)
         .forEachOrdered(
             point -> {
@@ -764,12 +764,12 @@ public class Warp10 implements Database {
         continue;
       }
 
-      Point[] points = entries.get(sensor);
-      Reading[] sensorReadings = new Reading[points.length];
-      for (int i = 0; i < points.length; i++) {
-        Point point = points[i];
+      DataPoint[] dataPoints = entries.get(sensor);
+      Reading[] sensorReadings = new Reading[dataPoints.length];
+      for (int i = 0; i < dataPoints.length; i++) {
+        DataPoint dataPoint = dataPoints[i];
         sensorReadings[i] =
-            new Reading(point.getTimestamp(), point, gpsLookupTable.get(point.getTimestamp()));
+            new Reading(dataPoint.getTimestamp(), dataPoint, gpsLookupTable.get(dataPoint.getTimestamp()));
       }
       readings.put(sensor, sensorReadings);
     }
@@ -862,8 +862,8 @@ public class Warp10 implements Database {
    */
   private class Reading {
     long timestamp;
-    Point sensorReading;
-    Point gpsLocation;
+    DataPoint sensorReading;
+    DataPoint gpsLocation;
 
     /**
      * Creates a reading instance.
@@ -872,7 +872,7 @@ public class Warp10 implements Database {
      * @param sensorReading Value(s) of the reading.
      * @param gpsLocation Location that the reading is labeled with.
      */
-    public Reading(long timestamp, Point sensorReading, Point gpsLocation) {
+    public Reading(long timestamp, DataPoint sensorReading, DataPoint gpsLocation) {
       this.sensorReading = sensorReading;
       this.gpsLocation = gpsLocation;
       this.timestamp = timestamp;

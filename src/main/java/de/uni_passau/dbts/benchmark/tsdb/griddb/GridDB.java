@@ -23,6 +23,7 @@ public class GridDB implements Database {
   /** GridDB instance. */
   private GridStore store;
 
+  /** A GridDB time series. */
   private TimeSeries<Entry> ts;
 
   /**

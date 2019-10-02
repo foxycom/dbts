@@ -12,7 +12,7 @@ import de.uni_passau.dbts.benchmark.monitor.MonitoringServer;
 import de.uni_passau.dbts.benchmark.tsdb.DBWrapper;
 import de.uni_passau.dbts.benchmark.tsdb.TsdbException;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
-import de.uni_passau.dbts.benchmark.workload.schema.DataSchema;
+import de.uni_passau.dbts.benchmark.workload.schema.BikesSchema;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,9 +95,9 @@ public class App {
         }
       }
       try {
-        DataSchema dataSchema = DataSchema.getInstance();
+        BikesSchema bikesSchema = BikesSchema.getInstance();
         List<Bike> schemaList = new ArrayList<>();
-        for (List<Bike> schemas : dataSchema.getClientBindSchema().values()) {
+        for (List<Bike> schemas : bikesSchema.getClientBindSchema().values()) {
           schemaList.addAll(schemas);
         }
         dbWrapper.registerSchema(schemaList);

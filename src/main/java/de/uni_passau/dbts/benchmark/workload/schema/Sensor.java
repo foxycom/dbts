@@ -5,7 +5,9 @@ import de.uni_passau.dbts.benchmark.tsdb.DB;
 
 import java.util.List;
 
-
+/**
+ * A unified interface for all sensor types.
+ */
 public interface Sensor {
 
   /**
@@ -121,9 +123,9 @@ public interface Sensor {
   List<String> getFields();
 
   /**
-   * Sets a new tick.
+   * Sets the timestamp of the next tick.
    *
-   * @param tick A new tick.
+   * @param tick Next tick.
    */
   void setTick(long tick);
 }

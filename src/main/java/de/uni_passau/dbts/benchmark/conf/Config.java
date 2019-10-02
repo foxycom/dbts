@@ -74,20 +74,28 @@ public class Config {
 
   public int MAX_K = 10;
 
-  public boolean IS_RANDOM_TIMESTAMP_INTERVAL = false;
+  /**
+   * Use a random interval between timestamps.
+   */
+  public boolean RANDOM_TIMESTAMP_INTERVAL = false;
 
   public int START_TIMESTAMP_INDEX = 20;
 
+  /** Name of the disk drive. */
   public String DRIVE_NAME = "sdb";
 
+  /** Network interface name. */
   public String IFACE_NAME = "enp0s25";
 
+  /** Proportions of scenarios to execute. */
   public String OPERATION_PROPORTION = "1:0:0:0:0:0:0:0:0:0";
 
   public int INTERVAL = 0;
 
+  /** Port of the system monitor. */
   public int SERVER_MONITOR_PORT = 56565;
 
+  /** Number of loops. */
   public long LOOP = 10000;
 
   /** Make random generator deterministic again! */
@@ -114,8 +122,14 @@ public class Config {
   public Aggregation QUERY_AGGREGATE_FUN;
   public long QUERY_INTERVAL = DEVICES_NUMBER;
   public double QUERY_LOWER_LIMIT = 0;
+
+  /** Time bucket interval. */
   public long TIME_BUCKET = QUERY_INTERVAL / 2;
+
+  /** Seed. */
   public long QUERY_SEED = 1516580959202L;
+
+  /** Register schema befoore benchmarking. */
   public boolean CREATE_SCHEMA = true;
 
   /** JDBC URL of the MySQL log instance. */

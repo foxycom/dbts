@@ -74,7 +74,7 @@ CREATE
 (SELECT projectID, result_value FROM RESULT WHERE result_key = 'totalPoint') b ON a.projectID = b.projectID JOIN
 (SELECT projectID, result_value FROM RESULT WHERE result_key = 'totalTime(s)') c ON a.projectID = c.projectID JOIN
 (SELECT projectID, result_value FROM RESULT WHERE result_key = 'totalErrorQuery') d ON a.projectID = d.projectID JOIN
-(SELECT projectID, result_value FROM RESULT WHERE result_key = 'resultPointPerSecond(points/s)') e ON a.projectID = e.projectID JOIN
+(SELECT projectID, result_value FROM RESULT WHERE result_key = 'resultPointPerSecond(dataPoints/s)') e ON a.projectID = e.projectID JOIN
     (SELECT projectID, result_value FROM RESULT WHERE result_key = 'avgQueryLatency') f1 ON a.projectID = f1.projectID JOIN
     (SELECT projectID, result_value FROM RESULT WHERE result_key = 'middleAvgQueryLatency') f2 ON a.projectID = f2.projectID JOIN
     (SELECT projectID, result_value FROM RESULT WHERE result_key = 'minQueryLatency') f3 ON a.projectID = f3.projectID JOIN

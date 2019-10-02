@@ -9,7 +9,7 @@ import de.uni_passau.dbts.benchmark.function.GeoFunction;
 import de.uni_passau.dbts.benchmark.utils.NameGenerator;
 import de.uni_passau.dbts.benchmark.utils.Sensors;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
-import de.uni_passau.dbts.benchmark.workload.ingestion.Point;
+import de.uni_passau.dbts.benchmark.workload.ingestion.DataPoint;
 import de.uni_passau.dbts.benchmark.workload.query.impl.Query;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
 import de.uni_passau.dbts.benchmark.workload.schema.GeoPoint;
@@ -21,15 +21,31 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+/**
+ * Generates synthetic workload on a database.
+ */
 public class SyntheticWorkload implements Workload {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SyntheticWorkload.class);
+
+  /** Config singleton. */
   private static Config config = ConfigParser.INSTANCE.config();
+
+  /** Random timestamp generator. */
   private static Random timestampRandom = new Random(config.DATA_SEED);
+
+  /** Random name generator. */
   private NameGenerator nameGenerator = NameGenerator.INSTANCE;
+
+  /** Max timestamp index. */
   private long maxTimestampIndex;
+
+  /** Random poisson distribution. */
   private Random poissonRandom;
+
+  /** Random bike generator. */
   private Random queryDeviceRandom;
+
   private Map<Operation, Long> operationLoops;
 
   /**
@@ -56,7 +72,7 @@ public class SyntheticWorkload implements Workload {
    */
   private static long getCurrentTimestamp(long stepOffset) {
     long currentTimestamp = Constants.START_TIMESTAMP + stepOffset;
-    if (config.IS_RANDOM_TIMESTAMP_INTERVAL) {
+    if (config.RANDOM_TIMESTAMP_INTERVAL) {
       currentTimestamp += (long) timestampRandom.nextDouble();
     }
     return currentTimestamp;
@@ -108,11 +124,11 @@ public class SyntheticWorkload implements Workload {
   }
 
   /**
-   * TODO assumption that GPS sensor is always slower than the fastest sensor
+   * Adds readings of a sensor for the entire time range of a batch.
    *
-   * @param sensor
-   * @param batch
-   * @param loopIndex
+   * @param sensor Sensor.
+   * @param batch Batch of data points.
+   * @param loopIndex Loop index.
    */
   static void addSensorData(Sensor sensor, Batch batch, long loopIndex) {
     long valuesNum;
@@ -123,7 +139,7 @@ public class SyntheticWorkload implements Workload {
       valuesNum = batch.getTimeRange() / sensor.getInterval();
     }
     Integer valNum = Math.toIntExact(valuesNum);
-    Point[] values = new Point[valNum];
+    DataPoint[] values = new DataPoint[valNum];
     for (int i = 0; i < valuesNum; i++) {
       long stepOffset = loopIndex * valuesNum + i; // point step
       long timestamp;
@@ -134,24 +150,42 @@ public class SyntheticWorkload implements Workload {
       }
       if (sensor.getFields().size() == 1) {
         String value = sensor.getValue(timestamp, config.DB_SWITCH);
-        values[i] = new Point(timestamp, value);
+        values[i] = new DataPoint(timestamp, value);
       } else {
         String[] sensorValues = sensor.getValues(timestamp, config.DB_SWITCH);
-        values[i] = new Point(timestamp, sensorValues);
+        values[i] = new DataPoint(timestamp, sensorValues);
       }
     }
 
     batch.add(sensor, values);
   }
 
+  /**
+   * To be implemented in future updates.
+   *
+   * @return null
+   */
   private Batch getLocalOutOfOrderBatch() {
     return null;
   }
 
+  /**
+   * To be implemented in future updates.
+   *
+   * @return null
+   */
   private Batch getGlobalOutOfOrderBatch() {
     return null;
   }
 
+  /**
+   * Generates a batch of data points on the fly.
+   *
+   * @param bike The bike the batch of points should belong to.
+   * @param loopIndex Loop index.
+   * @return A batch of data points.
+   * @throws WorkloadException if an error occurs while generating a batch.
+   */
   public Batch getOneBatch(Bike bike, long loopIndex) throws WorkloadException {
     if (!config.USE_OVERFLOW) {
       long st = System.nanoTime();
@@ -166,23 +200,31 @@ public class SyntheticWorkload implements Workload {
       Batch batch;
       switch (config.OVERFLOW_MODE) {
         case 0:
-          batch = getLocalOutOfOrderBatch();
-          break;
+          /*batch = getLocalOutOfOrderBatch();*/
+          throw new NotImplementedException(
+              "localOutOfOrderBatch is not implemented, yet.");
         case 1:
-          batch = getGlobalOutOfOrderBatch();
-          break;
+          /*batch = getGlobalOutOfOrderBatch();*/
+          throw new NotImplementedException(
+              "globalOutOfOrder is not implemented, yet.");
         case 2:
           /*batch = getDistOutOfOrderBatch(bike);*/
           throw new NotImplementedException(
-              "distOutOfOrderBatch is not implemented in the moment.");
+              "distOutOfOrderBatch is not implemented, yet.");
         default:
           throw new WorkloadException("Unsupported overflow mode: " + config.OVERFLOW_MODE);
       }
-      LOGGER.info("Generated one overflow batch of size {}", batch.pointNum());
-      return batch;
+      /*LOGGER.info("Generated one overflow batch of size {}", batch.pointNum());
+      return batch;*/
     }
   }
 
+  /**
+   * Randomly generates a list of bikes to query for.
+   *
+   * @return List of bikes.
+   * @throws WorkloadException if an error occurs.
+   */
   private List<Bike> getQueryBikesList() throws WorkloadException {
     checkQuerySchemaParams();
     List<Bike> queryDevices = new ArrayList<>();
