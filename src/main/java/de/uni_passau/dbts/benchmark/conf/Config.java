@@ -10,6 +10,7 @@ import java.util.List;
 
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
 
+/** Configurations container. */
 public class Config {
 
   /**
@@ -60,11 +61,13 @@ public class Config {
   /** Delay to wait in ms after erasing data. */
   public long ERASE_WAIT_TIME = 5000;
 
-  /** 是否为批插入乱序模式 */
+  /** Apply temporal overflow in batches. */
   public boolean USE_OVERFLOW = false;
-  /** 乱序模式 */
+
+  /** Type of overflow. */
   public int OVERFLOW_MODE = 0;
-  /** 批插入乱序比例 */
+
+  /** Overflow ratio. */
   public double OVERFLOW_RATIO = 1.0;
 
   public double LAMBDA = 3;
@@ -97,12 +100,6 @@ public class Config {
   public boolean ERASE_DATA = false;
 
   public boolean MONITOR_SERVER = false;
-
-  public double WRITE_RATIO = 0.2;
-  public double SIMPLE_QUERY_RATIO = 0.2;
-  public double MAX_QUERY_RATIO = 0.2;
-  public double RANDOM_INSERT_RATIO = 0.2;
-  public double UPDATE_RATIO = 0.2;
 
   /** Number of sensors to use in queries. */
   public int QUERY_SENSOR_NUM = 1;

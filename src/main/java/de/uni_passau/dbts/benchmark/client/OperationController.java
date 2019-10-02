@@ -8,17 +8,30 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This helper class parses the operation probabilities defined in a configuration file and
+ * randomly yields an operation to execute next.
+ */
 public class OperationController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OperationController.class);
+
+  /** Config singleton. */
   private static Config config = ConfigParser.INSTANCE.config();
+
+  /** Random numbers generator. */
   private Random random;
 
+  /** Creates a controller instance. */
   OperationController(int seed) {
     random = new Random(seed);
   }
 
-  /** @return Operation the next operation for client to execute */
+  /**
+   * Returns a randomly chosen operation to execute next.
+   *
+   * @return Next operation.
+   */
   Operation getNextOperationType() {
     List<Double> proportion = resolveOperationProportion();
     double[] p = new double[Operation.values().length + 1];
@@ -64,6 +77,13 @@ public class OperationController {
     }
   }
 
+  /**
+   * Parses the configured operation probabilities from the config.
+   *
+   * TODO cache results; atm the config gets parsed every time a next op is requested
+   *
+   * @return Operation probabilities.
+   */
   List<Double> resolveOperationProportion() {
     List<Double> proportion = new ArrayList<>();
     String[] split = config.OPERATION_PROPORTION.split(":");
@@ -87,6 +107,9 @@ public class OperationController {
     return proportion;
   }
 
+  /**
+   * Available operation types.
+   */
   public enum Operation {
     INGESTION("INGESTION"),
     PRECISE_POINT("PRECISE_POINT"),
@@ -100,12 +123,19 @@ public class OperationController {
     DOWNSAMPLE("DOWNSAMPLE"),
     OFFLINE_BIKES("OFFLINE_BIKES");
 
+    /**
+     * Returns the name of the operation.
+     *
+     * @return The name of the operation.
+     */
     public String getName() {
       return name;
     }
 
+    /** The name of the operation. */
     String name;
 
+    /** Initializes an operation. */
     Operation(String name) {
       this.name = name;
     }

@@ -8,21 +8,12 @@ import org.slf4j.LoggerFactory;
 import java.util.Random;
 
 public class PossionDistribution {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PossionDistribution.class);
   private Config config;
   private double lambda;
   private Random random;
   private int deltaKinds;
   private final double basicModelLambda = 10;
   private final int basicModelMaxK = 25;
-
-  public void setLambda(double lambda) {
-    this.lambda = lambda;
-  }
-
-  public void setDeltaKinds(int deltaKinds) {
-    this.deltaKinds = deltaKinds;
-  }
 
   public PossionDistribution(Random ran) {
     this.config = ConfigParser.INSTANCE.config();
@@ -38,19 +29,6 @@ public class PossionDistribution {
     }
     return sum * c;
   }
-
-  /*
-  public int getPossionVariable() {
-      int x = 0;
-      double y = random.nextDouble();
-      double cdf = getPossionProbability(x);
-      while (cdf < y) {
-          x++;
-          cdf += getPossionProbability(x);
-      }
-      return x;
-  }
-  */
 
   public int getNextPossionDelta() {
     int nextDelta = 0;

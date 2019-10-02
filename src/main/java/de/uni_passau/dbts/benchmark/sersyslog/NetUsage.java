@@ -13,8 +13,8 @@ public enum NetUsage {
    *
    * <p>enp0s25 KB/s in KB/s out 0.20 0.14
    *
-   * @param iface
-   * @return
+   * @param iface Name of the network interface.
+   * @return A pair of in and out throughput values in KB/s.
    */
   public Map<String, Float> get(String iface) {
     float recvPerSec = 0.0f;
@@ -33,7 +33,7 @@ public enum NetUsage {
           rightSection = true;
         } else if (rightSection) {
           if (line.contains("KB/s")) {
-
+            // skip..
           } else {
             line = UsageUtils.parseShellValues(line);
             String[] temp = line.split("\\s+");

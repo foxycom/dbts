@@ -18,25 +18,56 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public enum ServerMonitoring {
+/**
+ * The system monitoring server.
+ */
+public enum MonitoringServer {
   INSTANCE;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
+
+  /** CPU usage reader. */
   private CpuUsage cpuUsage = CpuUsage.INSTANCE;
+
+  /** Memory and swap usage reader. */
   private MemUsage memUsage = MemUsage.INSTANCE;
+
+  /** IO usage reader. */
   private IoUsage ioUsage = IoUsage.INSTANCE;
+
+  /** Network usage reader. */
   private NetUsage netUsage = NetUsage.INSTANCE;
 
+  /** Executor service of the worker thread that communicates with the monitoring client. */
   private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+  /** Socket. */
   private ServerSocket serverSocket;
+
+  /** Client's socket. */
   private Socket clientSocket;
+
+  /** Output. */
   private ObjectOutputStream out;
+
+  /** Input. */
   private BufferedReader in;
+
+  /** Worker thread. */
   private Monitor monitor;
+
+  /** Configuration singleton. */
   private Config config;
 
-  ServerMonitoring() {}
+  /** Creates a new instance. */
+  MonitoringServer() {}
 
+  /** Listens for new connections. When the monitoring client connects, waits for messages that
+   * determine what to do next.
+   *
+   * @param config Config instance.
+   * @throws IOException if a socket error occurs.
+   */
   public void listen(Config config) throws IOException {
     this.config = config;
     serverSocket = new ServerSocket(config.SERVER_MONITOR_PORT);
@@ -74,10 +105,18 @@ public enum ServerMonitoring {
     }
   }
 
+  /** Worker thread that reads system KPIs communicates with the monitoring client. */
   private class Monitor implements Runnable {
     private ObjectOutputStream out;
+
+    /** Proceed reading system KPIs. */
     private volatile boolean proceed = true;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param out Output stream.
+     */
     public Monitor(ObjectOutputStream out) {
       this.out = out;
     }

@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-/** CPU UsageUtils reader. */
+/** CPU utilization reader. */
 public enum CpuUsage {
   INSTANCE;
 
   /**
-   * Reads the CPU usage of %user with iostat. Sample output:
+   * Reads the CPU usage of %user with iostat, whose sample output looks like:
    *
    * <p>Linux 5.0.0-21-generic (tim-ba-client) 08/27/2019 _x86_64_ (4 CPU)
    *

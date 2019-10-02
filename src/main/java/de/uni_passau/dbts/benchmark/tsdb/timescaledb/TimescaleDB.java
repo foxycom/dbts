@@ -12,7 +12,6 @@ import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Point;
 import de.uni_passau.dbts.benchmark.workload.query.impl.Query;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
-import de.uni_passau.dbts.benchmark.workload.schema.GeoPoint;
 import de.uni_passau.dbts.benchmark.workload.schema.Sensor;
 import de.uni_passau.dbts.benchmark.workload.schema.SensorGroup;
 import java.sql.Connection;
@@ -23,13 +22,17 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroupFile;
 
+/**
+ * Implementation of benchmark scenarios for TimescaleDB.
+ */
 public class TimescaleDB implements Database {
 
   private static final int B2GB = 1024 * 1024 * 1024;
@@ -56,6 +59,9 @@ public class TimescaleDB implements Database {
   /** TimescaleDB table mode switch. */
   private TableMode dataModel;
 
+  /** Scenario templates. */
+  private STGroupFile scenarioTemplates;
+
   /**
    * Initializes an instance of the database controller.
    *
@@ -66,6 +72,11 @@ public class TimescaleDB implements Database {
     sqlBuilder = new SqlBuilder();
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
+    if (dataModel == TableMode.WIDE_TABLE) {
+      scenarioTemplates = new STGroupFile("../templates/timescaledb/wide/scenarios.stg");
+    } else if (dataModel == TableMode.NARROW_TABLE) {
+      scenarioTemplates = new STGroupFile("../templates/timescaledb/narrow/scenarios.stg");
+    }
   }
 
   /**
@@ -116,7 +127,6 @@ public class TimescaleDB implements Database {
    */
   @Override
   public void cleanup() throws TsdbException {
-    // delete old data
     try (Statement statement = connection.createStatement()) {
       connection.setAutoCommit(false);
 
@@ -143,7 +153,6 @@ public class TimescaleDB implements Database {
 
       initialDbSize = getInitialSize();
 
-      // wait for deletion complete
       LOGGER.info("Waiting {}ms until old data has been erased.", config.ERASE_WAIT_TIME);
       Thread.sleep(config.ERASE_WAIT_TIME);
     } catch (SQLException e) {
@@ -347,41 +356,25 @@ public class TimescaleDB implements Database {
    * {@inheritDoc} Example query:
    *
    * <p><code>
-   *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8') AND (time = '2018-08-29 18:00:00.0');
+   *  SELECT time, bike_id, s_40 FROM test WHERE (bike_id = 'bike_8')
+   *  AND (time = '2018-08-29 18:00:00.0');
    * </code>
    */
   @Override
   public Status precisePoint(Query query) {
+    ST template = null;
     Sensor sensor = query.getSensor();
-    long timestamp = query.getStartTimestamp();
+    Bike bike = query.getBikes().get(0);
+    Timestamp timestamp = new Timestamp(query.getStartTimestamp());
     if (dataModel == TableMode.NARROW_TABLE) {
-      List<String> columns = new ArrayList<>(sensor.getFields());
-      columns.addAll(
-          Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
-      sqlBuilder =
-          sqlBuilder
-              .reset()
-              .select(columns)
-              .from(sensor.getTableName())
-              .where()
-              .bikes(query.getBikes())
-              .and()
-              .time(timestamp);
+      throw new NotImplementedException("precisePoint is not implemented in the narrow table mode "
+          + "of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      List<String> columns =
-          Arrays.asList(
-              SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(), sensor.getName());
-      sqlBuilder =
-          sqlBuilder
-              .reset()
-              .select(columns)
-              .from(tableName)
-              .where()
-              .bikes(query.getBikes())
-              .and()
-              .time(timestamp);
+      template = scenarioTemplates.getInstanceOf("precisePoint");
+      template.add("tableName", tableName).add("sensor", sensor.getName()).add("bike", bike.getName())
+          .add("time", timestamp);
     }
-    return executeQuery(sqlBuilder.build());
+    return executeQuery(template.render());
   }
 
   /**
@@ -396,36 +389,18 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status lastKnownPosition(Query query) {
-    Sensor sensor = query.getSensor();
+    ST template = null;
     Sensor gpsSensor = query.getGpsSensor();
     String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      List<String> columns = new ArrayList<>(sensor.getFields());
-      columns.addAll(
-          Arrays.asList(
-              SqlBuilder.Column.BIKE.getName(),
-              SqlBuilder.Column.TIME.getName(),
-              SqlBuilder.Column.SENSOR.getName()));
-      sqlBuilder =
-          sqlBuilder
-              .reset()
-              .select(columns)
-              .from(sensor.getTableName())
-              .where()
-              .bikes(query.getBikes())
-              .orderBy(SqlBuilder.Column.TIME.getName(), SqlBuilder.Order.DESC)
-              .limit(1);
-      sql = sqlBuilder.build();
+      throw new NotImplementedException("lastKnownPosition is not implemented in the narrow table "
+          + "mode of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT data.time, data.bike_id, b.owner_name, data.%s FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT * FROM %s t WHERE t.bike_id = b.bike_id\n"
-              + "\tORDER BY time DESC LIMIT 1\n"
-              + ") AS data ON true;";
-      sql = String.format(Locale.US, sql, gpsSensor.getName(), tableName, gpsSensor.getName());
+      template = scenarioTemplates.getInstanceOf("lastKnownPosition");
+      template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName());
     }
 
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -443,41 +418,21 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status gpsPathScan(Query query) {
+    ST template = null;
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
     Sensor gpsSensor = query.getGpsSensor();
     Bike bike = query.getBikes().get(0);
-    List<String> columns =
-        new ArrayList<>(
-            Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
-    String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      columns.addAll(gpsSensor.getFields());
-
-      sqlBuilder =
-          sqlBuilder
-              .reset()
-              .select(columns)
-              .from(gpsSensor.getTableName())
-              .where()
-              .bikes(query.getBikes())
-              .and()
-              .time(query);
-      sql = sqlBuilder.build();
+      throw new NotImplementedException("gpsPathScan is not implemented in the narrow table mode of"
+          + " TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT %s AS location, bike_id FROM test t\n"
-              + "\tWHERE t.bike_id = b.bike_id \n"
-              + "\tAND bike_id = '%s' \n"
-              + "\tAND time >= '%s' \n"
-              + "\tAND time <= '%s'\n"
-              + ") AS data ON true;";
-      sql =
-          String.format(
-              Locale.US, sql, gpsSensor.getName(), bike.getName(), startTimestamp, endTimestamp);
+      template = scenarioTemplates.getInstanceOf("gpsPathScan");
+      template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+          .add("bike", bike.getName()).add("start", startTimestamp)
+          .add("end", endTimestamp);
     }
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -499,71 +454,24 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status identifyTrips(Query query) {
+    ST template = null;
     Bike bike = query.getBikes().get(0);
     Timestamp startTimestamp = new Timestamp(Constants.START_TIMESTAMP);
     Timestamp endTimestamp = new Timestamp(Constants.START_TIMESTAMP + config.QUERY_INTERVAL);
-    String valueColumn = SqlBuilder.Column.VALUE.getName();
-    String timeColumn = SqlBuilder.Column.TIME.getName();
-    String bikeColumn = SqlBuilder.Column.BIKE.getName();
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
-    String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql =
-          "WITH trip (second, current_value) AS (SELECT time_bucket('1 second', %s) AS second, %s(%s)"
-              + " FROM %s WHERE %s = '%s' and %s > '%s' and %s < '%s' GROUP BY second HAVING %s(%s) > %f)"
-              + " SELECT g.%s, t.current_value, g.%s as location FROM %s g INNER JOIN trip t "
-              + "ON g.%s = t.second WHERE g.%s = '%s';";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              timeColumn,
-              config.QUERY_AGGREGATE_FUN.name(),
-              valueColumn,
-              sensor.getTableName(),
-              bikeColumn,
-              bike.getName(),
-              timeColumn,
-              startTimestamp,
-              timeColumn,
-              endTimestamp,
-              config.QUERY_AGGREGATE_FUN,
-              valueColumn,
-              query.getThreshold(),
-              timeColumn,
-              valueColumn,
-              gpsSensor.getTableName(),
-              timeColumn,
-              bikeColumn,
-              bike.getName());
+      throw new NotImplementedException("identifyTrips is not implemented in the narrow table mode "
+          + "of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT data.second, data.bike_id, b.owner_name, data.s_12 FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT time_bucket(interval '1 s', time) AS second, bike_id, %s\n"
-              + "\tFROM test t \n"
-              + "\tWHERE t.bike_id = b.bike_id \n"
-              + "\tAND t.bike_id = '%s'\n"
-              + "\tAND time >= '%s' \n"
-              + "\tAND time < '%s'\n"
-              + "\tGROUP BY second, bike_id, %s\n"
-              + "\tHAVING AVG(%s) >= %f\n"
-              + ") AS data ON true\n"
-              + "ORDER BY data.second ASC, data.bike_id;";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              gpsSensor.getName(),
-              bike.getName(),
-              startTimestamp,
-              endTimestamp,
-              gpsSensor.getName(),
-              sensor.getName(),
-              query.getThreshold());
+      template = scenarioTemplates.getInstanceOf("identifyTrips");
+      template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+          .add("bike", bike.getName()).add("sensor", sensor.getName())
+          .add("threshold", query.getThreshold()).add("start", startTimestamp)
+          .add("end", endTimestamp);
     }
 
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -582,80 +490,23 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status distanceDriven(Query query) {
+    ST template = null;
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-    String sql = "";
-    String valueColumn = SqlBuilder.Column.VALUE.getName();
-    String bikeColumn = SqlBuilder.Column.BIKE.getName();
-    String timeColumn = SqlBuilder.Column.TIME.getName();
     Bike bike = query.getBikes().get(0);
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql =
-          "with trip_begin as (\n"
-              + "\tselect time_bucket(interval '1 s', %s) as second, %s from %s where %s > %f and %s = '%s' and %s > '%s' and %s < '%s'group by second, %s order by second asc limit 1\n"
-              + "), trip_end as (\n"
-              + "\tselect time_bucket(interval '1 s', %s) as second, %s from %s where %s > %f and %s = '%s' and %s > '%s'and %s < '%s' group by second, %s order by second desc limit 1\n"
-              + ")\n"
-              + "select st_length(st_makeline(g.%s::geometry)::geography, false) from %s g, trip_begin b, trip_end e where g.%s = '%s'\n"
-              + "and g.time > b.second and g.time < e.second group by g.bike_id;";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              timeColumn,
-              bikeColumn,
-              sensor.getTableName(),
-              valueColumn,
-              query.getThreshold(),
-              bikeColumn,
-              bike.getName(),
-              timeColumn,
-              startTimestamp,
-              timeColumn,
-              endTimestamp,
-              bikeColumn,
-              timeColumn,
-              bikeColumn,
-              sensor.getTableName(),
-              valueColumn,
-              query.getThreshold(),
-              bikeColumn,
-              bike.getName(),
-              timeColumn,
-              startTimestamp,
-              timeColumn,
-              endTimestamp,
-              bikeColumn,
-              valueColumn,
-              sensor.getTableName(),
-              bikeColumn,
-              bike.getName());
+      throw new NotImplementedException("distanceDriven is not implemented in the narrow table mode "
+          + "of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(%s::geometry)::geography, false) \n"
-              + "FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT time_bucket(interval '1 s', time) AS second, %s FROM %s t \n"
-              + "\tWHERE t.bike_id = b.bike_id AND bike_id = '%s' AND time >= '%s' AND time <= '%s'\n"
-              + "\tGROUP BY second, %s HAVING AVG(%s) > %f\n"
-              + ") AS data ON true\n"
-              + "GROUP BY b.bike_id, b.owner_name;";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              gpsSensor.getName(),
-              gpsSensor.getName(),
-              tableName,
-              bike.getName(),
-              startTimestamp,
-              endTimestamp,
-              gpsSensor.getName(),
-              sensor.getName(),
-              query.getThreshold());
+      template = scenarioTemplates.getInstanceOf("distanceDriven");
+      template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+          .add("bike", bike.getName()).add("sensor", sensor.getName())
+          .add("threshold", query.getThreshold()).add("start", startTimestamp)
+          .add("end", endTimestamp);
     }
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -669,61 +520,16 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status offlineBikes(Query query) {
-    String sql = "";
-    Sensor sensor = query.getSensor();
-    Sensor gpsSensor = query.getGpsSensor();
-    Bike bike = query.getBikes().get(0);
-
-    String bikeColumn = SqlBuilder.Column.BIKE.getName();
-    String valueColumn = SqlBuilder.Column.VALUE.getName();
-    String timeColumn = SqlBuilder.Column.TIME.getName();
-    Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
+    ST template = null;
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql =
-          "with trip as (\n"
-              + "\tselect time_bucket(interval '1 s', %s) as second, %s, avg(%s) as value from %s \n"
-              + "\twhere %s > %f and %s = '%s' \n"
-              + "\tgroup by second, %s\n"
-              + ") \n"
-              + "select time_bucket(interval '%d ms', g.%s) as half_minute, avg(t.%s), t.%s, st_makeline(g.%s::geometry) from %s g, trip t \n"
-              + "where g.%s = '%s' and g.%s = t.second and g.%s > '%s' and g.%s < '%s'\n"
-              + "group by half_minute, t.%s;";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              timeColumn,
-              bikeColumn,
-              valueColumn,
-              sensor.getTableName(),
-              valueColumn,
-              config.QUERY_LOWER_LIMIT,
-              bikeColumn,
-              bike.getName(),
-              bikeColumn,
-              config.TIME_BUCKET,
-              timeColumn,
-              valueColumn,
-              bikeColumn,
-              valueColumn,
-              gpsSensor.getTableName(),
-              bikeColumn,
-              bike.getName(),
-              timeColumn,
-              timeColumn,
-              startTimestamp,
-              timeColumn,
-              endTimestamp,
-              bikeColumn);
+      throw new NotImplementedException("offlineBikes is not implemented in the narrow table mode "
+          + "of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n"
-              + "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n"
-              + ");";
-      sql = String.format(Locale.US, sql, tableName, endTimestamp);
+      template = scenarioTemplates.getInstanceOf("offlineBikes");
+      template.add("tableName", tableName).add("time", endTimestamp);
     }
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -744,43 +550,18 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status lastTimeActivelyDriven(Query query) {
+    ST template = null;
     Sensor sensor = query.getSensor();
-    List<String> columns =
-        new ArrayList<>(
-            Arrays.asList(SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName()));
-    String sql = "";
+    Timestamp timestamp = new Timestamp(query.getEndTimestamp());
     if (dataModel == TableMode.NARROW_TABLE) {
-      columns.addAll(sensor.getFields());
-      sqlBuilder =
-          sqlBuilder
-              .reset()
-              .select(columns)
-              .from(sensor.getTableName())
-              .where()
-              .value(SqlBuilder.Op.GREATER, query.getThreshold())
-              .and()
-              .bikes(query.getBikes())
-              .and()
-              .time(query);
-      sql = sqlBuilder.build();
+      throw new NotImplementedException("LastTimeActivelyDriven is not implemented in the narrow "
+          + "table mode of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      Timestamp timestamp = new Timestamp(query.getEndTimestamp());
-      sql =
-          "SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM test t \n"
-              + "\tWHERE t.bike_id = b.bike_id AND time > '%s'\n"
-              + "\tAND %s IS NOT NULL\n"
-              + "\tGROUP BY minute, bike_id\n"
-              + "\tHAVING AVG(%s) > %f\n"
-              + "\tORDER BY minute DESC LIMIT 1\n"
-              + ") AS data \n"
-              + "ON true \n"
-              + "ORDER BY b.bike_id, data.minute DESC;";
-      sql =
-          String.format(
-              Locale.US, sql, timestamp, sensor.getName(), sensor.getName(), query.getThreshold());
+      template = scenarioTemplates.getInstanceOf("lastTimeActivelyDriven");
+      template.add("tableName", tableName).add("sensor", sensor.getName())
+          .add("time", timestamp).add("threshold", query.getThreshold());
     }
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -800,42 +581,22 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status downsample(Query query) {
+    ST template = null;
     Sensor sensor = query.getSensor();
     Bike bike = query.getBikes().get(0);
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-    String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      List<String> aggregatedColumns = new ArrayList<>(sensor.getFields());
-      List<String> plainColumns =
-          new ArrayList<>(Collections.singletonList(SqlBuilder.Column.BIKE.getName()));
-      sqlBuilder =
-          sqlBuilder
-              .reset()
-              .select(aggregatedColumns, plainColumns, query.getAggrFunc(), config.TIME_BUCKET)
-              .from(sensor.getTableName())
-              .where()
-              .time(query)
-              .groupBy(
-                  Arrays.asList(Constants.TIME_BUCKET_ALIAS, SqlBuilder.Column.BIKE.getName()));
-      sql = sqlBuilder.build();
+      throw new NotImplementedException("Downsampling is not implemented in the narrow table mode "
+          + "of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT time_bucket(interval '1 min', time) AS minute, AVG(%s) AS value\n"
-              + "\tFROM test t WHERE t.bike_id = b.bike_id\n"
-              + "\tAND bike_id = '%s'\n"
-              + "\tAND time >= '%s'\n"
-              + "\tAND time <= '%s'\n"
-              + "\tGROUP BY minute\n"
-              + ") AS data ON true\n"
-              + "ORDER BY data.minute ASC, b.bike_id;";
-      sql =
-          String.format(
-              Locale.US, sql, sensor.getName(), bike.getName(), startTimestamp, endTimestamp);
+      template = scenarioTemplates.getInstanceOf("downsample");
+      template.add("tableName", tableName).add("sensor", sensor.getName())
+          .add("bike", bike.getName()).add("start", startTimestamp)
+          .add("end", endTimestamp);
     }
 
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -850,63 +611,21 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status airPollutionHeatMap(Query query) {
+    ST template = null;
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-    GeoPoint startPoint = Constants.GRID_START_POINT;
-    String valueColumn = SqlBuilder.Column.VALUE.getName();
-    String timeColumn = SqlBuilder.Column.TIME.getName();
-    String bikeColumn = SqlBuilder.Column.BIKE.getName();
-    String sql = "";
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql =
-          "with map as (select (st_dump(map.geom)).geom from (\n"
-              + "\tselect st_setsrid(st_collect(grid.geom),4326) as geom from ST_CreateGrid(40, 90, 0.0006670, 0.0006670,"
-              + " %f, %f) as grid\n"
-              + ") map)\n"
-              + "select m.geom as cell, avg(a.%s) from %s g, map m, (\n"
-              + "\tselect time_bucket(interval '1 sec', ab.%s) as second, avg(%s) as value, %s from %s ab "
-              + "where ab.%s > '%s' and ab.%s < '%s' group by second, %s\n"
-              + ") a\n"
-              + "where g.%s = a.%s and a.second = g.time and st_contains(m.geom, g.value::geometry) group by m.geom;";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              startPoint.getLongitude(),
-              startPoint.getLatitude(),
-              valueColumn,
-              gpsSensor.getTableName(),
-              timeColumn,
-              valueColumn,
-              bikeColumn,
-              sensor.getTableName(),
-              timeColumn,
-              startTimestamp,
-              timeColumn,
-              endTimestamp,
-              bikeColumn,
-              bikeColumn,
-              bikeColumn);
+      throw new NotImplementedException("Air pollution heatmap is not implemented for the narrow "
+          + "table mode of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT ST_X(%s::geometry) AS longitude, \n"
-              + "ST_Y(%s::geometry) AS latitude, AVG(%s) FROM %s t\n"
-              + "WHERE time >= '%s' AND time <= '%s'\n"
-              + "GROUP BY longitude, latitude;";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              gpsSensor.getName(),
-              gpsSensor.getName(),
-              sensor.getName(),
-              tableName,
-              startTimestamp,
-              endTimestamp);
+      template = scenarioTemplates.getInstanceOf("airPollutionHeatMap");
+      template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+          .add("sensor", sensor.getName()).add("start", startTimestamp)
+          .add("end", endTimestamp);
     }
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -924,45 +643,19 @@ public class TimescaleDB implements Database {
    */
   @Override
   public Status bikesInLocation(Query query) {
-    String sql = "";
+    ST template = null;
     Sensor gpsSensor = query.getGpsSensor();
     if (dataModel == TableMode.NARROW_TABLE) {
-      sql =
-          "with last_location as (\n"
-              + "\tselect %s, last(%s, %s) as location from %s group by %s\n"
-              + ") select * from last_location l where st_contains(st_buffer(st_setsrid(st_makepoint(%f, %f),4326)::geography, %d)::geometry, l.location::geometry);";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              SqlBuilder.Column.BIKE.getName(),
-              SqlBuilder.Column.VALUE.getName(),
-              SqlBuilder.Column.TIME.getName(),
-              gpsSensor.getTableName(),
-              SqlBuilder.Column.BIKE.getName(),
-              Constants.SPAWN_POINT.getLongitude(),
-              Constants.SPAWN_POINT.getLatitude(),
-              config.RADIUS);
+      throw new NotImplementedException("bikesInLocation is not implemented in the narrow table "
+          + "mode of TimescaleDB.");
     } else if (dataModel == TableMode.WIDE_TABLE) {
-      sql =
-          "SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (\n"
-              + "\tSELECT %s AS location FROM %s t WHERE t.bike_id = b.bike_id\n"
-              + "\tORDER BY time DESC LIMIT 1\n"
-              + ") AS data ON true\n"
-              + "WHERE ST_CONTAINS(\n"
-              + "\tST_BUFFER(ST_SETSRID(ST_MAKEPOINT(%f, %f),4326)::geography, %d\n"
-              + "\t\t\t )::geometry, data.location::geometry);";
-      sql =
-          String.format(
-              Locale.US,
-              sql,
-              gpsSensor.getName(),
-              tableName,
-              Constants.SPAWN_POINT.getLongitude(),
-              Constants.SPAWN_POINT.getLatitude(),
-              config.RADIUS);
+      template = scenarioTemplates.getInstanceOf("bikesInLocation");
+      template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+          .add("longitude", Constants.SPAWN_POINT.getLongitude())
+          .add("latitude", Constants.SPAWN_POINT.getLatitude())
+          .add("radius", config.RADIUS);
     }
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**

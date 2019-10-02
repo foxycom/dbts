@@ -1,22 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <config xmlns="https://uni-passau.de"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="https://uni-passau.de  config.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="https://uni-passau.de  config.xsd">
     <version>0.4.0</version>
     <db>
         <type>MemSQL</type>
+        <!-- database name-->
         <name>test</name>
         <host>127.0.0.1</host>
         <port>3306</port>
+        <!-- erase data at the beginning -->
         <erase wait="5000">false</erase>
         <createSchema>false</createSchema>
     </db>
     <mode>synthetic_benchmark</mode>
+
+    <!-- log results into MySQL -->
     <mysqlLog active="false" remark="INGEST">
         jdbc:mysql://127.0.0.1:3306/benchmark?user=root&amp;password=MyStrongPassword&amp;useUnicode=true&amp;characterEncoding=UTF8&amp;useSSL=false
     </mysqlLog>
+
+    <!-- number of worker threads -->
     <clients bindToDevices="true">4</clients>
+
+    <!-- number of device groups -->
     <deviceGroups>3</deviceGroups>
+
+    <!-- number of bikes -->
     <devices prefix="d_">4</devices>
 
     <!-- INGEST::PRECISE::LAST_TIME_ACTIVE::HEATMAP::DISTANCE_DRIVEN::LAST_POSITIONS::IDENTIFY_TRIPS::BIKES_IN_LOC::GPS_PATH::DOWNSAMPLE::OFFLINE_BIKES -->
@@ -45,7 +55,7 @@
             <sensor frequency="50" type="basic"/>
             <sensor frequency="50" type="basic"/>
         </sensorGroup>
-        <sensorGroup name="gps" dataType="geographypoint">
+        <sensorGroup name="gps" dataType="geography">
             <sensor frequency="1" type="gps"/>
         </sensorGroup>
         <sensorGroup name="rotaryEncoder" dataType="double precision">
@@ -108,14 +118,19 @@
     </sensorGroups>
 
     <batch size="10000"/>
-    <loops>10</loops>
+    <loops>1</loops>
 
+    <!-- A monitoring server must be started in the server_mode beforehand -->
     <serverMonitor active="false">
+        <!-- Disk drive name -->
         <drive>sdb</drive>
+        <!-- Network interface name -->
         <iface>enp0s25</iface>
+        <!-- Port to run the system monitor on -->
         <port>56565</port>
     </serverMonitor>
 
+    <!-- will be used in future updates -->
     <overflow active="false">
         <ratio>0.5</ratio>
         <lamda>2200.0</lamda>
@@ -128,15 +143,25 @@
     </timestamp>
 
     <query>
+        <!-- sliding time range step in ms -->
+        <step>1000</step>
+
+        <seed>151658</seed>
+
+        <!-- radius in meters -->
+        <radius>500</radius>
+
+        <!-- interval of a time range in ms -->
+        <interval>3600000</interval>
+
+        <!-- value threshold -->
+        <lowerLimit>3</lowerLimit>
+
+        <!-- the following settings will be used in future updates -->
         <type>7</type>
         <sensorNum>1</sensorNum>
         <deviceNum>1</deviceNum>
-        <seed>151658</seed>
-        <step>1000</step>
-        <radius>500</radius>
         <aggregateFunction>avg</aggregateFunction>
-        <interval>3600000</interval>
-        <lowerLimit>1000</lowerLimit>
         <timeBucket>300000</timeBucket>
     </query>
 

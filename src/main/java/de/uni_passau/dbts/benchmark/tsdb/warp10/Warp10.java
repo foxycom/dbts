@@ -34,6 +34,9 @@ import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupFile;
 
+/**
+ * Implementation of benchmark scenarios for Warp 10.
+ */
 public class Warp10 implements Database {
   private static final Logger LOGGER = LoggerFactory.getLogger(Warp10.class);
   private static Config config = ConfigParser.INSTANCE.config();
@@ -62,11 +65,13 @@ public class Warp10 implements Database {
     writeUri = String.format(writeUri, config.HOST, config.PORT);
     deleteUri = String.format(deleteUri, config.HOST, config.PORT);
     execUri = String.format(execUri, config.HOST, config.PORT);
-    templatesFile = new STGroupFile("../templates/warp10/scenarios.stg");
+    templatesFile = new STGroupFile("templates/warp10/scenarios.stg");
   }
 
   @Override
-  public void init() throws TsdbException {}
+  public void init() throws TsdbException {
+    // Not needed since a HTTP API is used.
+  }
 
   @Override
   public void cleanup() throws TsdbException {
@@ -717,12 +722,24 @@ public class Warp10 implements Database {
     return ts * 1000;
   }
 
+  /**
+   * Parses a timestamp to a UTC time string.
+   *
+   * @param ts Timestamp to parse.
+   * @return UTC time string.
+   */
   private String parseTimestamp(long ts) {
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     df.setTimeZone(TimeZone.getTimeZone("UTC"));
     return df.format(new Date(ts));
   }
 
+  /**
+   * Transforms a batch of points to a Warp 10-friendly format.
+   *
+   * @param batch Batch to transform.
+   * @return Transformed
+   */
   private Map<Sensor, Reading[]> transform(Batch batch) {
     Map<Sensor, Point[]> entries = batch.getEntries();
     Sensor gpsSensor = null;
@@ -759,6 +776,12 @@ public class Warp10 implements Database {
     return readings;
   }
 
+  /**
+   * Builds a HTTP request with appropriate headers to execute a WarpScript code.
+   *
+   * @param warpScript WarpScript code to execute.
+   * @return Status of the execution.
+   */
   private Status exec(String warpScript) {
     HttpRequest request =
         HttpRequest.newBuilder()
@@ -771,6 +794,12 @@ public class Warp10 implements Database {
     return send(request);
   }
 
+  /**
+   * Builds a HTTP request with appropriate headers to fetch data.
+   *
+   * @param uri The URI to use in the request.
+   * @return Status of the request execution.
+   */
   private Status fetch(URI uri) {
     LOGGER.debug("{} fetches data", Thread.currentThread().getName());
     HttpRequest request =
@@ -798,6 +827,12 @@ public class Warp10 implements Database {
     return send(request);
   }
 
+  /**
+   * Sends a HTTP request with a specified Warp 10 end point and measures the delay in response time.
+   *
+   * @param request The HTTP request to send.
+   * @return Status of the execution.
+   */
   private Status send(HttpRequest request) {
     HttpResponse<Void> res;
     long startTimestamp = System.nanoTime();
@@ -821,11 +856,22 @@ public class Warp10 implements Database {
     return new Status(true, endTimestamp - startTimestamp, fetchedPoints);
   }
 
+  /**
+   * A data container that is similar to the data model Warp 10 uses; hence, the container makes
+   * batch handling easier.
+   */
   private class Reading {
     long timestamp;
     Point sensorReading;
     Point gpsLocation;
 
+    /**
+     * Creates a reading instance.
+     *
+     * @param timestamp Timestamp of the reading.
+     * @param sensorReading Value(s) of the reading.
+     * @param gpsLocation Location that the reading is labeled with.
+     */
     public Reading(long timestamp, Point sensorReading, Point gpsLocation) {
       this.sensorReading = sensorReading;
       this.gpsLocation = gpsLocation;

@@ -26,6 +26,9 @@ import org.influxdb.dto.QueryResult.Series;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implementation of benchmark scenarios for InfluxDB.
+ */
 public class InfluxDB implements Database {
   private static final long MILLIS_TO_NANO = 1000000L;
 

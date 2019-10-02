@@ -3,7 +3,7 @@ package de.uni_passau.dbts.benchmark.tsdb;
 import de.uni_passau.dbts.benchmark.conf.Config;
 import de.uni_passau.dbts.benchmark.conf.ConfigParser;
 import de.uni_passau.dbts.benchmark.tsdb.citus.Citus;
-import de.uni_passau.dbts.benchmark.tsdb.clickhouse.Clickhouse;
+import de.uni_passau.dbts.benchmark.tsdb.clickhouse.ClickHouse;
 import de.uni_passau.dbts.benchmark.tsdb.cratedb.CrateDB;
 import de.uni_passau.dbts.benchmark.tsdb.griddb.GridDB;
 import de.uni_passau.dbts.benchmark.tsdb.influxdb.InfluxDB;
@@ -16,12 +16,20 @@ import de.uni_passau.dbts.benchmark.tsdb.vertica.Vertica;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** */
+/** Factory of database connections. */
 public class DBFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DBFactory.class);
+
+  /** Config singleton. */
   private static Config config = ConfigParser.INSTANCE.config();
 
+  /**
+   * Returns a database connection which is determined by the configuration.
+   *
+   * @return Database connection.
+   * @throws SQLException if an error occurs while connecting to a database.
+   */
   public Database getDatabase() throws SQLException {
 
     switch (config.DB_SWITCH) {
@@ -42,7 +50,7 @@ public class DBFactory {
       case VERTICA:
         return new Vertica();
       case CLICKHOUSE:
-        return new Clickhouse();
+        return new ClickHouse();
       case GRIDDB:
         return new GridDB();
       default:

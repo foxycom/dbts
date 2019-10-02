@@ -7,8 +7,8 @@ import de.uni_passau.dbts.benchmark.conf.ConfigParser;
 import de.uni_passau.dbts.benchmark.conf.Constants;
 import de.uni_passau.dbts.benchmark.measurement.Measurement;
 import de.uni_passau.dbts.benchmark.mysql.MySqlLog;
-import de.uni_passau.dbts.benchmark.monitor.ClientMonitoring;
-import de.uni_passau.dbts.benchmark.monitor.ServerMonitoring;
+import de.uni_passau.dbts.benchmark.monitor.MonitoringClient;
+import de.uni_passau.dbts.benchmark.monitor.MonitoringServer;
 import de.uni_passau.dbts.benchmark.tsdb.DBWrapper;
 import de.uni_passau.dbts.benchmark.tsdb.TsdbException;
 import de.uni_passau.dbts.benchmark.workload.schema.Bike;
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * and server mode. The former works with synthetic data generated on the fly, and executes
  * predefined scenarios. The latter should be used on the machine running the benchmarked DBMS
  * instance, as it collects machine's KPIs and sends them over TCP to the main benchmark tool, which
- * runs in synthetic mode. See {@link SyntheticClient} and {@link ServerMonitoring} for more.
+ * runs in synthetic mode. See {@link SyntheticClient} and {@link MonitoringServer} for more.
  */
 public class App {
 
@@ -41,7 +41,7 @@ public class App {
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
-  private static ClientMonitoring clientMonitoring;
+  private static MonitoringClient monitoringClient;
 
   /**
    * Entry point of the benchmark tool. The input params should at least contain the -cf argument
@@ -79,8 +79,8 @@ public class App {
     MySqlLog mySql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
     mySql.initMysql(true);
     mySql.saveConfig();
-    clientMonitoring = ClientMonitoring.INSTANCE;
-    clientMonitoring.connect();
+    monitoringClient = MonitoringClient.INSTANCE;
+    monitoringClient.connect();
 
     Measurement measurement = new Measurement();
     DBWrapper dbWrapper = new DBWrapper(measurement);
@@ -164,7 +164,7 @@ public class App {
       // Waits for all clients to finish tests.
       downLatch.await();
 
-      clientMonitoring.shutdown();
+      monitoringClient.shutdown();
     } catch (InterruptedException e) {
       LOGGER.error("Exception occurred during waiting for all threads to finish.", e);
       Thread.currentThread().interrupt();
@@ -194,7 +194,7 @@ public class App {
    * @param config Configuration params instance.
    */
   private static void serverMode(Config config) {
-    ServerMonitoring monitor = ServerMonitoring.INSTANCE;
+    MonitoringServer monitor = MonitoringServer.INSTANCE;
     try {
       monitor.listen(config);
     } catch (IOException e) {

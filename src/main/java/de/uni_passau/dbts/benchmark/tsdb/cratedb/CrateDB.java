@@ -26,17 +26,37 @@ import java.util.Map;
 import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroupFile;
 
+/**
+ * Implementation of benchmark scenarios for CrateDB.
+ */
 public class CrateDB implements Database {
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(MemSQL.class);
+
+  /** 'Drop table' template. */
   private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s;";
+
+  /** Name of the data table. */
   private static String tableName;
+
+  /** Configuration singleton. */
   private static Config config;
+
+  /** JDBC connection. */
   private Connection connection;
+
+  /** SQL statements builder. */
   private SqlBuilder sqlBuilder;
+
+  /** Random names generator. */
   private NameGenerator nameGenerator;
+
+  /** Scenario templates file. */
+  private STGroupFile scenarioTemplates;
 
   /** Creates an instance of the database controller. */
   public CrateDB() {
@@ -44,6 +64,7 @@ public class CrateDB implements Database {
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
     nameGenerator = NameGenerator.INSTANCE;
+    scenarioTemplates = new STGroupFile("../templates/cratedb/scenarios.stg");
   }
 
   @Override
@@ -55,7 +76,7 @@ public class CrateDB implements Database {
               Constants.CRATE_USER,
               Constants.CRATE_PASSWD);
     } catch (Exception e) {
-      LOGGER.error("Initialize CrateDB failed because ", e);
+      LOGGER.error("CrateDB could not be initialized because ", e);
       throw new TsdbException(e);
     }
   }
@@ -179,21 +200,12 @@ public class CrateDB implements Database {
   @Override
   public Status precisePoint(Query query) {
     Sensor sensor = query.getSensor();
-    long timestamp = query.getStartTimestamp();
-
-    List<String> columns =
-        Arrays.asList(
-            SqlBuilder.Column.TIME.getName(), SqlBuilder.Column.BIKE.getName(), sensor.getName());
-    sqlBuilder =
-        sqlBuilder
-            .reset()
-            .select(columns)
-            .from(tableName)
-            .where()
-            .bikes(query.getBikes())
-            .and()
-            .time(timestamp);
-    return executeQuery(sqlBuilder.build());
+    Bike bike = query.getBikes().get(0);
+    Timestamp timestamp = new Timestamp(query.getStartTimestamp());
+    ST template = scenarioTemplates.getInstanceOf("precisePoint");
+    template.add("tableName", tableName).add("sensor", sensor.getName())
+        .add("bike", bike.getName()).add("time", timestamp);
+    return executeQuery(template.render());
   }
 
   /**
@@ -210,19 +222,9 @@ public class CrateDB implements Database {
   @Override
   public Status lastKnownPosition(Query query) {
     Sensor gpsSensor = query.getGpsSensor();
-    String sql = "";
-
-    sql =
-        "SELECT b.owner_name, l.bike_id, last_timestamp, t.%s FROM (\n"
-            + "SELECT MAX(\"time\") OVER (PARTITION BY bike_id) AS last_timestamp, bike_id FROM %s\n"
-            + "  ) AS l, %s t, bikes b\n"
-            + "  WHERE l.bike_id = t.bike_id AND l.last_timestamp = t.\"time\" AND b.bike_id = t.bike_id\n"
-            + "GROUP BY l.bike_id, b.owner_name, l.last_timestamp, t.%s;";
-    sql =
-        String.format(
-            Locale.US, sql, gpsSensor.getName(), tableName, tableName, gpsSensor.getName());
-
-    return executeQuery(sql);
+    ST template = scenarioTemplates.getInstanceOf("lastKnownPosition");
+    template.add("tableName", tableName).add("gpsSensor", gpsSensor);
+    return executeQuery(template.render());
   }
 
   /**
@@ -237,7 +239,7 @@ public class CrateDB implements Database {
    *  AND t.bike_id = 'bike_2'
    *  AND time &gt; '2018-08-30 02:00:00.0'
    *  AND time &lt; '2018-08-30 03:00:00.0'
-   *  group by b.owner_name, t.bike_id, longitude, latitude, second
+   *  GROUP BY b.owner_name, t.bike_id, longitude, latitude, second
    *  ORDER BY second;
    * </code>
    */
@@ -247,30 +249,11 @@ public class CrateDB implements Database {
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
     Sensor gpsSensor = query.getGpsSensor();
     Bike bike = query.getBikes().get(0);
-    String sql = "";
-
-    sql =
-        "SELECT date_trunc('second', \"time\") as second, \n"
-            + "longitude(%s) as longitude, latitude(%s) as latitude, \n"
-            + "t.bike_id, b.owner_name \n"
-            + "FROM %s t, bikes b\n"
-            + "WHERE b.bike_id = t.bike_id\n"
-            + "AND t.bike_id = '%s'\n"
-            + "AND time >= '%s' \n"
-            + "AND time <= '%s'\n"
-            + "group by b.owner_name, t.bike_id, longitude, latitude, second\n"
-            + "ORDER BY second;";
-    sql =
-        String.format(
-            Locale.US,
-            sql,
-            gpsSensor.getName(),
-            gpsSensor.getName(),
-            tableName,
-            bike.getName(),
-            startTimestamp,
-            endTimestamp);
-    return executeQuery(sql);
+    ST template = scenarioTemplates.getInstanceOf("gpsPathScan");
+    template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+        .add("bike", bike.getName()).add("start", startTimestamp)
+        .add("end", endTimestamp);
+    return executeQuery(template.render());
   }
 
   /**
@@ -299,38 +282,13 @@ public class CrateDB implements Database {
     Timestamp endTimestamp = new Timestamp(Constants.START_TIMESTAMP + config.QUERY_INTERVAL);
     Sensor sensor = query.getSensor();
     Sensor gpsSensor = query.getGpsSensor();
-    String sql = "";
+    ST template = scenarioTemplates.getInstanceOf("identifyTrips");
+    template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName())
+        .add("bike", bike.getName()).add("sensor", sensor.getName())
+        .add("threshold", query.getThreshold()).add("start", startTimestamp)
+        .add("end", endTimestamp);
 
-    sql =
-        "SELECT d.second, d.bike_id, b.owner_name, longitude, latitude\n"
-            + "FROM bikes b, (\n"
-            + "  SELECT date_trunc('second', \"time\") AS SECOND, \n"
-            + "\tbike_id, longitude(%s) as longitude, latitude(%s) as latitude\n"
-            + "\tFROM %s t \n"
-            + "\tWHERE bike_id = '%s'\n"
-            + "\tAND time >= '%s' \n"
-            + "\tAND time < '%s'\n"
-            + "\tGROUP BY second, bike_id, longitude(%s), latitude(%s)\n"
-            + "\tHAVING AVG(%s) >= %f\n"
-            + ") d\n"
-            + "WHERE d.bike_id = b.bike_id\n"
-            + "ORDER BY d.second ASC, d.bike_id;";
-    sql =
-        String.format(
-            Locale.US,
-            sql,
-            gpsSensor.getName(),
-            gpsSensor.getName(),
-            tableName,
-            bike.getName(),
-            startTimestamp,
-            endTimestamp,
-            gpsSensor.getName(),
-            gpsSensor.getName(),
-            sensor.getName(),
-            query.getThreshold());
-
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -356,15 +314,10 @@ public class CrateDB implements Database {
    */
   @Override
   public Status offlineBikes(Query query) {
-    String sql = "";
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-
-    sql =
-        "SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (\n"
-            + "\tSELECT DISTINCT(bike_id) FROM %s t WHERE time > '%s'\n"
-            + ");";
-    sql = String.format(Locale.US, sql, tableName, endTimestamp);
-    return executeQuery(sql);
+    ST template = scenarioTemplates.getInstanceOf("offlineBikes");
+    template.add("tableName", tableName).add("time", endTimestamp);
+    return executeQuery(template.render());
   }
 
   /**
@@ -384,28 +337,12 @@ public class CrateDB implements Database {
   @Override
   public Status lastTimeActivelyDriven(Query query) {
     Sensor sensor = query.getSensor();
-    String sql = "";
 
     Timestamp timestamp = new Timestamp(query.getEndTimestamp());
-    sql =
-        "SELECT l.bike_id, MAX(l.minute) as last_time FROM %s t, (\n"
-            + "SELECT date_trunc('minute', \"time\") as minute, bike_id\n"
-            + "FROM %s t WHERE time > '%s'\n"
-            + "GROUP BY minute, bike_id\n"
-            + "HAVING AVG(%s) > %f  \n"
-            + ") as l\n"
-            + "WHERE l.bike_id = t.bike_id\n"
-            + "GROUP BY l.bike_id;";
-    sql =
-        String.format(
-            Locale.US,
-            sql,
-            tableName,
-            tableName,
-            timestamp,
-            sensor.getName(),
-            query.getThreshold());
-    return executeQuery(sql);
+    ST template = scenarioTemplates.getInstanceOf("lastTimeActivelyDriven");
+    template.add("tableName", tableName).add("sensor", sensor.getName())
+        .add("threshold", query.getThreshold()).add("time", timestamp);
+    return executeQuery(template.render());
   }
 
   /**
@@ -430,29 +367,12 @@ public class CrateDB implements Database {
     Bike bike = query.getBikes().get(0);
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-    String sql = "";
-    sql =
-        "SELECT d.minute, b.bike_id, b.owner_name, d.value \n"
-            + "FROM (\n"
-            + "SELECT date_trunc('minute', \"time\") AS minute, bike_id, AVG(%s) AS value\n"
-            + "\tFROM %s t \n"
-            + "\tWHERE bike_id = '%s'\n"
-            + "\tAND time >= '%s'\n"
-            + "\tAND time <= '%s'\n"
-            + "\tGROUP BY bike_id, minute\n"
-            + ") d, bikes b WHERE b.bike_id = d.bike_id\n"
-            + "ORDER BY d.minute, b.bike_id;";
-    sql =
-        String.format(
-            Locale.US,
-            sql,
-            sensor.getName(),
-            tableName,
-            bike.getName(),
-            startTimestamp,
-            endTimestamp);
+    ST template = scenarioTemplates.getInstanceOf("downsample");
+    template.add("tableName", tableName).add("sensor", sensor.getName())
+        .add("bike", bike.getName()).add("start", startTimestamp)
+        .add("end", endTimestamp);
 
-    return executeQuery(sql);
+    return executeQuery(template.render());
   }
 
   /**
@@ -471,24 +391,11 @@ public class CrateDB implements Database {
     Sensor gpsSensor = query.getGpsSensor();
     Timestamp startTimestamp = new Timestamp(query.getStartTimestamp());
     Timestamp endTimestamp = new Timestamp(query.getEndTimestamp());
-    String sql = "";
-
-    sql =
-        "SELECT longitude(%s) as longitude, latitude(%s) as latitude, AVG(%s) \n"
-            + "FROM %s t \n"
-            + "WHERE time >= '%s' AND time <= '%s' \n"
-            + "GROUP BY longitude, latitude order by longitude, latitude;";
-    sql =
-        String.format(
-            Locale.US,
-            sql,
-            gpsSensor.getName(),
-            gpsSensor.getName(),
-            sensor.getName(),
-            tableName,
-            startTimestamp,
-            endTimestamp);
-    return executeQuery(sql);
+    ST template = scenarioTemplates.getInstanceOf("airPollutionHeatMap");
+    template.add("tableName", tableName).add("gpsSensor", gpsSensor)
+        .add("sensor", sensor.getName()).add("start", startTimestamp)
+        .add("end", endTimestamp);
+    return executeQuery(template.render());
   }
 
   /**
@@ -513,25 +420,10 @@ public class CrateDB implements Database {
    */
   @Override
   public Status bikesInLocation(Query query) {
-    String sql = "";
     Sensor gpsSensor = query.getGpsSensor();
-    sql =
-        "SELECT b.bike_id, b.owner_name, pos.pos FROM bikes b, \n"
-            + "\t(\n"
-            + "SELECT t.bike_id, t.%s AS pos FROM (\n"
-            + "SELECT MAX(\"time\") OVER (PARTITION BY bike_id) AS last_timestamp, bike_id\n"
-            + "FROM %s\n"
-            + ") l, %s t \n"
-            + "WHERE l.bike_id = t.bike_id\n"
-            + "AND l.last_timestamp = t.\"time\"\n"
-            + ") pos \n"
-            + "WHERE b.bike_id = pos.bike_id \n"
-            + "AND within(pos.pos, 'POLYGON((13.4406567 48.5723195, \n"
-            + "13.4373522 48.5707861, 13.4373522 48.5662708, \n"
-            + "13.4443045 48.5645384, 13.4489393 48.5683155, \n"
-            + "13.4492826 48.5710701, 13.4406567 48.5723195))');";
-    sql = String.format(Locale.US, sql, gpsSensor.getName(), tableName, tableName);
-    return executeQuery(sql);
+    ST template = scenarioTemplates.getInstanceOf("bikesInLocation");
+    template.add("tableName", tableName).add("gpsSensor", gpsSensor.getName());
+    return executeQuery(template.render());
   }
 
   /**

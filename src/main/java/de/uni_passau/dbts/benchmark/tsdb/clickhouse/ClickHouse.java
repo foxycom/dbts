@@ -24,8 +24,11 @@ import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupFile;
 
-public class Clickhouse implements Database {
-  private static final Logger LOGGER = LoggerFactory.getLogger(Clickhouse.class);
+/**
+ * Implementation of benchmark scenarios for ClickHouse.
+ */
+public class ClickHouse implements Database {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClickHouse.class);
 
   /** SQL template for dropping a table. */
   private static final String DROP_TABLE = "DROP TABLE IF EXISTS %s;";
@@ -46,7 +49,7 @@ public class Clickhouse implements Database {
   private STGroupFile templatesFile;
 
   /** Creates an instance of the database controller. */
-  public Clickhouse() {
+  public ClickHouse() {
     config = ConfigParser.INSTANCE.config();
     nameGenerator = NameGenerator.INSTANCE;
     templatesFile = new STGroupFile("../templates/clickhouse/scenarios.stg");

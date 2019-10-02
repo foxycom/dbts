@@ -26,6 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupFile;
 
+/**
+ * Implementation of benchmark scenarios for MemSQL.
+ */
 public class MemSQL implements Database {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MemSQL.class);

@@ -172,7 +172,7 @@
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="queryType">
-    <xs:sequence>
+    <xs:all>
       <xs:element type="xs:string" name="type"/>
       <xs:element type="xs:integer" name="sensorNum"/>
       <xs:element type="xs:integer" name="deviceNum"/>
@@ -183,10 +183,10 @@
       <xs:element type="xs:long" name="interval"/>
       <xs:element type="xs:double" name="lowerLimit"/>
       <xs:element type="xs:integer" name="timeBucket"/>
-    </xs:sequence>
+    </xs:all>
   </xs:complexType>
   <xs:complexType name="configType">
-    <xs:sequence>
+    <xs:all>
       <xs:element type="xs:string" name="version"/>
       <xs:element type="uni:dbType" name="db" xmlns:uni="https://uni-passau.de"/>
       <xs:element type="uni:warp10Type" name="warp10" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
@@ -204,6 +204,6 @@
       <xs:element type="uni:timestampType" name="timestamp" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="uni:functionsType" name="functions" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
       <xs:element type="uni:queryType" name="query" xmlns:uni="https://uni-passau.de" minOccurs="0"/>
-    </xs:sequence>
+    </xs:all>
   </xs:complexType>
 </xs:schema>

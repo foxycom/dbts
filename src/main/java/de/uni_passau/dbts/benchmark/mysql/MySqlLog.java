@@ -25,7 +25,9 @@ public class MySqlLog {
   private String projectID = "";
 
   /**
-   * Instantiates the MySQL log wrapper.
+   * Instantiates the MySQL log wrapper. In order for all worker threads to insert their intermediate
+   * measurements into the same database, they must initialize their MySQL instances with the same
+   * {@code lab} identifier.
    *
    * @param lab Identifier of the measurement.
    */
@@ -341,16 +343,9 @@ public class MySqlLog {
     String sql = "";
     try {
       statement = mysqlConnection.createStatement();
-      if (config.WORK_MODE.equals(Constants.MODE_INSERT_TEST_WITH_USERDEFINED_PATH)) {
-        sql = String.format(SAVE_CONFIG, "'" + projectID + "'", "'MODE'", "'GEN_DATA_MODE'");
-        statement.addBatch(sql);
-      } else if (config.WORK_MODE.equals(Constants.MODE_QUERY_TEST_WITH_DEFAULT_PATH)) {
-        sql = String.format(SAVE_CONFIG, "'" + projectID + "'", "'MODE'", "'QUERY_TEST_MODE'");
-        statement.addBatch(sql);
-      } else {
-        sql = String.format(SAVE_CONFIG, "'" + projectID + "'", "'MODE'", "'INSERT_TEST_MODE'");
-        statement.addBatch(sql);
-      }
+
+      sql = String.format(SAVE_CONFIG, "'" + projectID + "'", "'MODE'", "'INSERT_TEST_MODE'");
+      statement.addBatch(sql);
       sql =
           String.format(SAVE_CONFIG, "'" + projectID + "'", "'ServerIP'", "'" + config.HOST + "'");
       statement.addBatch(sql);

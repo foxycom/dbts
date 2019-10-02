@@ -1,7 +1,7 @@
 package de.uni_passau.dbts.benchmark.client;
 
 import de.uni_passau.dbts.benchmark.client.OperationController.Operation;
-import de.uni_passau.dbts.benchmark.monitor.ClientMonitoring;
+import de.uni_passau.dbts.benchmark.monitor.MonitoringClient;
 import de.uni_passau.dbts.benchmark.workload.Workload;
 import de.uni_passau.dbts.benchmark.workload.WorkloadException;
 import de.uni_passau.dbts.benchmark.workload.ingestion.Batch;
@@ -13,17 +13,41 @@ import java.util.concurrent.CyclicBarrier;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 
-/** */
+/**
+ * This class implements the logic of benchmarks with synthetic data. Each client carries a
+ * workload instance, which generates batches of synthetic data or query parameters. The client
+ * forwards the generated workload to the database wrapper.
+ */
 public abstract class BaseClient extends Client implements Runnable {
 
   protected static Logger LOGGER;
 
+  /** Yields operations to execute. */
   private OperationController operationController;
-  private Workload syntheticWorkload;
-  private long insertLoopIndex;
-  private DataSchema dataSchema = DataSchema.getInstance();
-  private static ClientMonitoring clientMonitoring = ClientMonitoring.INSTANCE;
 
+  /** Workload instance. */
+  private Workload syntheticWorkload;
+
+  /** Helper variable to track the progress of ingestion. */
+  private long insertLoopIndex;
+
+  /** Schema of bikes the client has to process. */
+  private DataSchema dataSchema = DataSchema.getInstance();
+
+  /**
+   * Singleton of a system monitor client, which the worker thread can tell to start or stop monitoring
+   * system stats to.
+   */
+  private static MonitoringClient monitoringClient = MonitoringClient.INSTANCE;
+
+  /**
+   * Creates an instance of a worker client.
+   *
+   * @param id The client's ID.
+   * @param countDownLatch Down latch object.
+   * @param barrier A barrier the client should be bound to.
+   * @param workload Workload instance.
+   */
   public BaseClient(
       int id, CountDownLatch countDownLatch, CyclicBarrier barrier, Workload workload) {
     super(id, countDownLatch, barrier);
@@ -33,13 +57,17 @@ public abstract class BaseClient extends Client implements Runnable {
     initLogger();
   }
 
+  /**
+   * Starts execution of operations. Within each loop tick, the next operation to execute is chosen
+   * based on the configured probabilities.
+   */
   void doTest() {
     for (long loopIndex = 0; loopIndex < config.LOOP; loopIndex++) {
       dbWrapper.incrementLoopIndex();
       Operation operation = operationController.getNextOperationType();
       switch (operation) {
         case INGESTION:
-          clientMonitoring.start();
+          monitoringClient.start();
           if (config.BIND_CLIENTS_TO_DEVICES) {
             try {
               List<Bike> schema = dataSchema.getClientBindSchema().get(clientThreadId);
@@ -66,7 +94,7 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case PRECISE_POINT:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.precisePoint(syntheticWorkload.getQuery("light"));
           } catch (Exception e) {
@@ -74,75 +102,75 @@ public abstract class BaseClient extends Client implements Runnable {
           }
           break;
         case ACTIVE_BIKES:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.lastTimeActivelyDriven(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to do range query with value filter because ", e);
+            LOGGER.error("Failed to retrieve last trips of each bike because ", e);
           }
           break;
         case DOWNSAMPLE:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.downsample(syntheticWorkload.getQuery("oximeter"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to do group by query because ", e);
+            LOGGER.error("Failed to downsample sensors metrics because ", e);
           }
           break;
         case LAST_KNOWN_POSITION:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.lastKnownPosition(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute latest point query because ", e);
+            LOGGER.error("Failed to retrieve last known positions of each bike because ", e);
           }
           break;
         case GPS_PATH_SCAN:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.gpsPathScan(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute a time range query with GPS data because ", e);
+            LOGGER.error("Failed to scan GPS path of a bike because ", e);
           }
           break;
         case IDENTIFY_TRIPS:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.identifyTrips(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute a time range query on trip identification because ", e);
+            LOGGER.error("Failed to identify trips because ", e);
           }
           break;
         case AIRQUALITY_HEATMAP:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.airPollutionHeatMap(syntheticWorkload.getQuery("particles"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute a heat map range query because ", e);
+            LOGGER.error("Failed to build a heatmap because ", e);
           }
           break;
         case DISTANCE_DRIVEN:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.distanceDriven(syntheticWorkload.getQuery("current"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute a distance range query because ", e);
+            LOGGER.error("Failed to compute the distance a bike has driven because ", e);
           }
           break;
         case BIKES_IN_LOCATION:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.bikesInLocation(syntheticWorkload.getQuery("emg"));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute the bikes in location query because ", e);
+            LOGGER.error("Failed to find bikes in a specific area because ", e);
           }
           break;
         case OFFLINE_BIKES:
-          clientMonitoring.start();
+          monitoringClient.start();
           try {
             dbWrapper.offlineBikes(syntheticWorkload.getQuery(""));
           } catch (WorkloadException e) {
-            LOGGER.error("Failed to execute the gps aggregation in range query because ", e);
+            LOGGER.error("Failed to retrieve offline bikes because ", e);
           }
           break;
         default:
@@ -155,5 +183,8 @@ public abstract class BaseClient extends Client implements Runnable {
     }
   }
 
+  /**
+   * Initializes a logger.
+   */
   abstract void initLogger();
 }

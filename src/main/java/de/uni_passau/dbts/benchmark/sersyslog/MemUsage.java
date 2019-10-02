@@ -10,6 +10,11 @@ public enum MemUsage {
 
   private final double KB2GB = 1024 * 1024f;
 
+  /**
+   * Returns the memory and swap usage in %.
+   *
+   * @return Pair of memory and swap usage.
+   */
   public Map<String, Float> get() {
     float memUsage = 0.0f;
     float swapUsage = 0.0f;

@@ -58,8 +58,10 @@ public class BasicSensor implements Sensor {
    * Creates an instance of sensor.
    *
    * @param name The name of the sensor.
+   * @param sensorGroup The sensor group which the sensor belongs to.
    * @param function The parameters of data function.
    * @param freq The frequency the sensor samples its data (in Hz).
+   * @param dataType The data type of values.
    */
   public BasicSensor(
       String name, SensorGroup sensorGroup, Function function, int freq, String dataType) {

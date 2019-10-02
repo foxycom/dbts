@@ -13,30 +13,54 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Benchmark results container.
+ */
 public class Measurement {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Measurement.class);
   private static final double[] MID_AVG_RANGE = {0.1, 0.9};
   private static Config config = ConfigParser.INSTANCE.config();
+
+  /** List of latencies per operation. */
   private Map<Operation, List<Double>> operationLatencies;
 
-  /* The sums of latencies per operation per thread. */
+  /** The sums of latencies per operation per thread. */
   private Map<Operation, List<Double>> getOperationLatencySumsList;
+
+  /** The sums of latencies per operation. */
   private Map<Operation, Double> operationLatencySums;
+
+  /** Time elapsed while registering a schema. */
   private double createSchemaTime;
+
+  /** Loop index. */
   private int loopIndex = -1;
+
+  /** Some remark to the results. */
   private String remark;
 
+  /** MySQL connection. */
   private MySqlLog mysql;
 
-  /* Total measurement time including schema registration and batch generation. */
+  /** Total run time including schema registration and batch generation. */
   private double elapseTime;
 
+  /** Numbers of successful operations. */
   private Map<Operation, Long> okOperationNumMap;
+
+  /** Numbers of failed operations. */
   private Map<Operation, Long> failOperationNumMap;
+
+  /** Number of processed data points per operation. */
   private Map<Operation, Long> okPointNumMap;
+
+  /** Number of failed data points per operation. */
   private Map<Operation, Long> failPointNumMap;
 
+  /**
+   * Creates a measurement instance.
+   */
   public Measurement() {
     mysql = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
     mysql.initMysql(false);
@@ -71,77 +95,153 @@ public class Measurement {
     }
   }
 
+  /**
+   * Returns the sums of latencies per operation.
+   *
+   * @return Sums of latencies per operation.
+   */
   private Map<Operation, Double> getOperationLatencySums() {
     for (Operation operation : Operation.values()) {
-      operationLatencySums.put(operation, getDoubleListSum(operationLatencies.get(operation)));
+      double sum = operationLatencies.get(operation).stream().mapToDouble(Double::doubleValue).sum();
+      operationLatencySums.put(operation, sum);
     }
     return operationLatencySums;
   }
 
+  /**
+   * Returns the number of successful executions of an operation type.
+   *
+   * @param operation Operation type.
+   * @return Number of successful executions.
+   */
   public long getOkOperationNum(Operation operation) {
     return okOperationNumMap.get(operation);
   }
 
+  /**
+   * Returns the number of failed executions of an operation type.
+   *
+   * @param operation Operation type.
+   * @return Number of failed executions.
+   */
   public long getFailOperationNum(Operation operation) {
     return failOperationNumMap.get(operation);
   }
 
+  /**
+   * Returns the number of processed data points.
+   *
+   * @param operation Operation type.
+   * @return Number of processed data points.
+   */
   public long getOkPointNum(Operation operation) {
     return okPointNumMap.get(operation);
   }
 
+  /**
+   * Returns the number of failed data points.
+   *
+   * @param operation Operation type.
+   * @return Number of failed points.
+   */
   public long getFailPointNum(Operation operation) {
     return failPointNumMap.get(operation);
   }
 
+  /**
+   * Adds a number of processed data points by an operation.
+   *
+   * @param operation Operation type.
+   * @param pointNum Number of processed data points.
+   */
   public void addOkPointNum(Operation operation, int pointNum) {
     okPointNumMap.put(operation, okPointNumMap.get(operation) + pointNum);
   }
 
+  /**
+   * Adds a failed operation.
+   *
+   * @param operation Operation type.
+   */
   public void addFailOperation(Operation operation) {
     failOperationNumMap.put(operation, failOperationNumMap.get(operation) + 1);
   }
 
+  /**
+   * Increments the loop counter.
+   */
   public void incrementLoopIndex() {
     loopIndex++;
   }
 
+  /**
+   * Returns latencies lists for each operation type.
+   *
+   * @return Latencies for each operation.
+   */
   private Map<Operation, List<Double>> getOperationLatencies() {
     return operationLatencies;
   }
 
-  public void setOperationLatencies(Map<Operation, List<Double>> operationLatencies) {
-    this.operationLatencies = operationLatencies;
-  }
-
+  /**
+   * Adds a successful operation.
+   *
+   * @param operation Operation type.
+   * @param latency Latency.
+   * @param okPointNum Number of processed points.
+   */
   public void addOkOperation(Operation operation, double latency, long okPointNum) {
     okOperationNumMap.put(operation, okOperationNumMap.get(operation) + 1);
     operationLatencies.get(operation).add(latency);
     okPointNumMap.put(operation, okPointNumMap.get(operation) + okPointNum);
 
     double rate = okPointNum / (latency / 1000); // Points/s
-    flushOk(operation.getName(), latency, rate, okPointNum);
+    flushOkOperation(operation.getName(), latency, rate, okPointNum);
   }
 
+  /**
+   * Adds a failed operation.
+   *
+   * @param operation Operation type.
+   * @param failPointNum Number of failed data points.
+   */
   public void addFailOperation(Operation operation, long failPointNum) {
     failOperationNumMap.put(operation, failOperationNumMap.get(operation) + 1);
     failPointNumMap.put(operation, failPointNumMap.get(operation) + failPointNum);
 
-    flushFail(operation.getName(), failPointNum);
+    flushFailedOperation(operation.getName(), failPointNum);
   }
 
-  private void flushOk(String operation, double latency, double rate, long okPointNum) {
+  /**
+   * Saves a successful operation into the MySQL database.
+   *
+   * @param operation Operation type.
+   * @param latency Latency.
+   * @param rate Throughput of data points per second.
+   * @param okPointNum Number of processed data points.
+   */
+  private void flushOkOperation(String operation, double latency, double rate, long okPointNum) {
     String clientName = Thread.currentThread().getName();
     mysql.saveClientMeasurement(
         clientName, operation, "OK", loopIndex, latency, elapseTime, rate, okPointNum, 0, remark);
   }
 
-  private void flushFail(String operation, long failPointNum) {
+  /**
+   * Saves a failed operation into the MySQL database.
+   *
+   * @param operation Operation type.
+   * @param failPointNum Number of failed data points.
+   */
+  private void flushFailedOperation(String operation, long failPointNum) {
     String clientName = Thread.currentThread().getName();
     mysql.saveClientMeasurement(
         clientName, operation, "FAILED", loopIndex, elapseTime, 0, 0, 0, failPointNum, remark);
   }
 
+  /**
+   * Saves the overall measurement into the MySQL database. {@link #calculateMetrics()} must be
+   * called beforehand.
+   */
   public void save() {
 
     for (Operation operation : Operation.values()) {
@@ -149,7 +249,7 @@ public class Measurement {
         continue;
       }
 
-      double accTime = Metric.MAX_THREAD_LATENCY_SUM.getTypeValueMap().get(operation);
+      double accTime = Metric.MAX_THREAD_LATENCY_SUM.getOperationValueMap().get(operation);
       double accRate = 0;
       if (accTime != 0) {
         accRate = okPointNumMap.get(operation) * 1000 / accTime;
@@ -157,9 +257,9 @@ public class Measurement {
 
       mysql.saveOverallMeasurement(
           operation.getName(),
-          Metric.AVG_LATENCY.getTypeValueMap().get(operation),
-          Metric.P99_LATENCY.getTypeValueMap().get(operation),
-          Metric.MEDIAN_LATENCY.getTypeValueMap().get(operation),
+          Metric.AVG_LATENCY.getOperationValueMap().get(operation),
+          Metric.P99_LATENCY.getOperationValueMap().get(operation),
+          Metric.MEDIAN_LATENCY.getOperationValueMap().get(operation),
           accTime,
           accRate,
           okPointNumMap.get(operation),
@@ -173,34 +273,64 @@ public class Measurement {
     }
   }
 
+  /**
+   * Returns the remark.
+   *
+   * @return Remark.
+   */
   public String getRemark() {
     return remark;
   }
 
+  /**
+   * Sets a new remark.
+   *
+   * @param remark New remark.
+   */
   public void setRemark(String remark) {
     this.remark = remark;
   }
 
+  /**
+   * Returns the time elapsed while registering a schema.
+   *
+   * @return Time elapsed while registering a schema.
+   */
   public double getCreateSchemaTime() {
     return createSchemaTime;
   }
 
+  /**
+   * Sets the time needed for a schema creation.
+   *
+   * @param createSchemaTime Latency.
+   */
   public void setCreateSchemaTime(double createSchemaTime) {
     this.createSchemaTime = createSchemaTime;
   }
 
+  /**
+   * Returns the elapsed time since the beginning of a benchmark run.
+   *
+   * @return Elapsed time.
+   */
   public double getElapseTime() {
     return elapseTime;
   }
 
+  /**
+   * Set the elapsed time since the beginning of a benchmark run.
+   *
+   * @param elapseTime Elapsed time.
+   */
   public void setElapseTime(double elapseTime) {
     this.elapseTime = elapseTime;
   }
 
   /**
-   * users need to call calculateMetrics() after calling mergeMeasurement() to update metrics.
+   * Merges results from another {@link Measurement} instance into this one.
    *
-   * @param m measurement to be merged
+   * @param m {@link Measurement} instance to be merged.
    */
   public void mergeMeasurement(Measurement m) {
     for (Operation operation : Operation.values()) {
@@ -215,6 +345,9 @@ public class Measurement {
     }
   }
 
+  /**
+   * Calculates latencies and percentiles.
+   */
   public void calculateMetrics() {
     for (Operation operation : Operation.values()) {
       List<Double> latencyList = operationLatencies.get(operation);
@@ -227,33 +360,35 @@ public class Measurement {
         double avgLatency = sumLatency / totalOps;
 
         // Time elapsed since the start and the time the last thread completed the operation.
-        double maxThreadLatencySum = getDoubleListMax(getOperationLatencySumsList.get(operation));
+        double maxThreadLatencySum = getOperationLatencySumsList.get(operation).stream()
+            .mapToDouble(Double::doubleValue).max().getAsDouble();
 
-        Metric.MAX_THREAD_LATENCY_SUM.getTypeValueMap().put(operation, maxThreadLatencySum);
-        Metric.AVG_LATENCY.getTypeValueMap().put(operation, avgLatency);
+        Metric.MAX_THREAD_LATENCY_SUM.getOperationValueMap().put(operation, maxThreadLatencySum);
+        Metric.AVG_LATENCY.getOperationValueMap().put(operation, avgLatency);
         latencyList.sort(new DoubleComparator());
-        Metric.MIN_LATENCY.getTypeValueMap().put(operation, latencyList.get(0));
-        Metric.MAX_LATENCY.getTypeValueMap().put(operation, latencyList.get(totalOps - 1));
+
+        Metric.MIN_LATENCY.getOperationValueMap().put(operation, latencyList.get(0));
+        Metric.MAX_LATENCY.getOperationValueMap().put(operation, latencyList.get(totalOps - 1));
         Metric.P10_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.10)));
         Metric.P25_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.25)));
         Metric.MEDIAN_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.50)));
         Metric.P75_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.75)));
         Metric.P90_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.90)));
         Metric.P95_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.95)));
         Metric.P99_LATENCY
-            .getTypeValueMap()
+            .getOperationValueMap()
             .put(operation, latencyList.get((int) (totalOps * 0.99)));
         double midAvgLatency = 0;
         double midSum = 0;
@@ -270,11 +405,14 @@ public class Measurement {
           LOGGER.error(
               "Can not calculate mid-average latency because mid-operation number is zero.");
         }
-        Metric.MID_AVG_LATENCY.getTypeValueMap().put(operation, midAvgLatency);
+        Metric.MID_AVG_LATENCY.getOperationValueMap().put(operation, midAvgLatency);
       }
     }
   }
 
+  /**
+   * Prints operation results into the console. {@link #calculateMetrics()} must be called beforehand.
+   */
   public void showMeasurements() {
     System.out.println(Thread.currentThread().getName() + " measurements:");
     System.out.println("Test elapse time: " + String.format("%.2f", elapseTime) + " second");
@@ -308,24 +446,9 @@ public class Measurement {
         "-----------------------------------------------------------------------------------------------------------------");
   }
 
-  public void showConfigs() {
-    System.out.println("----------------------Test Configurations----------------------");
-    System.out.println("DB_SWITCH: " + config.DB_SWITCH);
-    System.out.println("OPERATION_PROPORTION: " + config.OPERATION_PROPORTION);
-    System.out.println("IS_CLIENT_BIND: " + config.BIND_CLIENTS_TO_DEVICES);
-    System.out.println("CLIENT_NUMBER: " + config.CLIENTS_NUMBER);
-    System.out.println("GROUP_NUMBER: " + config.DEVICE_GROUPS_NUMBER);
-    System.out.println("DEVICE_NUMBER: " + config.DEVICES_NUMBER);
-    System.out.println("SENSOR_NUMBER: " + config.SENSORS_NUMBER);
-    System.out.println("BATCH_SIZE: " + config.BATCH_SIZE);
-    System.out.println("LOOP: " + config.LOOP);
-    System.out.println("QUERY_INTERVAL: " + config.QUERY_INTERVAL);
-    System.out.println("IS_OVERFLOW: " + config.USE_OVERFLOW);
-    System.out.println("OVERFLOW_MODE: " + config.OVERFLOW_MODE);
-    System.out.println("OVERFLOW_RATIO: " + config.OVERFLOW_RATIO);
-    System.out.println("---------------------------------------------------------------");
-  }
-
+  /**
+   * Prints operation latencies into the console. {@link #calculateMetrics()} must be called beforehand.
+   */
   public void showMetrics() {
     System.out.println(
         "-----------------------------------------------Latency (ms) Matrix-----------------------------------------------");
@@ -347,22 +470,9 @@ public class Measurement {
         "-----------------------------------------------------------------------------------------------------------------");
   }
 
-  private double getDoubleListSum(List<Double> list) {
-    double sum = 0;
-    for (double item : list) {
-      sum += item;
-    }
-    return sum;
-  }
-
-  private double getDoubleListMax(List<Double> list) {
-    double max = 0;
-    for (double item : list) {
-      max = Math.max(max, item);
-    }
-    return max;
-  }
-
+  /**
+   * Metric types.
+   */
   public enum Metric {
     AVG_LATENCY("AVG"),
     MID_AVG_LATENCY("MID_AVG"),
@@ -380,6 +490,11 @@ public class Measurement {
     Map<Operation, Double> typeValueMap;
     String name;
 
+    /**
+     * Initializes a metric.
+     *
+     * @param name The name of the metric.
+     */
     Metric(String name) {
       this.name = name;
       typeValueMap = new EnumMap<>(Operation.class);
@@ -388,16 +503,25 @@ public class Measurement {
       }
     }
 
-    public Map<Operation, Double> getTypeValueMap() {
+    /**
+     * Returns the operation -&gt; value map.
+     * @return Operation -&gt; value map.
+     */
+    public Map<Operation, Double> getOperationValueMap() {
       return typeValueMap;
     }
 
+    /**
+     * Returns the name of the metric.
+     *
+     * @return The name.
+     */
     public String getName() {
       return name;
     }
   }
 
-  class DoubleComparator implements Comparator<Double> {
+  static class DoubleComparator implements Comparator<Double> {
 
     @Override
     public int compare(Double a, Double b) {

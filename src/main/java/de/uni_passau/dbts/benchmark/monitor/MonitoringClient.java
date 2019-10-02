@@ -14,27 +14,54 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public enum ClientMonitoring {
+/**
+ * A client that connects to a system monitor (see {@link MonitoringServer}) over TCP and saves the
+ * KPI data that the server collects to the MySQL database.
+ */
+public enum MonitoringClient {
   INSTANCE;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
+  /** Configuration singleton. */
   private Config config = ConfigParser.INSTANCE.config();
+
+  /** Output writer. */
   private PrintWriter out;
+
+  /** Input reader. */
   private ObjectInputStream in;
+
+  /** Client thread. */
   private Client client;
+
+  /** Executor service for the client thread. */
   private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+  /** The MySQL logger instance. */
   private MySqlLog mySqlLog = new MySqlLog(config.MYSQL_INIT_TIMESTAMP);
+
+  /** State of the connection. */
   private volatile State state = State.DEAD;
+
+  /** */
   private int countDown;
+
+  /** List of the system KPIs collected by {@link MonitoringServer}. */
   private List<KPI> kpis;
 
-  ClientMonitoring() {
+  /**
+   * Creates a new client.
+   */
+  MonitoringClient() {
     mySqlLog.initMysql(false);
     kpis = new ArrayList<>();
     countDown = config.CLIENTS_NUMBER;
   }
 
+  /**
+   * Connects to a system monitor.
+   */
   public void connect() {
     if (!config.MONITOR_SERVER) {
       return;
@@ -53,6 +80,9 @@ public enum ClientMonitoring {
     }
   }
 
+  /**
+   * Starts a client thread that collects the KPIs from the monitoring server.
+   */
   public void start() {
     if (!config.MONITOR_SERVER) {
       return;
@@ -66,12 +96,20 @@ public enum ClientMonitoring {
     }
   }
 
+  /**
+   * Signals the monitoring server to stop reading system KPIs.
+   */
   private void sendStop() {
     out.println(Message.STOP);
     client.proceed = false;
     state = State.STOPPED;
   }
 
+  /**
+   * Called by a benchmark worker thread, signals that a worker thread has finished an operation.
+   * When all worker threads are done, the client sends a message the monitoring server to stop
+   * reading system KPIs.
+   */
   public void stop() {
     if (!config.MONITOR_SERVER) {
       return;
@@ -90,6 +128,9 @@ public enum ClientMonitoring {
     }
   }
 
+  /**
+   * Stops the monitoring client and saves the results into the MySQL database.
+   */
   public void shutdown() {
     if (!config.MONITOR_SERVER) {
       return;
@@ -105,16 +146,29 @@ public enum ClientMonitoring {
     mySqlLog.saveServerMetrics(kpis);
   }
 
+  /**
+   * States of the monitoring client.
+   */
   private enum State {
     RUNNING,
     STOPPED,
     DEAD
   }
 
+  /**
+   * Client thread that directly communicates with the monitoring server.
+   */
   private class Client implements Runnable {
     private ObjectInputStream in;
+
+    /** Proceed listening for new KPIs. */
     private volatile boolean proceed = true;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param in Input reader.
+     */
     public Client(ObjectInputStream in) {
       this.in = in;
     }

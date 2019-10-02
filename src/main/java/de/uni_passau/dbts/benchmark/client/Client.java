@@ -10,16 +10,40 @@ import java.util.concurrent.CyclicBarrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class defines the base behavior of all worker clients. Each client is bound by a cyclic
+ * barrier, which a the client implementation should call when its execution finished. Thus, the
+ * clients' executions can be synchronized.
+ */
 public abstract class Client implements Runnable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Client.class);
+
+  /** Config singleton. */
   protected static Config config = ConfigParser.INSTANCE.config();
+
+  /** Measurement instance that the client can write execution results into. */
   protected Measurement measurement;
+
+  /** Down latch. */
   private CountDownLatch countDownLatch;
+
+  /** The barrier which is used to synchronize worker clients. */
   CyclicBarrier barrier;
+
+  /** ID of the client. */
   int clientThreadId;
+
+  /** Database connection wrapper. */
   DBWrapper dbWrapper;
 
+  /**
+   * Creates an instance of worker client.
+   *
+   * @param id ID of the client.
+   * @param countDownLatch Down latch object.
+   * @param barrier A barrier the client should be bound to.
+   */
   public Client(int id, CountDownLatch countDownLatch, CyclicBarrier barrier) {
     this.countDownLatch = countDownLatch;
     this.barrier = barrier;
@@ -28,6 +52,11 @@ public abstract class Client implements Runnable {
     dbWrapper = new DBWrapper(measurement);
   }
 
+  /**
+   * Returns the measurement results of the client.
+   *
+   * @return Measurement results.
+   */
   public Measurement getMeasurement() {
     return measurement;
   }
@@ -45,7 +74,7 @@ public abstract class Client implements Runnable {
         try {
           dbWrapper.close();
         } catch (TsdbException e) {
-          LOGGER.error("Close {} error: ", config.DB_SWITCH, e);
+          LOGGER.error("Error while closing connection to {}: ", config.DB_SWITCH, e);
         }
       }
     } finally {
@@ -53,5 +82,8 @@ public abstract class Client implements Runnable {
     }
   }
 
+  /**
+   * Starts worker's operations.
+   */
   abstract void doTest();
 }

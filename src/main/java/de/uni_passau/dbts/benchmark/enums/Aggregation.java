@@ -1,5 +1,8 @@
 package de.uni_passau.dbts.benchmark.enums;
 
+/**
+ * Aggregation functions.
+ */
 public enum Aggregation {
   COUNT,
   AVG,
@@ -11,6 +14,12 @@ public enum Aggregation {
   TIME_BUCKET,
   MEAN;
 
+  /**
+   * Returns an SQL representation of the function applied to the specified column name.
+   *
+   * @param column Column name.
+   * @return SQL aggregation clause.
+   */
   public String build(String column) {
     switch (this) {
       case AVG:
@@ -29,6 +38,13 @@ public enum Aggregation {
     }
   }
 
+  /**
+   * Returns an SQL representation of the time bucket aggregation function.
+   *
+   * @param column Time column.
+   * @param timeBucket Time interval.
+   * @return SQL clause.
+   */
   public String build(String column, long timeBucket) {
     if (this == TIME_BUCKET) {
       return this.name().toLowerCase()

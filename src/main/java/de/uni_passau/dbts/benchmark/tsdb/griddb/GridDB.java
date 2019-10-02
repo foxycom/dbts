@@ -14,6 +14,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Implementation of benchmark scenarios for GridDB.
+ */
 public class GridDB implements Database {
   private static final Logger LOGGER = LoggerFactory.getLogger(GridDB.class);
 

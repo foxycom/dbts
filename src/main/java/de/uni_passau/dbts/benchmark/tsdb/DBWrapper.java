@@ -16,16 +16,31 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A wrapper for database connections. It measures execution latencies and saves the them into a
+ * {@link Measurement} instance.
+ */
 public class DBWrapper implements Database {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
+
+  /** Configuration singleton. */
   private static Config config = ConfigParser.INSTANCE.config();
+
+  /** Database connection. */
   private Database db;
-  private static final double NANO_TO_SECOND = 1000000000.0d;
-  private static final double NANO_TO_MILLIS = 1000000.0d;
+
+  /** Measurement results instance. */
   private Measurement measurement;
+
+  /** Error log template. */
   private static final String ERROR_LOG = "Failed to do {} because unexpected exception: ";
 
+  /**
+   * Creates an wrapper instance.
+   *
+   * @param measurement Measurement results instance.
+   */
   public DBWrapper(Measurement measurement) {
     DBFactory dbFactory = new DBFactory();
     try {
@@ -43,7 +58,7 @@ public class DBWrapper implements Database {
     try {
       status = db.insertOneBatch(batch);
       if (status.isOk()) {
-        double timeInMillis = status.getCostTime() / NANO_TO_MILLIS;
+        double timeInMillis = status.getCostTime() / Constants.NANO_TO_MILLIS;
         measureOperation(status, operation, batch.pointNum());
         String currentThread = Thread.currentThread().getName();
         double throughput = batch.pointNum() / (timeInMillis / Constants.MILLIS_TO_SECONDS);
@@ -239,7 +254,7 @@ public class DBWrapper implements Database {
         en = System.nanoTime();
         LOGGER.info("Successfully registered schema!");
       }
-      createSchemaTimeInSecond = (en - st) / NANO_TO_SECOND;
+      createSchemaTimeInSecond = (en - st) / Constants.NANO_TO_SECONDS;
       measurement.setCreateSchemaTime(createSchemaTimeInSecond);
     } catch (Exception e) {
       measurement.setCreateSchemaTime(0);
@@ -253,14 +268,28 @@ public class DBWrapper implements Database {
     return db.getSize();
   }
 
+  /**
+   * Adds a successfully executed operation to results.
+   *
+   * @param status Status of the execution.
+   * @param operation Executed operation.
+   * @param okPointNum Number of processed points.
+   */
   private void measureOperation(Status status, Operation operation, int okPointNum) {
-    measurement.addOkOperation(operation, status.getCostTime() / NANO_TO_MILLIS, okPointNum);
+    measurement.addOkOperation(operation, status.getCostTime() / Constants.NANO_TO_MILLIS,
+        okPointNum);
   }
 
+  /**
+   * Handles the results of an executed operation and logs the status.
+   *
+   * @param status Status of the execution.
+   * @param operation Executed operation.
+   */
   private void handleQueryOperation(Status status, Operation operation) {
     if (status.isOk()) {
       measureOperation(status, operation, status.getQueryResultPointNum());
-      double timeInMillis = status.getCostTime() / NANO_TO_MILLIS;
+      double timeInMillis = status.getCostTime() / Constants.NANO_TO_MILLIS;
       String formatTimeInMillis = String.format("%.2f", timeInMillis);
       String currentThread = Thread.currentThread().getName();
       LOGGER.info(
@@ -272,7 +301,6 @@ public class DBWrapper implements Database {
     } else {
       LOGGER.error("Execution fail: {}", status.getErrorMessage(), status.getException());
       measurement.addFailOperation(operation);
-      // currently we do not have expected result point number
       measurement.addOkPointNum(operation, status.getQueryResultPointNum());
     }
   }

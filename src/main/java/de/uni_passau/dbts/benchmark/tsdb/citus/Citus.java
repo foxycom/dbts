@@ -29,6 +29,9 @@ import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implementation of benchmark scenarios for Citus.
+ */
 public class Citus implements Database {
   private static final Logger LOGGER = LoggerFactory.getLogger(Citus.class);
 

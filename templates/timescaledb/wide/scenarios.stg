@@ -1,0 +1,93 @@
+precisePoint(tableName, sensor, bike, time) ::= <<
+SELECT time, bike_id, <sensor> FROM <tableName> WHERE (bike_id = '<bike>') AND (time = '<time>');
+>>
+
+lastTimeActivelyDriven(tableName, sensor, time, threshold) ::= <<
+SELECT data.minute, data.bike_id, b.owner_name FROM bikes b INNER JOIN LATERAL (
+	SELECT time_bucket(interval '1 min', time) AS minute, bike_id FROM <tableName> t
+	WHERE t.bike_id = b.bike_id AND time > '<time>'
+	AND <sensor> IS NOT NULL
+	GROUP BY minute, bike_id
+	HAVING AVG(<sensor>) > <threshold>
+	ORDER BY minute DESC LIMIT 1
+) AS data
+ON true
+ORDER BY b.bike_id, data.minute DESC;
+>>
+
+airPollutionHeatMap(tableName, gpsSensor, sensor, start, end) ::= <<
+SELECT ST_X(<gpsSensor>::geometry) AS longitude,
+ST_Y(<gpsSensor>::geometry) AS latitude, AVG(<sensor>) FROM <tableName> t
+WHERE time > '<start>' AND time \< '<end>'
+GROUP BY longitude, latitude;
+>>
+
+distanceDriven(tableName, gpsSensor, bike, sensor, threshold, start, end) ::= <<
+SELECT b.bike_id, b.owner_name, ST_LENGTH(ST_MAKELINE(<gpsSensor>::geometry)::geography, false)
+FROM bikes b INNER JOIN LATERAL (
+	SELECT time_bucket(interval '1 s', time) AS second, <gpsSensor> FROM <tableName> t
+	WHERE t.bike_id = b.bike_id AND bike_id = '<bike>' AND time > '<start>'
+	AND time \<= '<end>'
+	GROUP BY second, <gpsSensor> HAVING AVG(<sensor>) > <threshold>
+) AS data ON true
+GROUP BY b.bike_id, b.owner_name;
+>>
+
+lastKnownPosition(tableName, gpsSensor) ::= <<
+SELECT data.time, data.bike_id, b.owner_name, data.<gpsSensor> FROM bikes b INNER JOIN LATERAL (
+	SELECT * FROM <tableName> t WHERE t.bike_id = b.bike_id
+	ORDER BY time DESC LIMIT 1
+) AS data ON true;
+>>
+
+identifyTrips(tableName, gpsSensor, bike, sensor, threshold, start, end) ::= <<
+SELECT data.second, data.bike_id, b.owner_name, data.<gpsSensor> FROM bikes b INNER JOIN LATERAL (
+	SELECT time_bucket(interval '1 s', time) AS second, bike_id, <gpsSensor>
+	FROM <tableName> t
+	WHERE t.bike_id = b.bike_id
+	AND t.bike_id = '<bike>'
+	AND time >= '<start>'
+	AND time \< '<end>'
+	GROUP BY second, bike_id, <gpsSensor>
+	HAVING AVG(<sensor>) >= <threshold>
+) AS data ON true
+ORDER BY data.second ASC, data.bike_id;
+>>
+
+bikesInLocation(tableName, gpsSensor, radius, longitude, latitude) ::= <<
+SELECT b.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
+	SELECT <gpsSensor> AS location FROM <tableName> t WHERE t.bike_id = b.bike_id
+	ORDER BY time DESC LIMIT 1
+) AS data ON true
+WHERE ST_CONTAINS(
+	ST_BUFFER(ST_SETSRID(ST_MAKEPOINT(<longitude>, <latitude>),4326)::geography, <radius>
+)::geometry, data.location::geometry);
+>>
+
+gpsPathScan(tableName, gpsSensor, bike, start, end) ::= <<
+SELECT data.bike_id, b.owner_name, data.location FROM bikes b INNER JOIN LATERAL (
+	SELECT <gpsSensor> AS location, bike_id FROM <tableName> t
+	WHERE t.bike_id = b.bike_id
+	AND bike_id = '<bike>'
+	AND time >= '<start>'
+	AND time \<= '<end>'
+) AS data ON true;
+>>
+
+downsample(tableName, sensor, bike, start, end) ::= <<
+SELECT data.minute, b.bike_id, b.owner_name, data.value FROM bikes b INNER JOIN LATERAL (
+	SELECT time_bucket(interval '1 min', time) AS minute, AVG(<sensor>) AS value
+	FROM <tableName> t WHERE t.bike_id = b.bike_id
+	AND bike_id = '<bike>'
+	AND time >= '<start>'
+	AND time \<= '<end>'
+	GROUP BY minute
+) AS data ON true
+ORDER BY data.minute ASC, b.bike_id;
+>>
+
+offlineBikes(tableName, time) ::= <<
+SELECT DISTINCT(bike_id) FROM bikes WHERE bike_id NOT IN (
+	SELECT DISTINCT(bike_id) FROM <tableName> t WHERE time > '<time>'
+);
+>>

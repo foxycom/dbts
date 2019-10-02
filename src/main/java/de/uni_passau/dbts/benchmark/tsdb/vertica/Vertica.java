@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
 import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroupFile;
 
+/**
+ * Implementation of benchmark scenarios for Vertica.
+ */
 public class Vertica implements Database {
   private static final Logger LOGGER = LoggerFactory.getLogger(Vertica.class);
 

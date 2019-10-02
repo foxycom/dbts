@@ -19,6 +19,9 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Parser of XML configuration files.
+ */
 public enum ConfigParser {
   INSTANCE;
 
