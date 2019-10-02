@@ -59,7 +59,7 @@ public class MemSQL implements Database {
     sqlBuilder = new SqlBuilder();
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
-    templatesFile = new STGroupFile("../templates/memsql/scenarios.stg");
+    templatesFile = new STGroupFile("templates/memsql/scenarios.stg");
     nameGenerator = NameGenerator.INSTANCE;
   }
 

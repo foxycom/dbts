@@ -1,10 +1,10 @@
 #!/bin/sh
 
 if [ -z "${BENCHMARK_HOME}" ]; then
-  export BENCHMARK_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+  export BENCHMARK_HOME="$(cd "$(dirname "$0")"/.. || exit; pwd)"
 fi
 
-echo $BENCHMARK_HOME
+echo "$BENCHMARK_HOME"
 
 MAIN_CLASS=de.uni_passau.dbts.benchmark.App
 
@@ -25,6 +25,6 @@ else
     JAVA=java
 fi
 
-exec "$JAVA" -Xms3G -Duser.timezone=GMT+2 -Dlogback.configurationFile=${BENCHMARK_HOME}/conf/logback.xml  -cp "$CLASSPATH" "$MAIN_CLASS" "$@"
+exec "$JAVA" -Xms3G -Duser.timezone=GMT+2 -Dlogback.configurationFile="${BENCHMARK_HOME}"/conf/logback.xml  -cp "$CLASSPATH" "$MAIN_CLASS" "$@"
 
 exit $?

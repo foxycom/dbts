@@ -58,7 +58,7 @@ public class Vertica implements Database {
    */
   public Vertica() {
     config = ConfigParser.INSTANCE.config();
-    templatesFile = new STGroupFile("../templates/vertica/queries.stg");
+    templatesFile = new STGroupFile("templates/vertica/queries.stg");
   }
 
   @Override

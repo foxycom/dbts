@@ -64,7 +64,7 @@ public class CrateDB implements Database {
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
     nameGenerator = NameGenerator.INSTANCE;
-    scenarioTemplates = new STGroupFile("../templates/cratedb/scenarios.stg");
+    scenarioTemplates = new STGroupFile("templates/cratedb/scenarios.stg");
   }
 
   @Override

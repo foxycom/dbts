@@ -73,9 +73,9 @@ public class TimescaleDB implements Database {
     config = ConfigParser.INSTANCE.config();
     tableName = config.DB_NAME;
     if (dataModel == TableMode.WIDE_TABLE) {
-      scenarioTemplates = new STGroupFile("../templates/timescaledb/wide/scenarios.stg");
+      scenarioTemplates = new STGroupFile("templates/timescaledb/wide/scenarios.stg");
     } else if (dataModel == TableMode.NARROW_TABLE) {
-      scenarioTemplates = new STGroupFile("../templates/timescaledb/narrow/scenarios.stg");
+      scenarioTemplates = new STGroupFile("templates/timescaledb/narrow/scenarios.stg");
     }
   }
 

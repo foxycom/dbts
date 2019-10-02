@@ -52,7 +52,7 @@ public class ClickHouse implements Database {
   public ClickHouse() {
     config = ConfigParser.INSTANCE.config();
     nameGenerator = NameGenerator.INSTANCE;
-    templatesFile = new STGroupFile("../templates/clickhouse/scenarios.stg");
+    templatesFile = new STGroupFile("templates/clickhouse/scenarios.stg");
     tableName = "test";
   }
 

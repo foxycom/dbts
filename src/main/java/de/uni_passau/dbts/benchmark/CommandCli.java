@@ -10,6 +10,9 @@ import org.apache.commons.cli.ParseException;
 
 import de.uni_passau.dbts.benchmark.conf.Constants;
 
+/**
+ * CLI arguments parser. Currently, only the option -cf is supported.
+ */
 public class CommandCli {
   private final String HELP_ARGS = "help";
   private final String CONFIG_ARGS = "cf";
@@ -17,6 +20,11 @@ public class CommandCli {
 
   private static final int MAX_HELP_CONSOLE_WIDTH = 88;
 
+  /**
+   * Registers CLI options.
+   *
+   * @return CLI options.
+   */
   private Options createOptions() {
     Options options = new Options();
     Option help = new Option(HELP_ARGS, false, "Display help information");
@@ -34,6 +42,15 @@ public class CommandCli {
     return options;
   }
 
+  /**
+   * Parses the CLI input.
+   *
+   * @param parser Parser.
+   * @param options CLI options.
+   * @param args CLI input.
+   * @param hf Formatter.
+   * @return true if CLI option were entered correctly, false otherwise.
+   */
   private boolean parseParams(
       CommandLineParser parser,
       Options options,
@@ -62,6 +79,12 @@ public class CommandCli {
     return true;
   }
 
+  /**
+   * Initializes the parser.
+   *
+   * @param args CLI input.
+   * @return true if options were entered correctly, false otherwise.
+   */
   public boolean init(String[] args) {
     Options options = createOptions();
     HelpFormatter hf = new HelpFormatter();
